@@ -253,6 +253,41 @@ public class RepositorioDeEventosPostgres implements RepositorioDeEventosPort {
         }
     }
 
+    /**
+     * Contagem por dia, agrupada em UTC.
+     *
+     * <p><b>O {@code AT TIME ZONE 'UTC'} não é enfeite.</b> {@code ocorrido_em} é
+     * {@code TIMESTAMPTZ}, e {@code date_trunc('day', ...)} sem fuso explícito usa o fuso
+     * da <b>sessão</b> do banco. Uma sessão em São Paulo e outra em Lisboa agrupariam a
+     * mesma linha em dias diferentes — e o gráfico mudaria conforme quem o abrisse, sem
+     * erro nenhum. É a mesma família de defeito do log em {@code -03:00}.</p>
+     */
+    @Override
+    public List<ContagemPorDia> contarPorDia(Instant desde) {
+        String sql = """
+                SELECT (date_trunc('day', ocorrido_em AT TIME ZONE 'UTC'))::date AS dia,
+                       count(*) AS quantos
+                  FROM evento_natural
+                 WHERE ocorrido_em >= ?
+                 GROUP BY 1
+                 ORDER BY 1""";
+        List<ContagemPorDia> serie = new ArrayList<>();
+        try (Connection c = Conexoes.abrir(dataSource, "evento_natural");
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setObject(1, desde.atOffset(ZoneOffset.UTC));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    serie.add(new ContagemPorDia(
+                            rs.getObject("dia", java.time.LocalDate.class),
+                            rs.getLong("quantos")));
+                }
+            }
+            return serie;
+        } catch (SQLException e) {
+            throw new FalhaNaPersistenciaDeEventosException("contar-por-dia", desde.toString(), e);
+        }
+    }
+
     @Override
     public long contar() {
         return umNumero("SELECT count(*) FROM evento_natural", "contar");

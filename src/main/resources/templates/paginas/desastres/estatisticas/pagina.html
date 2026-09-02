@@ -81,6 +81,34 @@
       {/for}
     </dl>
 
+    <h2 class="secao-titulo est-subtitulo">Histórico — eventos por dia</h2>
+    <p class="secao-texto" translate="no">
+      Pico de <strong>{pico}</strong> evento(s) num dia; <strong>{diasComEvento}</strong> de
+      {dias} dias tiveram algum evento.
+    </p>
+
+    <!--
+      SERIE HISTORICA. Os dias SEM evento aparecem, com altura zero — e essa e a
+      decisao que mais importa aqui. O banco devolve so os dias que tiveram
+      eventos; desenhar apenas eles encurtaria a linha do tempo e faria tres
+      eventos em tres semanas parecerem tres dias seguidos de atividade. O
+      buraco e a informacao: e ele que mostra a calmaria.
+
+      Sem biblioteca de grafico, de novo: cada coluna e um <div> com altura em
+      porcentagem, calculada no servidor. Legivel sem JavaScript, imprimivel, e
+      cada coluna carrega o valor no `title` e no texto alternativo.
+    -->
+    <div class="serie" role="img"
+         aria-label="Eventos por dia nos últimos {dias} dias, pico de {pico}">
+      {#for c in colunas}
+      <div class="serie-coluna{#if c.quantos == 0} serie-coluna-vazia{/if}"
+           title="{c.dia}: {c.quantos} evento(s)">
+        <span class="serie-barra" style="height: {c.altura}%"></span>
+        <span class="serie-rotulo" translate="no">{c.rotulo}</span>
+      </div>
+      {/for}
+    </div>
+
     <p class="grafico-legenda">
       A barra mais longa é a categoria com mais eventos na janela; as demais são
       proporcionais a ela.

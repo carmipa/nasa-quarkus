@@ -1,0 +1,35 @@
+/*
+ * ESTILO DO FORMULÁRIO DE CONTATO — e só dele.
+ *
+ * Grade, campo, rótulo e botão são componentes do base.css. Aqui fica a
+ * explicação do tipo, que é o que esta tela tem de próprio — e é o pedaço mais
+ * importante dela.
+ */
+
+.volta { width: 100%; margin-bottom: 0.75rem; }
+.volta a { color: var(--cor-texto-fraco); text-decoration: none; font-size: 0.9rem; }
+.volta a:hover { color: var(--cor-destaque); }
+
+/* A explicação do tipo NÃO é uma dica discreta: é a informação que decide se
+   alguém será avisado de um desastre. Por isso tem caixa própria, com borda
+   marcada, e fica ao lado do campo — não num rodapé. */
+.tipo-explicacao {
+  margin-top: 0.6rem;
+  padding: 0.75rem 1rem;
+  border-left: 3px solid var(--cor-alerta);
+  border-radius: 0 0.4rem 0.4rem 0;
+  background: rgba(255, 159, 67, .07);
+  transition: border-color .15s, background .15s;
+}
+
+.tipo-explicacao p { margin: 0 0 0.4rem; font-size: 0.88rem; }
+.tipo-explicacao p:last-child { margin-bottom: 0; }
+
+/* Quando o tipo escolhido é EMERGÊNCIA, a explicação fica marcada — o destaque
+   acompanha a escolha, em vez de esperar o envio. */
+.tipo-explicacao[data-emergencia="sim"] {
+  border-left-color: #f87171;
+  background: rgba(248, 113, 113, .1);
+}
+
+.aviso-sucesso a { color: var(--cor-destaque); font-weight: 600; }

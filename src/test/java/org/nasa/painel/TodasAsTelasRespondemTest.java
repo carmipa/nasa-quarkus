@@ -114,6 +114,18 @@ class TodasAsTelasRespondemTest {
     }
 
     @Test
+    @DisplayName("as telas de CONTATO renderizam, com e sem filtro de tipo")
+    void telasDeContato() {
+        deveResponder("/contatos/listar");
+        deveResponder("/contatos/cadastrar");
+        deveResponder("/contatos/fragmento/lista");
+        deveResponder("/contatos/fragmento/lista?tipo=EMERGENCIA");
+        deveResponder("/contatos/fragmento/lista?termo=exemplo");
+        // O ramo com termo E pagina: e onde o urlEncoded aparece.
+        deveResponder("/contatos/fragmento/lista?termo=exemplo&tipo=&pagina=1");
+    }
+
+    @Test
     @DisplayName("as telas de ALERTA renderizam, com e sem filtro de situacao")
     void telasDeAlerta() {
         deveResponder("/alertas");
@@ -123,6 +135,18 @@ class TodasAsTelasRespondemTest {
         deveResponder("/alertas/fragmento/lista?situacao=ENVIADO");
         deveResponder("/alertas/fragmento/lista?situacao=FALHOU");
         deveResponder("/alertas/fragmento/lista?situacao=ENVIADO&pagina=1");
+    }
+
+    @Test
+    @DisplayName("as telas de ENDERECO renderizam, e os TRES estados do CEP")
+    void telasDeEndereco() {
+        deveResponder("/enderecos/listar");
+        deveResponder("/enderecos/cadastrar");
+        deveResponder("/enderecos/cadastrar?clienteId=1");
+        // Os tres estados do fragmento de CEP, cada um com seu texto proprio.
+        deveResponder("/enderecos/fragmento/por-cep");                 // nao consultei
+        deveResponder("/enderecos/fragmento/por-cep?cep=123");         // incompleto
+        deveResponder("/enderecos/fragmento/por-cep?cep=00000000");    // nao existe
     }
 
     @Test
@@ -146,7 +170,9 @@ class TodasAsTelasRespondemTest {
         // infraestrutura para quem nao deveria ve-la.
         for (String rota : new String[] { "/", "/contato", "/desastres", "/desastres/mapa",
                 "/desastres/estatisticas", "/clientes/listar", "/clientes/cadastrar",
-                "/clientes/buscar", "/alertas" }) {
+                "/clientes/buscar", "/alertas", "/contatos/listar",
+                "/contatos/cadastrar", "/enderecos/listar",
+                "/enderecos/cadastrar" }) {
             String corpo = corpoDe(rota);
             assertTrue(!corpo.contains("org.nasa.") || !corpo.contains("at java."),
                     "rastro de pilha visivel em " + rota);

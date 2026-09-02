@@ -1,0 +1,51 @@
+<!--
+  RESULTADO DA CONSULTA DE CEP.
+
+  TRES ESTADOS, e o terceiro e o que mais importa:
+    1. ainda nao consultei      -> nada na tela
+    2. o CEP nao existe         -> corrija o que digitou
+    3. o PROVEDOR esta fora     -> tente de novo; o CEP pode estar certo
+  Dizer "CEP nao encontrado" quando o servico caiu faz a pessoa APAGAR um CEP
+  que estava correto — e ela nao tem como saber que o erro nao era dela.
+
+  Os campos sao preenchidos por JavaScript a partir dos atributos `data-` deste
+  fragmento, e SO os que estao vazios. Sobrescrever apagaria a correcao de quem
+  sabe que a rua mudou de nome e a base do CEP ainda nao atualizou.
+-->
+{#if !consultou}
+  <!-- Nada ainda: o campo de CEP mal comecou a ser digitado. -->
+{#else if indisponivel}
+  <div class="aviso aviso-erro" role="alert">
+    <strong>Não consegui consultar o CEP agora.</strong> {erro}
+    <p class="aviso-nota">
+      O CEP pode estar certo — foi o serviço de consulta que não respondeu. Você pode
+      preencher o endereço à mão e cadastrar: <strong>o cadastro não depende disso</strong>.
+      Só a coordenada ficará ausente, e o endereço não entrará no alerta de proximidade.
+    </p>
+  </div>
+{#else if achado}
+  <div class="cep-achado" role="status"
+       data-logradouro="{achado.logradouro}"
+       data-bairro="{achado.bairro}"
+       data-localidade="{achado.localidade}"
+       data-uf="{achado.uf}">
+    <strong>Encontrado:</strong>
+    <span translate="no">{achado.logradouro} — {achado.localidade}/{achado.uf}</span>
+    <span class="cep-provedor" translate="no">via {achado.provedor}</span>
+    {#if achado.coordenada.isPresent()}
+      <span class="cep-coordenada">
+        com coordenada — este endereço entrará no alerta de proximidade
+      </span>
+    {#else}
+      <span class="cep-sem-coordenada">
+        <strong>sem coordenada</strong> — este endereço não entrará no alerta de proximidade
+      </span>
+    {/if}
+  </div>
+{#else}
+  <div class="aviso" role="status">
+    <strong>Nenhum provedor conhece este CEP.</strong>
+    Confira os oito dígitos. Se estiverem certos, preencha o endereço à mão — o cadastro
+    funciona sem a consulta.
+  </div>
+{/if}

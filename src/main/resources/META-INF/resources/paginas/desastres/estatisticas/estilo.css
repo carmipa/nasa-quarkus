@@ -64,3 +64,71 @@
   .barra-linha { grid-template-columns: 1fr; gap: 0.25rem; }
   .barra-rotulo { text-align: left; }
 }
+
+/* ------------------------------------------------------- série histórica */
+
+/*
+ * Cada coluna é um <div> com altura em porcentagem, calculada no servidor.
+ * Sem biblioteca, pelo mesmo motivo das barras: é um retângulo.
+ *
+ * ROLA NA HORIZONTAL quando há muitos dias — 365 colunas não cabem em tela
+ * nenhuma, e espremê-las até 1px transformaria o gráfico numa mancha.
+ */
+.serie {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  width: 100%;
+  height: 12rem;
+  padding: 0.5rem 0 0;
+  margin: 1rem 0 0.5rem;
+  border-bottom: 1px solid var(--cor-borda);
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.serie-coluna {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  flex: 1 0 auto;
+  min-width: 0.6rem;
+  height: 100%;
+  gap: 0.2rem;
+}
+
+.serie-barra {
+  display: block;
+  width: 100%;
+  min-height: 0;      /* dia com ZERO fica com altura zero mesmo: o vazio é a
+                         informação, e um tracinho falsificaria atividade */
+  border-radius: 2px 2px 0 0;
+  background: linear-gradient(180deg, #5ee9d6, var(--cor-destaque));
+}
+
+/* O dia sem evento ganha uma marca de base — mostra que o dia EXISTE e que
+   nada aconteceu, que é diferente de o dia não estar no gráfico. */
+.serie-coluna-vazia .serie-barra {
+  height: 2px !important;
+  background: var(--cor-borda);
+}
+
+.serie-rotulo {
+  color: var(--cor-texto-fraco);
+  font-size: 0.6rem;
+  white-space: nowrap;
+  transform: rotate(-60deg);
+  transform-origin: center;
+  margin-top: 0.4rem;
+  height: 2.2rem;
+}
+
+/* Acima de 60 dias o rótulo de cada coluna vira uma faixa ilegível de texto
+   girado; o `title` de cada coluna continua respondendo ao passar o mouse. */
+@media (max-width: 900px) {
+  .serie-rotulo { display: none; }
+  .serie { height: 9rem; }
+}
+
+.est-subtitulo { font-size: 1.15rem; margin-top: 2rem; }

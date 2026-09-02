@@ -225,7 +225,24 @@ public class DesastrePaginasResource {
                         maior == 0 ? 0 : Math.max(1, c.quantos() * 100 / maior)))
                 .toList();
 
+        // SERIE HISTORICA. A altura de cada coluna e calculada AQUI, pelo mesmo motivo
+        // das barras: o Qute nao faz aritmetica, e conta em template e regra escondida.
+        var serie = consultar.serieHistorica(dias);
+        long pico = serie.stream().mapToLong(p -> p.quantos()).max().orElse(1L);
+        List<Coluna> colunas = serie.stream()
+                .map(p -> new Coluna(p.dia().toString(),
+                        p.dia().getDayOfMonth() + "/" + p.dia().getMonthValue(),
+                        p.quantos(),
+                        // Dia com ZERO fica com altura 0 e NAO vira 1%: o vazio e a
+                        // informacao mais importante de uma serie historica, e falsificar
+                        // um tracinho ali apagaria a calmaria que ele mostra.
+                        p.quantos() == 0 ? 0 : Math.max(2, p.quantos() * 100 / pico)))
+                .toList();
+
         return moldura.vestir(telaEstatisticas
+                .data("colunas", colunas)
+                .data("pico", pico)
+                .data("diasComEvento", serie.stream().filter(p -> p.quantos() > 0).count())
                 .data("barras", barras)
                 .data("dias", dias)
                 .data("soma", soma)
@@ -246,6 +263,23 @@ public class DesastrePaginasResource {
      * @param porcentagem  largura da barra, de 1 a 100, relativa à maior categoria
      */
     public record Barra(String categoria, long quantos, long porcentagem) {
+    }
+
+    /**
+     * Uma coluna da serie historica.
+     *
+     * <p><b>Dia com zero tem altura ZERO</b>, e não um mínimo simbólico. É o oposto da
+     * regra das barras por categoria, onde uma categoria com um evento precisa aparecer:
+     * ali o mínimo revela algo que existe; aqui um tracinho falsificaria atividade num dia
+     * em que não houve nenhuma — e a calmaria é justamente o que a série histórica mostra
+     * de mais útil.</p>
+     *
+     * @param dia      a data completa, para o rótulo acessível
+     * @param rotulo   dia/mês, curto, para caber sob a coluna
+     * @param quantos  quantos eventos
+     * @param altura   0 a 100, relativa ao pico da janela
+     */
+    public record Coluna(String dia, String rotulo, long quantos, long altura) {
     }
 
     // ----------------------------------------------------------------- detalhe

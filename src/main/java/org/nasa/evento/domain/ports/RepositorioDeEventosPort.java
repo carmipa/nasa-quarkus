@@ -62,6 +62,26 @@ public interface RepositorioDeEventosPort {
     record ContagemPorCategoria(String categoria, long quantos) {
     }
 
+    /**
+     * Quantos eventos por DIA, na janela — a série histórica.
+     *
+     * <p><b>Dias sem evento NÃO aparecem</b> no resultado do banco, e isso é uma armadilha:
+     * um gráfico que desenha só os dias retornados encurta a linha do tempo e faz três
+     * eventos em três semanas parecerem três dias seguidos de atividade. Quem completa os
+     * dias vazios é o caso de uso, com o relógio na mão.</p>
+     */
+    List<ContagemPorDia> contarPorDia(Instant desde);
+
+    /**
+     * Um dia e quantos eventos ocorreram nele.
+     *
+     * @param dia     a data em UTC — o agrupamento por dia depende do fuso, e usar o
+     *                local faria a virada do dia cair em hora diferente por máquina
+     * @param quantos quantos eventos naquele dia
+     */
+    record ContagemPorDia(java.time.LocalDate dia, long quantos) {
+    }
+
     long contar();
 
     long contarAtivos();

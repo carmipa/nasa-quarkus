@@ -1,0 +1,83 @@
+{#include layout/base}
+{#titulo}Endereços{/titulo}
+
+{#estilos}
+<link rel="stylesheet" href="/paginas/enderecos/listar/estilo.css?v={versaoAssets}">
+{/estilos}
+
+{#corpo}
+<!--
+  LISTA DE ENDERECOS.
+
+  INVARIANTE DA TELA: cada endereco DIZ se entra no alerta de proximidade. Um
+  endereco sem coordenada e comum — 1 de cada 6 CEPs medidos volta assim — e
+  parece completo na tela. Sem esta marca, alguem cadastra e acredita que a
+  cobertura existe.
+-->
+<section class="secao">
+  <div class="lista-topo">
+    <h1 class="secao-titulo">
+      {#if clienteId}Endereços do cliente #{clienteId}{#else}Endereços{/if}
+    </h1>
+    <span class="lista-total" translate="no">{total} no total</span>
+    <a class="botao botao-principal"
+       href="/enderecos/cadastrar{#if clienteId}?clienteId={clienteId}{/if}">Novo endereço</a>
+  </div>
+
+  {#if vazio}
+    <div class="vazio">
+      {#if clienteId}
+        <p>Este cliente ainda não tem endereço.</p>
+        <p class="vazio-dica">
+          <strong>Sem endereço com coordenada, ele nunca recebe alerta de proximidade.</strong>
+        </p>
+      {#else}
+        <p>Nenhum endereço cadastrado.</p>
+      {/if}
+      <a class="botao botao-principal"
+         href="/enderecos/cadastrar{#if clienteId}?clienteId={clienteId}{/if}">Cadastrar</a>
+    </div>
+  {#else}
+    <ul class="lista">
+      {#for e in enderecos}
+      <li class="lista-item{#if !e.participaDoAlertaDeProximidade} sem-coordenada{/if}">
+        <div class="lista-item-dados">
+          <span class="lista-item-nome">
+            {e.logradouro}{#if e.numero}, {e.numero}{/if}
+          </span>
+          <dl class="lista-item-campos">
+            <div class="campo"><dt>CEP</dt><dd translate="no">{e.cep.formatado}</dd></div>
+            <div class="campo"><dt>Cidade</dt><dd>{e.localidade}/{e.uf}</dd></div>
+            {#if e.bairro}
+            <div class="campo"><dt>Bairro</dt><dd>{e.bairro}</dd></div>
+            {/if}
+            {#if e.complemento}
+            <div class="campo"><dt>Complemento</dt><dd>{e.complemento}</dd></div>
+            {/if}
+            {#if e.coordenada.isPresent()}
+            <div class="campo">
+              <dt>Coordenada</dt>
+              <dd translate="no">{e.coordenada.get.latitude}, {e.coordenada.get.longitude}</dd>
+            </div>
+            {/if}
+          </dl>
+          {#if !e.participaDoAlertaDeProximidade}
+          <p class="fora-do-alerta">
+            <strong>Não entra no alerta de proximidade:</strong> sem coordenada, não há o
+            que comparar com a posição de um evento.
+          </p>
+          {/if}
+        </div>
+        <div class="lista-item-acoes">
+          <form method="post"
+                action="/enderecos/{e.id}/excluir{#if clienteId}?clienteId={clienteId}{/if}">
+            <button class="botao botao-perigo" type="submit">Excluir</button>
+          </form>
+        </div>
+      </li>
+      {/for}
+    </ul>
+  {/if}
+</section>
+{/corpo}
+{/include}

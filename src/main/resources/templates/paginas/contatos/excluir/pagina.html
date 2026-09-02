@@ -1,0 +1,75 @@
+{#include layout/base}
+{#titulo}Contato — excluir{/titulo}
+
+{#estilos}
+<link rel="stylesheet" href="/paginas/contatos/excluir/estilo.css?v={versaoAssets}">
+{/estilos}
+
+{#corpo}
+<!--
+  EXCLUSAO DE CONTATO — tela propria, e por um motivo alem do costume.
+
+  Excluir um contato de EMERGENCIA tira alguem da lista de avisos de desastre. O
+  sintoma disso e SILENCIO, meses depois, num dia ruim — e ninguem relaciona o
+  silencio com o clique de hoje. Por isso a tela diz essa consequencia em voz
+  alta ANTES de confirmar.
+
+  A exclusao e POST: um GET que apaga e apagado por rastreador e por
+  pre-carregamento de navegador, sem ninguem clicar.
+-->
+<section class="secao">
+  {#if excluido}
+    <div class="aviso aviso-sucesso" role="status">
+      <strong translate="no">{contato.email.valor}</strong> foi excluído.
+      {#if contato.recebeAlerta}
+      <p class="aviso-nota">
+        <strong>Este era um contato de emergência.</strong> A partir de agora ele não
+        receberá mais alerta de desastre.
+      </p>
+      {/if}
+    </div>
+    <div class="excluir-acoes">
+      <a class="botao botao-principal" href="/contatos/listar">Voltar à lista</a>
+      <a class="botao" href="/contatos/cadastrar">Cadastrar outro</a>
+    </div>
+  {#else}
+    <nav class="volta"><a href="/contatos/listar">&larr; Contatos</a></nav>
+    <h1 class="secao-titulo">Excluir contato</h1>
+
+    {#if contato.recebeAlerta}
+    <div class="aviso aviso-erro" role="alert">
+      <strong>Atenção: este é um contato de EMERGÊNCIA.</strong>
+      Excluí-lo tira esta pessoa da lista de avisos de desastre. O efeito não aparece
+      agora — aparece no dia em que o aviso não chegar.
+    </div>
+    {#else}
+    <div class="aviso aviso-erro" role="alert">
+      <strong>Esta ação não pode ser desfeita.</strong>
+      Este contato não recebe alerta, então nenhuma cobertura é perdida — mas o registro
+      some junto com o vínculo aos clientes.
+    </div>
+    {/if}
+
+    <article class="excluir-cartao">
+      <h2 class="excluir-nome" translate="no">{contato.email.valor}</h2>
+      <dl class="excluir-campos">
+        <div class="campo"><dt>Identificador</dt><dd translate="no">{contato.id}</dd></div>
+        <div class="campo"><dt>Tipo</dt><dd translate="no">{contato.tipo.rotulo}</dd></div>
+        <div class="campo">
+          <dt>Telefone</dt><dd translate="no">{contato.contatoTelefonicoFormatado}</dd>
+        </div>
+        <div class="campo">
+          <dt>Cadastrado em</dt>
+          <dd translate="no">{contato.criadoEm} <span class="campo-fuso">UTC</span></dd>
+        </div>
+      </dl>
+    </article>
+
+    <form class="excluir-acoes" method="post" action="/contatos/{contato.id}/excluir">
+      <a class="botao botao-principal" href="/contatos/listar">Cancelar</a>
+      <button class="botao botao-perigo" type="submit">Excluir definitivamente</button>
+    </form>
+  {/if}
+</section>
+{/corpo}
+{/include}
