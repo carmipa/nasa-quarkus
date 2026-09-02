@@ -21,6 +21,7 @@
  * ├── endereco/     FATIA — CEP, geocodificação, CRUD de endereço
  * ├── contato/      FATIA — por onde a pessoa e avisada; decide quem recebe alerta
  * ├── evento/       FATIA — o que a NASA publica, e o que dispara o alerta
+ * ├── alerta/       FATIA — a saida do sistema: o aviso de que o desastre esta perto
  * └── painel/      FATIA — as telas, em Qute + HTMX
  * </pre>
  *
