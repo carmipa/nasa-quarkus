@@ -1,0 +1,97 @@
+{#include layout/base}
+{#titulo}Clientes — cadastrar{/titulo}
+
+{#estilos}
+<link rel="stylesheet" href="/paginas/clientes/cadastrar/estilo.css?v={versaoAssets}">
+{/estilos}
+
+{#corpo}
+<!--
+  CADASTRO DE CLIENTE.
+
+  O QUE MUDOU EM RELAÇÃO AO LEGADO (clientes/cadastrar/page.tsx, 469 linhas):
+    1. O legado validava CPF, data e obrigatoriedade EM JAVASCRIPT, antes de
+       enviar. Validação duplicada é validação que diverge: bastava a regra do
+       servidor mudar para as duas discordarem, e a que vale é sempre a do
+       servidor. Aqui a validação é UMA, no caso de uso, e a tela mostra o que
+       ele respondeu.
+    2. Ao dar erro, o formulário do legado perdia o que tinha sido digitado. O
+       erro mais comum aqui é um dígito de CPF — não justifica redigitar nome,
+       sobrenome e data.
+
+  INVARIANTE: o campo com erro é apontado PELO NOME que o servidor devolveu
+    (`campo`), não por adivinhação da tela. É o mesmo `alvo` que vai para o log,
+    então tela e log falam do mesmo campo.
+-->
+<section class="secao">
+  <h1 class="secao-titulo">Novo cliente</h1>
+
+  {#if criado}
+  <div class="aviso aviso-sucesso" role="status">
+    <strong>{criado.nomeCompleto}</strong> foi cadastrado.
+    <a href="/clientes/{criado.id}">Ver o cadastro</a> ou
+    <a href="/clientes/listar">voltar à lista</a>.
+  </div>
+  {/if}
+
+  {#if erro}
+  <div class="aviso aviso-erro" role="alert">
+    <strong>Não foi possível cadastrar.</strong> {erro}
+  </div>
+  {/if}
+
+  <form class="formulario" method="post" action="/clientes/cadastrar">
+    <div class="formulario-campo">
+      <label class="formulario-rotulo" for="nome">Nome</label>
+      <input class="campo-formulario{#if campo == 'nome'} campo-formulario-erro{/if}"
+             id="nome" name="nome" type="text" value="{nome}" required autofocus>
+      {#if campo == 'nome'}<span class="formulario-erro-campo">{erro}</span>{/if}
+    </div>
+
+    <div class="formulario-campo">
+      <label class="formulario-rotulo" for="sobrenome">Sobrenome</label>
+      <input class="campo-formulario{#if campo == 'sobrenome'} campo-formulario-erro{/if}"
+             id="sobrenome" name="sobrenome" type="text" value="{sobrenome}" required>
+      {#if campo == 'sobrenome'}<span class="formulario-erro-campo">{erro}</span>{/if}
+    </div>
+
+    <div class="formulario-campo">
+      <label class="formulario-rotulo" for="dataNascimento">Data de nascimento</label>
+      <!--
+        `type="date"` entrega sempre AAAA-MM-DD e traz o calendário do sistema.
+        O servidor mesmo assim reconfere o formato: o campo pode chegar como
+        texto livre em navegador antigo, e a regra não pode depender do widget.
+      -->
+      <input class="campo-formulario{#if campo == 'dataNascimento'} campo-formulario-erro{/if}"
+             id="dataNascimento" name="dataNascimento" type="date"
+             value="{dataNascimento}" required>
+      {#if campo == 'dataNascimento'}<span class="formulario-erro-campo">{erro}</span>{/if}
+    </div>
+
+    <div class="formulario-campo">
+      <label class="formulario-rotulo" for="documento">CPF ou CNPJ</label>
+      <input class="campo-formulario{#if campo == 'documento'} campo-formulario-erro{/if}"
+             id="documento" name="documento" type="text" value="{documento}"
+             inputmode="numeric" autocomplete="off" required
+             placeholder="000.000.000-00">
+      <span class="formulario-dica">
+        Pode digitar com ou sem pontuação — o sistema guarda só os dígitos, e é
+        por isso que o mesmo CPF nas duas formas é reconhecido como a mesma pessoa.
+      </span>
+      {#if campo == 'documento'}<span class="formulario-erro-campo">{erro}</span>{/if}
+    </div>
+
+    <div class="formulario-acoes">
+      <button class="botao botao-principal" type="submit">Cadastrar</button>
+      <a class="botao" href="/clientes/listar">Cancelar</a>
+    </div>
+  </form>
+</section>
+{/corpo}
+
+{#scripts}
+<!-- Componente compartilhado (duas telas usam), depois o script da tela. -->
+<script src="/estatico/js/mascara-documento.js?v={versaoAssets}" defer></script>
+<script src="/paginas/clientes/cadastrar/script.js?v={versaoAssets}" defer></script>
+{/scripts}
+{/include}

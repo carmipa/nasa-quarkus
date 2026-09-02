@@ -194,20 +194,31 @@ public class RepositorioDeClientesPostgres implements RepositorioDeClientesPort 
         // do SQLite. Portar literalmente faria `bruno` deixar de achar "Bruno" calado.
         // `documento` segue com LIKE porque so tem digitos, onde caixa nao existe.
         String sql = "SELECT " + COLUNAS + " FROM cliente "
-                + "WHERE nome ILIKE ? OR sobrenome ILIKE ? OR documento LIKE ? "
+                + "WHERE (? AND (nome ILIKE ? OR sobrenome ILIKE ?)) "
+                + "   OR (? AND documento LIKE ?) "
                 + "ORDER BY nome, sobrenome, id LIMIT ? OFFSET ?";
+        // CADA METADE DO FILTRO SO VALE SE TIVER O QUE PROCURAR, e este guarda
+        // conserta um defeito REAL medido em 02/09/2026: sem ele, um termo sem
+        // digitos produzia `soDigitos = "%%"`, e `documento LIKE '%%'` casa com
+        // TODA linha da tabela. Pesquisar "zzzzzz" devolvia a base inteira — a
+        // caixa de busca aceitava o texto, respondia rapido, e simplesmente nao
+        // filtrava. Veio do adaptador SQLite e foi portada fielmente, ate a tela
+        // de lista tornar o sintoma visivel.
+        //
         // O termo e PARAMETRO, nunca concatenado: e aqui que a injecao de SQL entraria.
         // A limpeza tambem remove `%` e `_`, que sao curingas DENTRO do padrao — sem
         // isso, quem digitasse `%` listaria a base inteira.
-        String curinga = "%" + termo.replaceAll("[^\\p{L}\\p{N} ]", "") + "%";
-        String soDigitos = "%" + termo.replaceAll("[^0-9]", "") + "%";
+        String texto = termo.replaceAll("[^\\p{L}\\p{N} ]", "").strip();
+        String digitos = termo.replaceAll("[^0-9]", "");
         try (Connection c = Conexoes.abrir(dataSource, "cliente");
              PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setString(1, curinga);
-            ps.setString(2, curinga);
-            ps.setString(3, soDigitos);
-            ps.setInt(4, tamanho);
-            ps.setInt(5, pagina * tamanho);
+            ps.setBoolean(1, !texto.isEmpty());
+            ps.setString(2, "%" + texto + "%");
+            ps.setString(3, "%" + texto + "%");
+            ps.setBoolean(4, !digitos.isEmpty());
+            ps.setString(5, "%" + digitos + "%");
+            ps.setInt(6, tamanho);
+            ps.setInt(7, pagina * tamanho);
             return todos(ps);
         } catch (SQLException e) {
             throw traduzir(e, "pesquisar", termo);

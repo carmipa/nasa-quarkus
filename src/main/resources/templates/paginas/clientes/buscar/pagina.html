@@ -1,0 +1,59 @@
+{#include layout/base}
+{#titulo}Clientes — buscar por documento{/titulo}
+
+{#estilos}
+<link rel="stylesheet" href="/paginas/clientes/buscar/estilo.css?v={versaoAssets}">
+{/estilos}
+
+{#corpo}
+<!--
+  BUSCA POR DOCUMENTO — busca EXATA, e é outra coisa que a busca da lista.
+
+  POR QUE AS DUAS EXISTEM: a da lista é aproximada e serve para achar alguém
+    cujo nome se lembra pela metade. Esta é exata e responde "esta pessoa já
+    está cadastrada?", que é a pergunta de quem está prestes a cadastrar. Juntar
+    as duas faria a segunda devolver uma lista quando ela precisa devolver sim
+    ou não.
+
+  INVARIANTE: documento MALFORMADO e documento INEXISTENTE produzem respostas
+    diferentes. "Não encontrado" para um CPF de dez dígitos manda procurar a
+    pessoa errada; o certo é dizer que o que foi digitado não é um documento.
+-->
+<section class="secao">
+  <h1 class="secao-titulo">Buscar por documento</h1>
+  <p class="secao-texto">
+    Consulta exata por CPF ou CNPJ. Para procurar por nome, use a
+    <a href="/clientes/listar">lista de clientes</a>.
+  </p>
+
+  <div class="busca-caixa">
+    <label class="formulario-rotulo" for="documento">CPF ou CNPJ</label>
+    <input class="campo-formulario"
+           id="documento"
+           type="search"
+           name="documento"
+           value="{documento}"
+           inputmode="numeric"
+           autocomplete="off"
+           autofocus
+           placeholder="000.000.000-00"
+           hx-get="/clientes/fragmento/por-documento"
+           hx-trigger="keyup changed delay:400ms, search"
+           hx-target="#resultado"
+           hx-indicator="#buscando">
+    <span class="formulario-dica">
+      Com ou sem pontuação. A consulta parte assim que houver dígitos suficientes.
+    </span>
+    <span class="htmx-indicator busca-carregando" id="buscando" translate="no">consultando…</span>
+  </div>
+
+  <div id="resultado" class="busca-resultado"></div>
+</section>
+{/corpo}
+
+{#scripts}
+<!-- Componente compartilhado (duas telas usam), depois o script da tela. -->
+<script src="/estatico/js/mascara-documento.js?v={versaoAssets}" defer></script>
+<script src="/paginas/clientes/buscar/script.js?v={versaoAssets}" defer></script>
+{/scripts}
+{/include}

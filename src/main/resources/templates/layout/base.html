@@ -27,6 +27,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{#insert titulo}NASA — Alerta de Desastres Naturais{/}</title>
   <link rel="stylesheet" href="/estatico/css/base.css?v={versaoAssets}">
+  <!--
+    CSS DA PÁGINA, sempre DEPOIS do base.css. A ordem é a cascata: o base define a
+    moldura e os componentes comuns; a página só refina o que é dela. Cada página tem
+    o seu arquivo, em pasta própria — nunca um `globals.css` compartilhado, que foi
+    exatamente o que o front legado tinha (801 linhas para 13 telas), e onde mexer
+    numa tela arriscava as outras doze.
+  -->
+  {#insert estilos}{/}
 </head>
 <body>
 
@@ -89,6 +97,18 @@
   </nav>
 </header>
 
+<!--
+  MENU. As quatro seções do sistema. O item ativo vem do parâmetro `secaoAtiva`, que
+  cada página informa: destacar no servidor evita o pisca-pisca de quem só descobre a
+  seção ativa depois que o JavaScript roda.
+-->
+<nav class="menu" aria-label="Seções">
+  <a class="menu-item{#if secaoAtiva == 'inicio'} menu-item-ativo{/if}" href="/">Início</a>
+  <a class="menu-item{#if secaoAtiva == 'clientes'} menu-item-ativo{/if}" href="/clientes/listar">Clientes</a>
+  <a class="menu-item{#if secaoAtiva == 'desastres'} menu-item-ativo{/if}" href="/desastres">Desastres</a>
+  <a class="menu-item{#if secaoAtiva == 'contato'} menu-item-ativo{/if}" href="/contato">Contato</a>
+</nav>
+
 <main class="conteudo">
   {#insert corpo}{/}
 </main>
@@ -100,6 +120,13 @@
 
 <script src="/estatico/js/htmx.min.js?v={versaoAssets}" defer></script>
 <script src="/estatico/js/relogio.js?v={versaoAssets}" defer></script>
+
+<!--
+  JS DA PÁGINA. Vem DEPOIS do htmx (a página pode registrar ouvintes de evento dele)
+  e ANTES do i18n. Cada página carrega só o seu: tela que não tem mapa não baixa
+  biblioteca de mapa.
+-->
+{#insert scripts}{/}
 
 <!-- i18n — a ordem destes três elementos é obrigatória (invariante 2 acima). -->
 <div id="google_translate_element" style="display:none"></div>

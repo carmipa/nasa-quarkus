@@ -1,0 +1,49 @@
+/*
+ * ESTILO DA TELA "DETALHE DO CLIENTE" — e só dela.
+ */
+
+.detalhe-volta { width: 100%; margin-bottom: 0.75rem; }
+
+.detalhe-volta a {
+  color: var(--cor-texto-fraco);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+.detalhe-volta a:hover,
+.detalhe-volta a:focus-visible { color: var(--cor-destaque); }
+
+.detalhe-campos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  gap: 1rem 2rem;
+  width: 100%;
+  margin: 1rem 0 2rem;
+}
+
+.detalhe-campo {
+  min-width: 0;
+  padding: 0.9rem 1.1rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 0.5rem;
+  background: var(--cor-superficie);
+}
+
+/* Ocupa a linha inteira: o instante com fuso é o campo mais longo, e quebrado
+   em duas linhas dentro de uma célula estreita fica difícil de ler. */
+.detalhe-campo-largo { grid-column: 1 / -1; }
+
+.detalhe-campo dt {
+  color: var(--cor-texto-fraco);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 0.3rem;
+}
+
+.detalhe-campo dd {
+  margin: 0;
+  font-size: 1.05rem;
+  overflow-wrap: anywhere;
+}
+
+.detalhe-acoes { display: flex; flex-wrap: wrap; gap: 0.75rem; width: 100%; }

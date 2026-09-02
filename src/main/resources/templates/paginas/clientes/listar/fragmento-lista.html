@@ -1,0 +1,79 @@
+<!--
+  FRAGMENTO DA LISTA — é só isto que o HTMX troca ao buscar ou paginar.
+
+  PROPÓSITO: devolver a lista pronta, sem que o navegador precise montar nada.
+    Trocar apenas este pedaço é o que mantém o cursor dentro do campo de busca.
+
+  INVARIANTE: as duas formas de lista vazia dizem coisas DIFERENTES. "Nenhum
+    resultado para 'silva'" pede corrigir a busca; "nenhum cliente cadastrado"
+    pede cadastrar o primeiro. Mostrar a mesma frase nos dois casos faz alguém
+    concluir que o sistema está quebrado quando a base só está vazia.
+-->
+{#if vazio}
+  {#if termo.isEmpty()}
+    <div class="lista-vazia">
+      <p>Nenhum cliente cadastrado ainda.</p>
+      <a class="botao botao-principal" href="/clientes/cadastrar">Cadastrar o primeiro</a>
+    </div>
+  {#else}
+    <div class="lista-vazia">
+      <p>Nenhum cliente encontrado para <strong translate="no">{termo}</strong>.</p>
+      <p class="lista-vazia-dica">A busca procura em nome, sobrenome e documento.</p>
+    </div>
+  {/if}
+{#else}
+  <ul class="lista">
+    {#for c in clientes}
+    <li class="lista-item">
+      <div class="lista-item-dados">
+        <a class="lista-item-nome" href="/clientes/{c.id}">{c.nomeCompleto}</a>
+        <dl class="lista-item-campos">
+          <div class="campo">
+            <dt>Documento</dt>
+            <dd translate="no">{c.documento.formatado}</dd>
+          </div>
+          <div class="campo">
+            <dt>Nascimento</dt>
+            <dd translate="no">{c.dataNascimento}</dd>
+          </div>
+          <div class="campo">
+            <dt>Cadastrado em</dt>
+            <!--
+              O instante é UTC e a página DIZ isso. Mostrar hora sem rótulo de
+              fuso é o engano mais caro deste domínio: alguém compara com o
+              relógio da parede e conclui que há três horas de erro.
+            -->
+            <dd translate="no">{c.criadoEm} <span class="campo-fuso">UTC</span></dd>
+          </div>
+        </dl>
+      </div>
+      <div class="lista-item-acoes">
+        <a class="botao botao-discreto" href="/clientes/{c.id}">Ver</a>
+        <a class="botao botao-discreto" href="/clientes/{c.id}/alterar">Alterar</a>
+        <a class="botao botao-perigo" href="/clientes/{c.id}/excluir">Excluir</a>
+      </div>
+    </li>
+    {/for}
+  </ul>
+
+  <!--
+    PAGINAÇÃO. "Anterior" só existe a partir da segunda página, e "Próxima" só
+    quando a página veio cheia. Botão que leva a uma página vazia é convite a
+    achar que o sistema perdeu os dados.
+  -->
+  {#if pagina > 0 || temProxima}
+  <nav class="lista-paginacao" aria-label="Paginação">
+    {#if pagina > 0}
+    <button type="button" class="botao botao-discreto"
+            hx-get="/clientes/fragmento/lista?termo={termo.urlEncoded}&pagina={pagina - 1}"
+            hx-target="#lista">Anterior</button>
+    {/if}
+    <span class="lista-paginacao-atual" translate="no">página {pagina + 1}</span>
+    {#if temProxima}
+    <button type="button" class="botao botao-discreto"
+            hx-get="/clientes/fragmento/lista?termo={termo.urlEncoded}&pagina={pagina + 1}"
+            hx-target="#lista">Próxima</button>
+    {/if}
+  </nav>
+  {/if}
+{/if}

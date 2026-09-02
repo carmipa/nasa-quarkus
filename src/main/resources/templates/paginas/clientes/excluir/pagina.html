@@ -1,0 +1,79 @@
+{#include layout/base}
+{#titulo}Cliente — excluir {cliente.nomeCompleto}{/titulo}
+
+{#estilos}
+<link rel="stylesheet" href="/paginas/clientes/excluir/estilo.css?v={versaoAssets}">
+{/estilos}
+
+{#corpo}
+<!--
+  EXCLUSÃO DE CLIENTE — tela própria, e é deliberado.
+
+  POR QUE NÃO UM `confirm()` NA LISTA: o botão "Excluir" fica ao lado de
+    "Alterar", numa lista de nomes parecidos. Uma caixinha perguntando "tem
+    certeza?" não diz DE QUEM se trata — e quem clicou na linha errada responde
+    "sim" com a mesma confiança. Aqui os dados aparecem inteiros antes de
+    confirmar: quem errou de linha reconhece o nome errado e volta.
+
+  INVARIANTE: a exclusão é POST, nunca GET. Um GET que apaga é apagado por
+    rastreador, por pré-carregamento de navegador e por qualquer coisa que
+    resolva "visitar" o link — sem ninguém clicar.
+
+  O QUE SOME JUNTO: o esquema declara ON DELETE CASCADE em contatos, endereços
+    e alertas do cliente. A tela DIZ isso antes, porque é a informação que muda
+    a decisão de quem está com o dedo no botão.
+-->
+<section class="secao">
+  {#if excluido}
+    <div class="aviso aviso-sucesso" role="status">
+      <strong>{cliente.nomeCompleto}</strong> foi excluído.
+    </div>
+    <div class="excluir-acoes">
+      <a class="botao botao-principal" href="/clientes/listar">Voltar à lista</a>
+      <a class="botao" href="/clientes/cadastrar">Cadastrar outro</a>
+    </div>
+  {#else}
+    <nav class="excluir-volta">
+      <a href="/clientes/{cliente.id}">&larr; Voltar ao cadastro</a>
+    </nav>
+
+    <h1 class="secao-titulo">Excluir cliente</h1>
+
+    <div class="aviso aviso-erro" role="alert">
+      <strong>Esta ação não pode ser desfeita.</strong>
+      Junto com o cliente saem os contatos, os endereços e o histórico de
+      alertas ligados a ele.
+    </div>
+
+    <article class="excluir-cartao">
+      <h2 class="excluir-nome">{cliente.nomeCompleto}</h2>
+      <dl class="excluir-campos">
+        <div class="campo">
+          <dt>Identificador</dt>
+          <dd translate="no">{cliente.id}</dd>
+        </div>
+        <div class="campo">
+          <dt>Documento</dt>
+          <dd translate="no">{cliente.documento.formatado}</dd>
+        </div>
+        <div class="campo">
+          <dt>Nascimento</dt>
+          <dd translate="no">{cliente.dataNascimento}</dd>
+        </div>
+        <div class="campo">
+          <dt>Cadastrado em</dt>
+          <dd translate="no">{cliente.criadoEm} <span class="campo-fuso">UTC</span></dd>
+        </div>
+      </dl>
+    </article>
+
+    <form class="excluir-acoes" method="post" action="/clientes/{cliente.id}/excluir">
+      <!-- "Cancelar" vem PRIMEIRO e é o botão de destaque: numa tela de ação
+           irreversível, o caminho seguro é o que deve estar sob o dedo. -->
+      <a class="botao botao-principal" href="/clientes/{cliente.id}">Cancelar</a>
+      <button class="botao botao-perigo" type="submit">Excluir definitivamente</button>
+    </form>
+  {/if}
+</section>
+{/corpo}
+{/include}

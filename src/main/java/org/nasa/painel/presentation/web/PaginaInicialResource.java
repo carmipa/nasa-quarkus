@@ -8,9 +8,8 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
-import org.nasa.core.tempo.Relogio;
+import org.nasa.core.presentation.web.MolduraDaPagina;
 
-import java.time.format.DateTimeFormatter;
 
 /**
  * A página inicial do sistema.
@@ -50,10 +49,6 @@ import java.time.format.DateTimeFormatter;
 @Path("/")
 public class PaginaInicialResource {
 
-    /** Formato do relógio do servidor: ISO-8601 UTC, sem ambiguidade de fuso. */
-    private static final DateTimeFormatter FORMATO_UTC =
-            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(java.time.ZoneOffset.UTC);
-
     /**
      * O template da fatia. {@code @Location} é obrigatório porque a árvore canônica põe
      * o arquivo em {@code templates/<fatia>/}, espelhando o pacote Java — sem ele o Qute
@@ -64,15 +59,11 @@ public class PaginaInicialResource {
     Template index;
 
     @Inject
-    Relogio relogio;
+    MolduraDaPagina moldura;
 
     @GET
     @Produces(MediaType.TEXT_HTML)
     public TemplateInstance pagina() {
-        var agora = relogio.agora();
-        return index
-                .data("horaServidorUtc", FORMATO_UTC.format(agora))
-                .data("instanteIso", agora.toString())
-                .data("versaoAssets", VersaoDosAssets.ATUAL);
+        return moldura.vestir(index.instance(), "inicio");
     }
 }

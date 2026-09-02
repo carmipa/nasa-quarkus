@@ -1,0 +1,180 @@
+/*
+ * ESTILO DA TELA "LISTA DE CLIENTES" — e só dela.
+ *
+ * PROPÓSITO: desenhar a lista, a busca e a paginação desta tela. Nada aqui é
+ *   usado por outra página; se passar a ser, sobe para o base.css como
+ *   componente, com nome próprio.
+ *
+ * INVARIANTES (as três primeiras herdadas do base.css, e valem em toda pasta):
+ *   1. Largura em `%` e `width:100%`. NUNCA `max-width` + `margin:0 auto` — o
+ *      conteúdo não fica pingando no meio numa coluna estreita.
+ *   2. Grade que preenche: `repeat(auto-fit, minmax(Xrem,1fr))`, nunca
+ *      `auto-fill`, que cria colunas vazias e cola tudo à esquerda.
+ *   3. `px` só em borda fina e breakpoint. O resto em `%`, `rem` ou `vmin`.
+ *   4. Nenhum seletor genérico de elemento (`ul`, `li`, `dl`) sem classe. Este
+ *      arquivo carrega junto com o de outras telas durante a navegação HTMX, e
+ *      um `ul { }` solto aqui redesenharia listas que não são desta página.
+ */
+
+.lista-topo {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  width: 100%;
+  margin-bottom: 1.2rem;
+}
+
+.lista-topo .secao-titulo { margin: 0; }
+
+.lista-total {
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 999px;
+  color: var(--cor-texto-fraco);
+  font-size: 0.85rem;
+}
+
+/* `margin-left:auto` empurra o botão para a direita sem precisar de wrapper. */
+.lista-topo .botao-principal { margin-left: auto; }
+
+/* ------------------------------------------------------------------ busca */
+
+.lista-busca {
+  width: 100%;
+  margin-bottom: 1.2rem;
+}
+
+.lista-busca-rotulo {
+  display: block;
+  margin-bottom: 0.4rem;
+  color: var(--cor-texto-fraco);
+  font-size: 0.9rem;
+}
+
+.lista-busca-campo {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 0.4rem;
+  background: var(--cor-fundo);
+  color: var(--cor-texto);
+  font: inherit;
+}
+
+.lista-busca-campo:focus-visible {
+  outline: 2px solid var(--cor-destaque);
+  outline-offset: 1px;
+}
+
+/* O indicador só ocupa espaço quando aparece — se reservasse a linha inteira,
+   a lista saltaria para baixo a cada tecla digitada. */
+.lista-carregando {
+  display: inline-block;
+  margin-top: 0.4rem;
+  color: var(--cor-destaque);
+  font-size: 0.85rem;
+}
+
+/* ------------------------------------------------------------------ lista */
+
+.lista {
+  list-style: none;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.lista-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  padding: 1rem 1.2rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 0.5rem;
+  background: var(--cor-superficie);
+}
+
+.lista-item-dados { flex: 1 1 60%; min-width: 0; }
+
+.lista-item-nome {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--cor-texto);
+  font-size: 1.1rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+.lista-item-nome:hover,
+.lista-item-nome:focus-visible { color: var(--cor-destaque); }
+
+.lista-item-campos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.5rem 1.5rem;
+  margin: 0;
+}
+
+.lista-item-campos .campo { min-width: 0; }
+
+.lista-item-campos dt {
+  color: var(--cor-texto-fraco);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.lista-item-campos dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* O rótulo de fuso é discreto mas nunca some: hora sem fuso, nesta aplicação,
+   é o engano que custa mais caro. */
+.campo-fuso {
+  color: var(--cor-texto-fraco);
+  font-size: 0.75rem;
+}
+
+.lista-item-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+/* ------------------------------------------------------- vazio e paginação */
+
+.lista-vazia {
+  width: 100%;
+  padding: 2.5rem 1rem;
+  border: 1px dashed var(--cor-borda);
+  border-radius: 0.5rem;
+  text-align: center;
+  color: var(--cor-texto-fraco);
+}
+
+.lista-vazia .botao { margin-top: 1rem; }
+.lista-vazia-dica { font-size: 0.9rem; }
+
+.lista-paginacao {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  width: 100%;
+  margin-top: 1.2rem;
+}
+
+.lista-paginacao-atual { color: var(--cor-texto-fraco); font-size: 0.9rem; }
+
+/* Abaixo de 40rem as ações vão para baixo dos dados: lado a lado, os três
+   botões ficariam com área de toque menor que o dedo. */
+@media (max-width: 640px) {
+  .lista-item-acoes { margin-left: 0; width: 100%; }
+  .lista-item-acoes .botao { flex: 1 1 auto; text-align: center; }
+}

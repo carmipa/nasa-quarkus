@@ -1,0 +1,24 @@
+/*
+ * ESTILO DA TELA "CADASTRAR CLIENTE" — e só dela.
+ *
+ * ESTE ARQUIVO É CURTO DE PROPÓSITO, e a razão vale mais que o conteúdo: a
+ * grade do formulário, o campo, o rótulo, a dica e os botões são COMPONENTES do
+ * sistema e vivem no base.css, porque a tela de alterar usa os mesmos e a de
+ * contato vai usar. Só sobrou aqui o que é desta tela.
+ *
+ * Arquivo curto não é arquivo inútil: é a prova de que esta tela não inventou
+ * estilo próprio para o que já existia. Enchê-lo copiando as regras do
+ * formulário daria a impressão de "CSS próprio" e produziria, na primeira
+ * correção, duas telas com formulários diferentes.
+ */
+
+/* A dica do documento é a única linha longa do formulário — sem o limite, ela
+   estica a coluna da grade e desalinha os campos vizinhos. */
+#documento ~ .formulario-dica { max-width: 34rem; }
+
+/* O aviso de sucesso traz links para o cadastro criado; sem isso eles ficam da
+   mesma cor do texto e ninguém percebe que são clicáveis. */
+.aviso-sucesso a {
+  color: var(--cor-destaque);
+  font-weight: 600;
+}

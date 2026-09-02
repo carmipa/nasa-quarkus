@@ -196,3 +196,157 @@ body {
   .cabecalho { flex-direction: column; align-items: flex-start; }
   .relogio { width: 100%; }
 }
+
+/* -------------------------------------------------------------------------
+ * MENU DAS SEÇÕES.
+ *
+ * Mora aqui, e não numa pasta de página, porque é MOLDURA: aparece em todas as
+ * telas e corrigi-lo aqui conserta todas. A regra "cada página tem o seu CSS"
+ * vale para o que é DA página — não para o que é do sistema inteiro.
+ *
+ * O item ativo é marcado no servidor. Descobri-lo no navegador faria o menu
+ * aparecer sem destaque até o JavaScript rodar, e ficar sem destaque nenhum se
+ * ele falhasse.
+ * ------------------------------------------------------------------------- */
+.menu {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+  padding: 0 2%;
+  gap: 0.25rem;
+  background: var(--cor-superficie);
+  border-bottom: 1px solid var(--cor-borda);
+}
+
+.menu-item {
+  padding: 0.85rem 1.4rem;
+  color: var(--cor-texto-fraco);
+  text-decoration: none;
+  font-weight: 600;
+  border-bottom: 3px solid transparent;
+  transition: color .15s, border-color .15s;
+}
+
+.menu-item:hover,
+.menu-item:focus-visible {
+  color: var(--cor-texto);
+  border-bottom-color: var(--cor-borda);
+}
+
+.menu-item-ativo,
+.menu-item-ativo:hover {
+  color: var(--cor-destaque);
+  border-bottom-color: var(--cor-destaque);
+}
+
+/* -------------------------------------------------------------------------
+ * COMPONENTES COMPARTILHADOS — botão, campo, aviso.
+ *
+ * ONDE ESTÁ A LINHA, já que a regra é "cada página tem o seu CSS":
+ *   - é DA PÁGINA o que só existe nela: o desenho da lista de clientes, a
+ *     grade do formulário de cadastro, o mapa dos desastres;
+ *   - é DO SISTEMA o que aparece em toda tela: botão, campo, aviso, menu.
+ *
+ * Botão definido em seis pastas viraria seis botões ligeiramente diferentes, e
+ * ninguém saberia qual é o certo. O erro do legado não foi ter um arquivo
+ * comum — foi ter APENAS um, com as 801 linhas de todas as treze telas dentro.
+ * ------------------------------------------------------------------------- */
+.botao {
+  display: inline-block;
+  padding: 0.6rem 1.1rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 0.4rem;
+  background: var(--cor-superficie);
+  color: var(--cor-texto);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, color .15s;
+}
+
+.botao:hover,
+.botao:focus-visible { border-color: var(--cor-destaque); color: var(--cor-destaque); }
+
+.botao-principal {
+  background: var(--cor-destaque);
+  border-color: var(--cor-destaque);
+  color: #06231f;
+}
+.botao-principal:hover,
+.botao-principal:focus-visible { background: #5ee9d6; border-color: #5ee9d6; color: #06231f; }
+
+.botao-discreto { padding: 0.45rem 0.85rem; font-size: 0.9rem; }
+
+/* Perigo NÃO é vermelho só por estética: é a única cor que faz a mão parar
+   antes de clicar, e estes botões ficam ao lado de "Alterar". */
+.botao-perigo { border-color: #f8717155; color: #fca5a5; }
+.botao-perigo:hover,
+.botao-perigo:focus-visible { background: #7f1d1d; border-color: #f87171; color: #fff; }
+
+.campo-formulario {
+  width: 100%;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 0.4rem;
+  background: var(--cor-fundo);
+  color: var(--cor-texto);
+  font: inherit;
+}
+.campo-formulario:focus-visible { outline: 2px solid var(--cor-destaque); outline-offset: 1px; }
+
+/* Campo com erro: a borda muda E a mensagem aparece. Só cor não serve — quem
+   não distingue vermelho de cinza ficaria sem nenhuma informação. */
+.campo-formulario-erro { border-color: #f87171; }
+
+.aviso {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--cor-borda);
+  border-left: 4px solid var(--cor-alerta);
+  border-radius: 0.4rem;
+  background: var(--cor-superficie);
+  margin: 0 0 1rem;
+}
+.aviso-erro { border-left-color: #f87171; }
+.aviso-sucesso { border-left-color: var(--cor-destaque); }
+
+/* -------------------------------------------------------------------------
+ * FORMULÁRIO — grade e campo rotulado.
+ *
+ * Está aqui porque cadastrar e alterar usam o MESMO formulário, e amanhã
+ * contato usa outro igual. Três cópias em três pastas divergiriam na primeira
+ * vez que alguém ajustasse o espaçamento de uma delas.
+ * ------------------------------------------------------------------------- */
+.formulario {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1rem 1.5rem;
+  align-items: start;
+}
+
+/* O bloco que ocupa a linha inteira: botões, avisos, campos longos. */
+.formulario-linha-cheia { grid-column: 1 / -1; }
+
+.formulario-campo { display: flex; flex-direction: column; gap: 0.35rem; }
+
+.formulario-rotulo {
+  color: var(--cor-texto-fraco);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* A dica fica SEMPRE visível, não só depois do erro: dizer o formato antes
+   evita o erro; dizer depois só explica o que já incomodou. */
+.formulario-dica { color: var(--cor-texto-fraco); font-size: 0.78rem; }
+
+.formulario-erro-campo { color: #fca5a5; font-size: 0.8rem; }
+
+.formulario-acoes {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}

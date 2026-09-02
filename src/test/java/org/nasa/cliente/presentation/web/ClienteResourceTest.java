@@ -14,6 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -29,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * prova que o caminho feliz anda; só os outros provam que a proteção existe.</p>
  */
 @QuarkusTest
-@DisplayName("API de clientes — o caminho inteiro, no SQLite de verdade")
+@DisplayName("API de clientes — o caminho inteiro, no PostgreSQL de verdade")
 class ClienteResourceTest {
 
     /** Documento único por execução: a base de teste é compartilhada entre os testes. */
@@ -211,4 +212,38 @@ class ClienteResourceTest {
         // E o estado final do banco confirma: um unico registro com aquele documento.
         assertEquals(200, given().when().get("/api/clientes/documento/" + doc).statusCode());
     }
+    @Test
+    @DisplayName("a busca FILTRA — e o controle positivo prova que ela ACHA")
+    void buscaFiltraDeVerdade() {
+        // DEFEITO REAL, medido em 02/09/2026 e consertado no mesmo dia: para um termo
+        // sem digitos, `soDigitos` virava "%%", e `documento LIKE '%%'` casa com TODA
+        // linha da tabela. Pesquisar "zzzzzz" devolvia a base INTEIRA. A caixa de busca
+        // aceitava o texto, respondia rapido, e simplesmente nao filtrava — o tipo de
+        // defeito que so aparece quando alguem repara que o resultado nao muda.
+        String doc = documentoNovo();
+        assertEquals(201, cadastrar("Zoraide", doc).statusCode());
+
+        // CONTROLE POSITIVO PRIMEIRO. Sem ele, uma busca quebrada que nunca devolve
+        // nada passaria folgada na asserção seguinte.
+        var achou = given().when().get("/api/clientes/pesquisar?termo=Zoraide")
+                .then().statusCode(200).extract().jsonPath().getList("id");
+        assertFalse(achou.isEmpty(), "o termo existe e a busca nao achou: o instrumento "
+                + "esta cego, e o teste de baixo nao provaria nada");
+
+        var nada = given().when().get("/api/clientes/pesquisar?termo=xyzzyqwertynaoexiste")
+                .then().statusCode(200).extract().jsonPath().getList("id");
+        assertTrue(nada.isEmpty(),
+                "termo que nao casa com ninguem devolveu " + nada.size() + " resultado(s): "
+                        + "a busca voltou a nao filtrar");
+
+        // E o ILIKE: no PostgreSQL o LIKE e sensivel a caixa, e portar o SQL
+        // literalmente faria `zoraide` deixar de achar "Zoraide" — sem erro nenhum.
+        var minuscula = given().when().get("/api/clientes/pesquisar?termo=zoraide")
+                .then().statusCode(200).extract().jsonPath().getList("id");
+        assertFalse(minuscula.isEmpty(),
+                "busca em minuscula nao achou nome com maiuscula: o ILIKE virou LIKE");
+        System.out.println("[API] busca: 'Zoraide'=" + achou.size()
+                + " 'zoraide'=" + minuscula.size() + " inexistente=" + nada.size());
+    }
+
 }

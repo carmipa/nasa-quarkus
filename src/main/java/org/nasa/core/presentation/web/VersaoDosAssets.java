@@ -1,4 +1,4 @@
-package org.nasa.painel.presentation.web;
+package org.nasa.core.presentation.web;
 
 /**
  * A versão dos arquivos estáticos, para invalidar cache do navegador.

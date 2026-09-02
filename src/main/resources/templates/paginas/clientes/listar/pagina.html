@@ -1,0 +1,73 @@
+{#include layout/base}
+{#titulo}Clientes — lista{/titulo}
+
+{#estilos}
+<link rel="stylesheet" href="/paginas/clientes/listar/estilo.css?v={versaoAssets}">
+{/estilos}
+
+{#corpo}
+<!--
+  LISTA DE CLIENTES.
+
+  PROPÓSITO: a tela por onde se chega a todas as outras de cliente. É a primeira
+    que abre ao entrar na seção, então é ela que precisa responder rápido e deixar
+    achar alguém sem paginar à mão.
+
+  O QUE MUDOU EM RELAÇÃO AO LEGADO (clientes/listar/page.tsx, 233 linhas de React):
+    1. A busca era um campo que filtrava a página JÁ CARREGADA — a lista vinha
+       inteira do servidor e o filtro acontecia no navegador. Com a base crescendo,
+       isso baixa tudo para filtrar no cliente. Aqui a busca vai ao servidor, com
+       LIMIT, e troca só a lista.
+    2. Excluir chamava a API e depois recarregava a lista inteira. Aqui a exclusão
+       tem tela própria de confirmação, porque é irreversível e o botão fica ao
+       lado do de alterar numa lista de nomes parecidos.
+
+  INVARIANTES:
+    1. A lista chega por HTMX no `load`. O campo de busca NÃO é recriado a cada
+       tecla — se fosse, o cursor saltaria para fora dele a cada letra digitada.
+    2. `delay:300ms` no `keyup`: sem isso, "Fernando" dispara oito consultas.
+    3. Lista vazia por BUSCA e lista vazia por BASE VAZIA dizem coisas diferentes,
+       e cada uma oferece a ação que faz sentido.
+-->
+<section class="secao">
+  <div class="lista-topo">
+    <h1 class="secao-titulo">Clientes</h1>
+    <span class="lista-total" translate="no">{total} cadastrado{#if total != 1}s{/if}</span>
+    <a class="botao botao-principal" href="/clientes/cadastrar">Novo cliente</a>
+  </div>
+
+  <div class="lista-busca">
+    <label class="lista-busca-rotulo" for="busca">Buscar por nome, sobrenome ou documento</label>
+    <input class="lista-busca-campo"
+           id="busca"
+           type="search"
+           name="termo"
+           value="{termo}"
+           placeholder="Digite para filtrar…"
+           autocomplete="off"
+           hx-get="/clientes/fragmento/lista"
+           hx-trigger="keyup changed delay:300ms, search"
+           hx-target="#lista"
+           hx-indicator="#carregando">
+    <span class="htmx-indicator lista-carregando" id="carregando" translate="no">buscando…</span>
+  </div>
+
+  <!--
+    A lista se carrega sozinha ao abrir. Renderizá-la no servidor junto com a
+    página funcionaria igual; carregar por HTMX mantém UM caminho só para
+    montar a lista — o mesmo que a busca e a paginação usam. Dois caminhos para
+    montar a mesma coisa é onde eles divergem.
+  -->
+  <div id="lista"
+       hx-get="/clientes/fragmento/lista"
+       hx-trigger="load"
+       hx-target="this">
+    <p class="lista-vazia">Carregando…</p>
+  </div>
+</section>
+{/corpo}
+
+{#scripts}
+<script src="/paginas/clientes/listar/script.js?v={versaoAssets}" defer></script>
+{/scripts}
+{/include}
