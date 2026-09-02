@@ -48,14 +48,79 @@ SESSÃO / PORTÃO
 - [x] **6. Fatia `cliente`** completa, com concorrência provada (8 simultâneos → 1)
 - [x] **7a. Fatia `endereco`** — CEP e geocodificação por provedores abertos
 - [x] **7a-bis. Arranque REAL consertado** — 3 defeitos que a suíte verde não pegava
+- [x] **7a-ter. PostgreSQL no lugar do SQLite** + `robots.txt` (decisão do Paulo, 02/09)
 - [ ] 7b. Fatia `contato` (CRUD, espelha `cliente`)
 - [ ] 8. Fatia `eventoEonet`
 - [ ] 9. Fatia `estatistica`
 - [ ] 10. Fatia `alerta` (outbox + idempotência)
-- [ ] 11. Painel: 12 telas em Qute + HTMX
+- [ ] **10-bis. Autenticação GitHub OAuth + separação público/privado** (ESCOPO NOVO)
+- [ ] 11. Painel: 12 telas em Qute + HTMX — agora com a divisão público/privado
 - [ ] 12. Guardas restantes no endereço único
 
 ---
+
+## ESCOPO NOVO — revelado em 02/09, e não estava na planta original
+
+Paulo respondeu "onde isto vai rodar?" e a resposta mudou mais que o banco.
+**Destino: VPS, com login obrigatório por GitHub.**
+
+| rota | acesso |
+|---|---|
+| home, documentação, contato, equipe | **público** |
+| todo o resto (painel, API) | **exige login GitHub** |
+
+- **Página `equipe`: só Paulo.** Sem RM — ele já é formado, e este projeto é
+  vitrine, não entrega de turma. Isso muda o conteúdo da tela, não só o layout.
+- **É propaganda**, então apresentação e indexação das páginas públicas contam
+  como requisito, não como enfeite. O `robots.txt` já reflete isso.
+- **Consequência para o item 11:** as 12 telas deixam de ser um bloco só —
+  precisam nascer já divididas entre o que é vitrine e o que é operação.
+
+**Falta um fato que só o Paulo tem:** o domínio definitivo. Sem ele o
+`robots.txt` fica sem `Sitemap:` — e URL inventada ali manda o rastreador a um
+404 e queima confiança do domínio, então fica de fora até existir.
+
+### 7a-ter. SQLite → PostgreSQL (02/09, commit `b647ce6`)
+
+**Por que agora:** o custo cresce a cada migração nova. Havia uma; na altura do
+item 12 haveria cinco ou seis, cada uma precisando de gêmea.
+
+**Custo medido:** 4 arquivos. Domínio e casos de uso não mudaram uma linha —
+as únicas menções a SQLite ali eram Javadoc.
+
+**As duas diferenças que não dão erro nenhum** (as perigosas):
+
+```
+LIKE -> ILIKE   SQLite ignora caixa, PostgreSQL nao. `termo=paulo` deixaria
+                de achar "Paulo" — sem excecao, sem log, so lista vazia.
+                PROVADO em producao: termo=paulo devolveu o cliente.
+UNIQUE -> 23505 detectar duplicata por procurar "UNIQUE" na mensagem depende
+                de texto do fornecedor, que muda de versao e e traduzido.
+```
+
+**Ganhos de tipo:** `TIMESTAMPTZ` (o UTC passa a morar no tipo, reforçando o
+invariante quebrado no log hoje de manhã), `DATE` (o CHECK antigo deixava passar
+2026-02-31), `IDENTITY`. **Mantido de propósito:** `json_original` segue TEXT —
+JSONB recusaria justamente o payload malformado que se ia querer ler.
+
+**A lição de hoje foi portada junto.** O preparador de diretório virou
+`VerificadorDoBancoPostgres`: a causa mudou, a classe de falha não — e ficou
+maior. Calibrado contra as três, no jar de produção:
+
+```
+servidor fora (porta 55499) .. exit 1 "o servidor PostgreSQL nao respondeu..."
+senha errada ................. exit 1 "...RECUSOU a credencial..."
+base inexistente ............. exit 1 "...a base NAO EXISTE. Crie com..."
+senha no log ................. 0 ocorrencias em 98 linhas (zero NAO ambiguo)
+```
+
+**Credencial: nenhuma no repositório, por construção.** Dev e teste usam Dev
+Services; produção só variável de ambiente sem padrão, que falha fechada.
+
+**Como rodar:** `gradlew quarkusDev` (sobe Postgres sozinho, precisa de Docker)
+ou, em produção, `NASA_DB_URL`/`NASA_DB_USER`/`NASA_DB_PASSWORD` + `gradlew rodar`.
+
+`127 testes · 0 falhas · PostgreSQL 17.11`
 
 ## FECHADO COM ARTEFATO
 
