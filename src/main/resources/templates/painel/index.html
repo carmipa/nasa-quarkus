@@ -1,6 +1,10 @@
 {#include layout/base}
 {#titulo}Início — Alerta de Desastres Naturais{/titulo}
 
+{#estilos}
+<link rel="stylesheet" href="/paginas/inicio/estilo.css?v={versaoAssets}">
+{/estilos}
+
 {#corpo}
 <section class="secao">
   <h1 class="secao-titulo">Alerta de desastres naturais</h1>
@@ -56,5 +60,78 @@
     </article>
   </div>
 </section>
+
+<!--
+  CARROSSEL DE NOTICIAS — o que esta acontecendo no mundo agora.
+
+  DE ONDE VEM, E POR QUE MUDOU: o legado usava a `api.reliefweb.int/v1`. Medido
+    em 02/09/2026, ela responde HTTP 410 ("decommissioned"), e a v2 responde 403
+    sem um appname aprovado — inclusive para o appname do legado. O carrossel do
+    projeto original NAO funciona mais, e nao e por causa da reescrita.
+    No lugar entrou o GDACS (ONU/UE), aberto e sem cadastro, que ainda traz
+    nivel de alerta e coordenada — coisas que a fonte anterior nao tinha.
+
+  INVARIANTES:
+    1. O carrossel e uma LISTA que rola na horizontal, com HTML de verdade. Se o
+       JavaScript falhar, ela continua rolavel com o dedo e com a barra — nunca
+       vira um bloco vazio.
+    2. As mais GRAVES vem primeiro, decidido no servidor. Num feed de 348 itens,
+       ordenar por data esconderia o vermelho de ontem atras de dez verdes.
+    3. Fonte fora e ESTADO declarado, nao pagina quebrada: a home continua
+       inteira e diz que o noticiario esta indisponivel.
+-->
+<section class="secao">
+  <div class="noticias-topo">
+    <h2 class="secao-titulo">Desastres no mundo agora</h2>
+    <span class="noticias-fonte" translate="no">GDACS — ONU / UE</span>
+  </div>
+
+  {#if noticiarioIndisponivel}
+    <div class="aviso" role="status">
+      <strong>Noticiário indisponível no momento.</strong> {motivoDoNoticiario}
+    </div>
+  {#else if noticias.isEmpty()}
+    <div class="aviso" role="status">{motivoDoNoticiario}</div>
+  {#else}
+    <div class="carrossel" data-carrossel>
+      <button class="carrossel-seta carrossel-seta-esq" type="button"
+              data-carrossel-anterior aria-label="Anterior" translate="no">&#8249;</button>
+
+      <ul class="carrossel-trilho" data-carrossel-trilho>
+        {#for n in noticias}
+        <li class="noticia {n.nivel.classeCss}">
+          <a class="noticia-link" href="{n.link}" target="_blank" rel="noopener noreferrer">
+            <div class="noticia-cabecalho">
+              <span class="noticia-nivel" translate="no">{n.nivel.rotulo}</span>
+              <span class="noticia-tipo">{n.tipoPorExtenso}</span>
+            </div>
+            <h3 class="noticia-titulo">{n.titulo}</h3>
+            <dl class="noticia-campos">
+              {#if n.pais}
+              <div><dt>Local</dt><dd>{n.pais}</dd></div>
+              {/if}
+              {#if n.severidade}
+              <div><dt>Severidade</dt><dd translate="no">{n.severidade}</dd></div>
+              {/if}
+              {#if n.publicadaEm}
+              <div><dt>Publicado</dt>
+                  <dd translate="no">{n.publicadaEm} <span class="campo-fuso">UTC</span></dd></div>
+              {/if}
+            </dl>
+          </a>
+        </li>
+        {/for}
+      </ul>
+
+      <button class="carrossel-seta carrossel-seta-dir" type="button"
+              data-carrossel-proximo aria-label="Próximo" translate="no">&#8250;</button>
+    </div>
+  {/if}
+</section>
+
 {/corpo}
+
+{#scripts}
+<script src="/paginas/inicio/script.js?v={versaoAssets}" defer></script>
+{/scripts}
 {/include}

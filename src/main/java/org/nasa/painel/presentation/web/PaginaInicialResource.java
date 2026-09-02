@@ -9,6 +9,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
 import org.nasa.core.presentation.web.MolduraDaPagina;
+import org.nasa.painel.application.ConsultarNoticiasUseCase;
 
 
 /**
@@ -61,9 +62,18 @@ public class PaginaInicialResource {
     @Inject
     MolduraDaPagina moldura;
 
+    @Inject
+    ConsultarNoticiasUseCase noticias;
+
     @GET
     @Produces(MediaType.TEXT_HTML)
     public TemplateInstance pagina() {
-        return moldura.vestir(index.instance(), "inicio");
+        // 12 noticias: e o que cabe num carrossel sem virar rolagem infinita, e foi o
+        // limite que o legado usava. As mais graves vem primeiro, decidido na fonte.
+        var noticiario = noticias.executar(12);
+        return moldura.vestir(index
+                .data("noticias", noticiario.noticias())
+                .data("noticiarioIndisponivel", noticiario.fonteIndisponivel())
+                .data("motivoDoNoticiario", noticiario.motivo()), "inicio");
     }
 }
