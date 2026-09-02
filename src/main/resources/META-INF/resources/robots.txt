@@ -1,0 +1,44 @@
+# robots.txt — nasa-quarkus
+#
+# ATENCAO, e isto vale mais que o resto do arquivo:
+# robots.txt e um PEDIDO, nao uma tranca. Todo rastreador honesto obedece;
+# nenhum rastreador mal-intencionado obedece. Quem protege rota e a
+# AUTENTICACAO — este arquivo nunca. Por isso nao ha aqui nenhum caminho
+# sigiloso: listar um caminho em `Disallow` e a forma mais eficiente de
+# anuncia-lo a quem procura exatamente isso.
+#
+# Este projeto e vitrine: as paginas publicas DEVEM ser indexadas. O que
+# sai do indice sai por ser inutil na busca, nao por ser secreto.
+
+User-agent: *
+
+# ---------------------------------------------------------------------
+# Fora do indice
+# ---------------------------------------------------------------------
+# API de dados: devolve JSON. Em resultado de busca nao serve a ninguem,
+# e rastrear cada `/api/clientes/{id}` gastaria a VPS — que divide maquina
+# com outros nove servicos. Quem de fato barra o acesso e o login.
+Disallow: /api/
+
+# Painel operacional: exige sessao. Rastreador so encontraria a tela de
+# login, repetida em dezenas de URLs.
+Disallow: /painel/
+
+# ---------------------------------------------------------------------
+# Explicitamente LIVRES — e de proposito
+# ---------------------------------------------------------------------
+# CSS e JS precisam ser rastreaveis: o Google renderiza a pagina antes de
+# avaliar, e bloquear os estaticos faz a home ser julgada quebrada.
+Allow: /estatico/
+
+# ---------------------------------------------------------------------
+# Ritmo
+# ---------------------------------------------------------------------
+# O Google ignora `Crawl-delay`; Bing e Yandex respeitam. Cinco segundos
+# nao atrapalha a indexacao de um site deste tamanho e protege uma VPS
+# compartilhada.
+Crawl-delay: 5
+
+# Sitemap: entra quando o dominio definitivo existir. URL inventada aqui
+# vale menos que linha nenhuma — manda o rastreador a um 404 e queima
+# confianca do dominio.

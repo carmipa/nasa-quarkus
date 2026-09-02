@@ -61,7 +61,7 @@ class AplicadorDeMigracoesTest {
         a.relogio = () -> Instant.parse("2026-09-02T12:00:00Z");
         a.armazenamento = () -> {
             registro.trilha.add("garantirDisponibilidade");
-            return new PreparacaoDoArmazenamentoPort.Local("duble", false);
+            return new PreparacaoDoArmazenamentoPort.Local("duble");
         };
         return a;
     }

@@ -7,7 +7,6 @@ import org.nasa.cliente.domain.Documento;
 import org.nasa.cliente.domain.exceptions.DocumentoJaCadastradoException;
 import org.nasa.cliente.domain.ports.RepositorioDeClientesPort;
 import org.nasa.core.tempo.Relogio;
-
 import org.nasa.persistencia.infrastructure.adapters.Conexoes;
 
 import javax.sql.DataSource;
@@ -18,39 +17,67 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 /**
- * O cadastro de clientes no SQLite.
+ * O cadastro de clientes no PostgreSQL.
  *
- * <p><b>PROPÓSITO DE NEGÓCIO.</b> É o único lugar do sistema que sabe como um cliente
- * vira linha de tabela. Toda regra vive nos casos de uso; aqui só há tradução.</p>
+ * <p><b>PROPÓSITO DE NEGÓCIO.</b> É o único lugar do sistema que sabe como um cliente vira
+ * linha de tabela. Toda regra vive nos casos de uso; aqui só há tradução.</p>
+ *
+ * <p><b>O QUE MUDOU NA PORTABILIDADE DO SQLITE</b> (02/09/2026), porque duas destas
+ * diferenças não dão erro nenhum — mudam o comportamento em silêncio:</p>
+ * <ol>
+ *   <li><b>{@code LIKE} virou {@code ILIKE}.</b> No SQLite o {@code LIKE} é insensível a
+ *       maiúsculas para ASCII; no PostgreSQL <b>não é</b>. Portar literalmente faria a
+ *       pesquisa por {@code bruno} parar de encontrar "Bruno" — sem exceção, sem log, só
+ *       resultado vazio que parece "não existe".</li>
+ *   <li><b>Data e instante deixaram de trafegar como texto.</b> Eram {@code setString} com
+ *       ISO-8601 porque o SQLite não tinha os tipos; agora são {@code LocalDate} e
+ *       {@code OffsetDateTime} em UTC explícito. Nunca {@code LocalDateTime}: esse tipo não
+ *       carrega fuso, e o driver o interpretaria no fuso da sessão — reintroduzindo, pela
+ *       porta dos fundos, o mesmo defeito de fuso corrigido no log nesta mesma data.</li>
+ *   <li><b>A duplicata é detectada por {@code SQLSTATE 23505} e pelo NOME da restrição</b>,
+ *       não por procurar a palavra "UNIQUE" na mensagem. Mensagem de erro é texto do
+ *       fornecedor: muda de versão para versão, e é traduzida conforme o idioma do
+ *       servidor.</li>
+ *   <li><b>{@code RETURNING id}</b> no lugar de {@code getGeneratedKeys()}. A versão antiga
+ *       devolvia {@code 0L} calada quando a chave não vinha, e esse zero iria para o
+ *       cabeçalho {@code Location} apontando um recurso que não existe.</li>
+ * </ol>
  *
  * <p><b>INVARIANTES DO DOMÍNIO.</b></p>
  * <ol>
- *   <li><b>Consulta sempre parametrizada.</b> Nenhum valor entra no SQL por concatenação
- *       — inclusive na pesquisa por texto, que é justamente onde a tentação aparece.</li>
+ *   <li><b>Consulta sempre parametrizada.</b> Nenhum valor entra no SQL por concatenação —
+ *       inclusive na pesquisa por texto, que é justamente onde a tentação aparece.</li>
  *   <li><b>Ordenação determinística com desempate por {@code id}.</b> Ordenar só por nome
  *       faz dois homônimos trocarem de lugar entre uma página e outra, e a paginação passa
  *       a repetir um e pular o outro — sem erro nenhum.</li>
- *   <li><b>Instante em UTC, gravado como texto ISO-8601</b>, vindo do relógio injetado.</li>
- *   <li><b>Violação de UNIQUE é traduzida</b> para
- *       {@link DocumentoJaCadastradoException}: o operador precisa ler "esta pessoa já
- *       está cadastrada", não {@code SQLITE_CONSTRAINT_UNIQUE}.</li>
+ *   <li><b>Instante em UTC</b>, vindo do relógio injetado, gravado em {@code TIMESTAMPTZ}.</li>
+ *   <li><b>Violação de unicidade é traduzida</b> para {@link DocumentoJaCadastradoException}:
+ *       o operador precisa ler "esta pessoa já está cadastrada", não o código do banco.</li>
  * </ol>
  *
  * <p><b>COMPORTAMENTO EM CASO DE FALHA.</b> Erro de banco vira
- * {@link FalhaNoCadastroDeClientesException} com causa-raiz e a operação no alvo. A
- * violação de unicidade é a única traduzida para exceção de negócio — porque é a única
+ * {@link FalhaNoCadastroDeClientesException} com causa-raiz e a operação no alvo. A violação
+ * de unicidade do documento é a única traduzida para exceção de negócio — porque é a única
  * que o operador consegue resolver sozinho.</p>
  */
 @ApplicationScoped
-public class RepositorioDeClientesSqlite implements RepositorioDeClientesPort {
+public class RepositorioDeClientesPostgres implements RepositorioDeClientesPort {
 
     private static final String COLUNAS =
             "id, nome, sobrenome, data_nascimento, documento, criado_em";
+
+    /** SQLSTATE padrão de violação de unicidade. Não é texto do fornecedor. */
+    private static final String UNIQUE_VIOLATION = "23505";
+
+    /** Nome DECLARADO da restrição, como está na V001. */
+    private static final String RESTRICAO_DOCUMENTO = "cliente_documento_unico";
 
     @Inject
     DataSource dataSource;
@@ -61,20 +88,25 @@ public class RepositorioDeClientesSqlite implements RepositorioDeClientesPort {
     @Override
     public Cliente salvar(Cliente novo) {
         String sql = "INSERT INTO cliente (nome, sobrenome, data_nascimento, documento, criado_em) "
-                + "VALUES (?, ?, ?, ?, ?)";
+                + "VALUES (?, ?, ?, ?, ?) RETURNING id";
         Instant agora = relogio.agora();
         try (Connection c = Conexoes.abrir(dataSource, "cliente");
-             PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+             PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setString(1, novo.nome());
             ps.setString(2, novo.sobrenome());
-            ps.setString(3, novo.dataNascimento().toString());
+            ps.setObject(3, novo.dataNascimento());
             ps.setString(4, novo.documento().digitos());
-            ps.setString(5, agora.toString());
-            ps.executeUpdate();
+            ps.setObject(5, agora.atOffset(ZoneOffset.UTC));
 
-            try (ResultSet chaves = ps.getGeneratedKeys()) {
-                long id = chaves.next() ? chaves.getLong(1) : 0L;
-                return new Cliente(id, novo.nome(), novo.sobrenome(),
+            try (ResultSet chaves = ps.executeQuery()) {
+                if (!chaves.next()) {
+                    // Insercao sem chave devolvida nao deveria acontecer com RETURNING.
+                    // Se acontecer, falhar aqui e melhor que devolver id 0 — que iria no
+                    // cabecalho Location apontando um recurso inexistente.
+                    throw new FalhaNoCadastroDeClientesException("salvar",
+                            novo.documento().digitos(), null);
+                }
+                return new Cliente(chaves.getLong("id"), novo.nome(), novo.sobrenome(),
                         novo.dataNascimento(), novo.documento(), agora);
             }
         } catch (SQLException e) {
@@ -90,7 +122,7 @@ public class RepositorioDeClientesSqlite implements RepositorioDeClientesPort {
              PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setString(1, existente.nome());
             ps.setString(2, existente.sobrenome());
-            ps.setString(3, existente.dataNascimento().toString());
+            ps.setObject(3, existente.dataNascimento());
             ps.setString(4, existente.documento().digitos());
             ps.setLong(5, existente.id());
             ps.executeUpdate();
@@ -142,8 +174,8 @@ public class RepositorioDeClientesSqlite implements RepositorioDeClientesPort {
 
     @Override
     public List<Cliente> listar(int pagina, int tamanho) {
-        // Desempate por id: sem ele, homônimos trocam de lugar entre páginas e a
-        // paginação repete um e pula outro, sem erro nenhum.
+        // Desempate por id: sem ele, homonimos trocam de lugar entre paginas e a
+        // paginacao repete um e pula outro, sem erro nenhum.
         String sql = "SELECT " + COLUNAS + " FROM cliente ORDER BY nome, sobrenome, id "
                 + "LIMIT ? OFFSET ?";
         try (Connection c = Conexoes.abrir(dataSource, "cliente");
@@ -158,10 +190,15 @@ public class RepositorioDeClientesSqlite implements RepositorioDeClientesPort {
 
     @Override
     public List<Cliente> pesquisar(String termo, int pagina, int tamanho) {
+        // ILIKE, e nao LIKE: no PostgreSQL o LIKE e SENSIVEL a maiusculas, ao contrario
+        // do SQLite. Portar literalmente faria `bruno` deixar de achar "Bruno" calado.
+        // `documento` segue com LIKE porque so tem digitos, onde caixa nao existe.
         String sql = "SELECT " + COLUNAS + " FROM cliente "
-                + "WHERE nome LIKE ? OR sobrenome LIKE ? OR documento LIKE ? "
+                + "WHERE nome ILIKE ? OR sobrenome ILIKE ? OR documento LIKE ? "
                 + "ORDER BY nome, sobrenome, id LIMIT ? OFFSET ?";
-        // O termo é PARÂMETRO, nunca concatenado: é aqui que a injeção de SQL entraria.
+        // O termo e PARAMETRO, nunca concatenado: e aqui que a injecao de SQL entraria.
+        // A limpeza tambem remove `%` e `_`, que sao curingas DENTRO do padrao — sem
+        // isso, quem digitasse `%` listaria a base inteira.
         String curinga = "%" + termo.replaceAll("[^\\p{L}\\p{N} ]", "") + "%";
         String soDigitos = "%" + termo.replaceAll("[^0-9]", "") + "%";
         try (Connection c = Conexoes.abrir(dataSource, "cliente");
@@ -206,27 +243,41 @@ public class RepositorioDeClientesSqlite implements RepositorioDeClientesPort {
         return lista;
     }
 
+    /**
+     * Traduz a linha em cliente.
+     *
+     * <p>Lê {@code criado_em} como {@link OffsetDateTime} e não como
+     * {@code LocalDateTime}: o segundo não carrega fuso, e o driver o interpretaria no
+     * fuso da sessão — que é o mesmo tipo de defeito corrigido no log em 02/09.</p>
+     */
     private static Cliente daLinha(ResultSet rs) throws SQLException {
         return new Cliente(
                 rs.getLong("id"),
                 rs.getString("nome"),
                 rs.getString("sobrenome"),
-                LocalDate.parse(rs.getString("data_nascimento")),
+                rs.getObject("data_nascimento", LocalDate.class),
                 new Documento(rs.getString("documento")),
-                Instant.parse(rs.getString("criado_em")));
+                rs.getObject("criado_em", OffsetDateTime.class).toInstant());
     }
 
     /**
      * Traduz o erro do banco para a linguagem da fatia.
      *
-     * <p>A violação de unicidade é a única que vira exceção de <b>negócio</b>: é a única
-     * que o operador consegue resolver sozinho. As demais são falha de infraestrutura e
+     * <p>A violação de unicidade do documento é a única que vira exceção de <b>negócio</b>:
+     * é a única que o operador resolve sozinho. As demais são falha de infraestrutura e
      * sobem como tal, com causa-raiz.</p>
+     *
+     * <p>O reconhecimento usa o {@code SQLSTATE} padrão mais o <b>nome</b> da restrição.
+     * Um {@code 23505} de outra restrição não é traduzido de propósito: dizer "documento
+     * já cadastrado" para uma duplicata de e-mail mandaria o operador corrigir o campo
+     * errado.</p>
      */
     private static RuntimeException traduzir(SQLException e, String operacao, String alvo) {
-        String texto = e.getMessage() == null ? "" : e.getMessage().toUpperCase();
-        if (texto.contains("UNIQUE") && texto.contains("DOCUMENTO")) {
-            return new DocumentoJaCadastradoException(alvo);
+        if (UNIQUE_VIOLATION.equals(e.getSQLState())) {
+            String texto = e.getMessage() == null ? "" : e.getMessage().toLowerCase();
+            if (texto.contains(RESTRICAO_DOCUMENTO)) {
+                return new DocumentoJaCadastradoException(alvo);
+            }
         }
         return new FalhaNoCadastroDeClientesException(operacao, alvo, e);
     }

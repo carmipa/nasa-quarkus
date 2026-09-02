@@ -1,51 +1,55 @@
 package org.nasa.persistencia.domain.ports;
 
 /**
- * Garante que o armazenamento existe e é utilizável ANTES da primeira conexão.
+ * Garante que o banco está utilizável ANTES da primeira operação de negócio.
  *
- * <p><b>PROPÓSITO DE NEGÓCIO.</b> O SQLite cria o <b>arquivo</b> do banco sozinho, mas
- * <b>nunca o diretório</b> que o contém. Num clone novo do repositório, onde a pasta de
- * dados ainda não existe, a primeira conexão falha com {@code SQLITE_CANTOPEN} e a
- * aplicação não sobe — sintoma que não diz nada sobre a causa. Esta porta existe para que
- * esse caso vire "o diretório foi criado" em vez de "não consegui abrir o banco".</p>
+ * <p><b>PROPÓSITO DE NEGÓCIO.</b> Existe para que "o banco não está pronto" seja uma frase
+ * dita no arranque, com a correção junto, em vez de um erro obscuro na primeira requisição
+ * de quem estiver usando o sistema.</p>
  *
- * <p><b>Por que é PORTA, e não uma chamada direta:</b> quem sabe interpretar uma URL JDBC
- * é a infraestrutura. A camada de aplicação precisa apenas que <i>alguém</i> garanta a
- * disponibilidade antes de ela abrir a primeira conexão — e a guarda de fronteira reprova
- * o build se {@code application} enxergar {@code infrastructure}.</p>
+ * <p><b>A LIÇÃO QUE ESTA PORTA CARREGA</b> (02/09/2026). Nasceu no SQLite, onde a falha era
+ * "o diretório {@code data/} não existe" — o SQLite cria o arquivo do banco, nunca a pasta.
+ * Sobreviveu à troca para PostgreSQL <b>de propósito</b>: a causa concreta mudou, a classe
+ * não. Onde havia uma forma de não estar pronto agora há quatro — servidor fora, credencial
+ * errada, base inexistente, servidor recusando —, e a lição vale mais depois da troca do
+ * que antes.</p>
+ *
+ * <p><b>Por que é PORTA, e não uma chamada direta:</b> quem sabe interpretar SQLSTATE e URL
+ * JDBC é a infraestrutura. A camada de aplicação precisa apenas que <i>alguém</i> garanta a
+ * disponibilidade antes de ela começar — e a guarda de fronteira reprova o build se
+ * {@code application} enxergar {@code infrastructure}.</p>
  *
  * <p><b>INVARIANTES DO DOMÍNIO.</b></p>
  * <ol>
- *   <li><b>É idempotente.</b> Chamar duas vezes não muda o resultado nem falha — dois
- *       processos subindo ao mesmo tempo é caso normal, não corrida.</li>
- *   <li><b>Falha FECHADA.</b> Diretório impossível de criar ou sem permissão de escrita
- *       derruba o arranque. Subir com banco inacessível troca um erro claro no boot por
- *       um erro obscuro na primeira requisição de quem estiver usando.</li>
- *   <li><b>Não cria, apaga nem migra dado.</b> Prepara o continente, nunca o conteúdo.</li>
+ *   <li><b>É idempotente.</b> Chamar duas vezes não muda nada — dois processos subindo ao
+ *       mesmo tempo é caso normal, não corrida.</li>
+ *   <li><b>Falha FECHADA.</b> Banco inacessível derruba o arranque.</li>
+ *   <li><b>Não cria, apaga nem migra dado.</b> Verifica o continente, nunca o conteúdo.
+ *       Criar a base automaticamente pareceria conveniente e transformaria um erro de
+ *       digitação na variável de ambiente numa base vazia recém-criada — que sobe limpa,
+ *       sem nenhum dado, e sem nada acusando o engano.</li>
  * </ol>
  *
  * <p><b>COMPORTAMENTO EM CASO DE FALHA.</b> Lança
- * {@code ArmazenamentoIndisponivelException} (causa-raiz {@code ARQUIVO_INACESSIVEL}) com
- * o <b>caminho absoluto</b> resolvido no campo alvo — sem o caminho absoluto, "não
- * consegui criar o diretório" manda procurar no lugar errado quando o processo roda com
- * outro diretório de trabalho.</p>
+ * {@code BancoIndisponivelException} com a causa nomeada e host/porta/base no alvo —
+ * <b>nunca</b> usuário ou senha, que vazariam para o log.</p>
  */
 public interface PreparacaoDoArmazenamentoPort {
 
     /**
-     * Garante o armazenamento utilizável.
+     * Garante o banco utilizável.
      *
-     * @return o que foi feito — {@code criouDiretorio} distingue AGIU de ABSTEVE, que é a
-     *         diferença entre "primeira execução aqui" e "já estava tudo pronto"
+     * @return descrição do que foi verificado, para o log do arranque responder
+     *         "afinal, contra qual banco este processo está falando?"
      */
     Local garantirDisponibilidade();
 
     /**
-     * O resultado da preparação.
+     * O que foi verificado.
      *
-     * @param descricao      caminho absoluto do arquivo, ou a descrição do modo em memória
-     * @param criouDiretorio {@code true} se o diretório foi criado AGORA
+     * @param descricao identificação legível do banco — host, porta, base e versão.
+     *                  Nunca credencial.
      */
-    record Local(String descricao, boolean criouDiretorio) {
+    record Local(String descricao) {
     }
 }

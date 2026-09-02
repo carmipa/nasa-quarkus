@@ -93,15 +93,15 @@ public class RegistroDeMigracoesJdbc implements RegistroDeMigracoesPort {
             boolean autocommitOriginal = c.getAutoCommit();
             c.setAutoCommit(false);
             try {
-                // O SQLite executa uma instrução por chamada: o arquivo é dividido em `;`.
-                for (String comando : migracao.sql().split(";")) {
-                    String limpo = comando.strip();
-                    if (limpo.isEmpty()) {
-                        continue;
-                    }
-                    try (Statement st = c.createStatement()) {
-                        st.executeUpdate(limpo);
-                    }
+                // O script inteiro numa chamada só. A versão do SQLite dividia o
+                // arquivo em `;` porque ele executa uma instrução por vez — e essa
+                // divisão é uma bomba-relógio: o primeiro `;` dentro de uma string
+                // literal ou de um corpo de função parte o comando ao meio e produz
+                // erro de sintaxe em SQL que está correto. O PostgreSQL aceita o
+                // script completo, então o problema deixa de existir em vez de ficar
+                // esperando a migração que o acione.
+                try (Statement st = c.createStatement()) {
+                    st.execute(migracao.sql());
                 }
 
                 String registro = "INSERT INTO " + TABELA

@@ -25,9 +25,8 @@ import java.util.Map;
  *
  * <p><b>INVARIANTES DO DOMÍNIO.</b></p>
  * <ol>
- *   <li><b>O armazenamento é preparado ANTES da primeira conexão.</b> O diretório do
- *       arquivo é garantido aqui, em ordem declarada — não na esperança de que algum
- *       observador de arranque rode antes.</li>
+ *   <li><b>O banco é verificado ANTES da primeira operação.</b> Em ordem declarada —
+ *       não na esperança de que algum observador de arranque rode antes.</li>
  *   <li><b>Migração já aplicada e editada ABORTA o boot</b> ({@link MigracaoAlteradaException}).
  *       É a invariante mais importante daqui, e a única que não tem cura automática.</li>
  *   <li><b>Ordem crescente, sem pular.</b> A fonte entrega ordenado; este caso de uso
@@ -74,14 +73,12 @@ public class AplicadorDeMigracoes {
     public Resultado executar() {
         var inicio = relogio.agora();
 
-        // PRIMEIRO de tudo: o SQLite cria o ARQUIVO do banco, nunca o DIRETORIO. Sem
-        // isto, um clone novo morre na primeira conexao com SQLITE_CANTOPEN — erro que
-        // nao menciona diretorio nenhum. A ordem aqui e DECLARADA, e nao herdada da
-        // ordem em que o container resolve observadores de arranque, que nao e garantida.
+        // PRIMEIRO de tudo, e a ordem aqui e DECLARADA — nao herdada da ordem em que o
+        // container resolve observadores de arranque, que nao e garantida. Nasceu porque
+        // o SQLite morria com CANTOPEN quando faltava o diretorio; sobrevive porque com
+        // PostgreSQL ha MAIS formas de o banco nao estar pronto, nao menos.
         var local = armazenamento.garantirDisponibilidade();
-        if (local.criouDiretorio()) {
-            LOG.info(Registro.de(OPERACAO, local.descricao(), "diretorio do banco criado agora"));
-        }
+        LOG.info(Registro.de(OPERACAO, local.descricao(), "banco verificado"));
 
         registro.prepararControle();
         List<Migracao> declaradas = fonte.disponiveis();
