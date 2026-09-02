@@ -20,6 +20,7 @@
  * ├── cliente/      FATIA — quem recebe o alerta
  * ├── endereco/     FATIA — CEP, geocodificação, CRUD de endereço
  * ├── contato/      FATIA — por onde a pessoa e avisada; decide quem recebe alerta
+ * ├── evento/       FATIA — o que a NASA publica, e o que dispara o alerta
  * └── painel/      FATIA — as telas, em Qute + HTMX
  * </pre>
  *
