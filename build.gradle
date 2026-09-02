@@ -1,0 +1,63 @@
+plugins {
+    id 'java'
+    id 'io.quarkus'
+}
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+}
+
+dependencies {
+    implementation enforcedPlatform("${quarkusPlatformGroupId}:${quarkusPlatformArtifactId}:${quarkusPlatformVersion}")
+    implementation 'io.quarkus:quarkus-rest'
+    implementation 'io.quarkus:quarkus-rest-client-jackson'
+    implementation 'io.quarkus:quarkus-rest-jackson'
+    implementation 'io.quarkus:quarkus-arc'
+
+    // --- SQLite (item 1 do docs/PLANO-MESTRE.md) -----------------------------
+    // O SQLite NAO e extensao oficial do Quarkus: entra como driver JDBC comum
+    // sob o pool Agroal, com `quarkus.datasource.db-kind=other`. A viabilidade
+    // desta combinacao (Quarkus 3.39.1 + Java 25 + SQLite) e medida por
+    // SqliteViabilidadeTest antes de qualquer coisa ser construida em cima.
+    implementation 'io.quarkus:quarkus-agroal'
+    implementation 'org.xerial:sqlite-jdbc:3.50.1.0'
+
+    testImplementation 'io.quarkus:quarkus-junit5'
+    testImplementation 'io.rest-assured:rest-assured'
+
+    // Guarda de fronteira arquitetural. O desenho de fatias/peers/kernel é intenção
+    // até existir um teste que REPROVE o build quando alguém cruzar a fronteira:
+    // um documento pode ser ignorado pela próxima IA, um teste vermelho não.
+    testImplementation 'com.tngtech.archunit:archunit-junit5:1.4.2'
+}
+
+group = 'org.nasa'
+version = '1.0.0-SNAPSHOT'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
+}
+
+compileJava {
+    options.encoding = 'UTF-8'
+    options.compilerArgs << '-parameters'
+}
+
+compileTestJava {
+    options.encoding = 'UTF-8'
+}
+
+// O driver do SQLite carrega biblioteca nativa via `System.load`. No Java 25 isso
+// gera aviso; a mensagem do próprio JDK diz que "restricted methods will be blocked
+// in a future release unless native access is enabled" — ou seja, hoje é ruído e num
+// JDK futuro vira falha de boot. Declarar o acesso agora custa uma linha e evita que
+// a atualização do JDK derrube a aplicação sem ninguém entender por quê.
+tasks.withType(Test).configureEach {
+    jvmArgs '--enable-native-access=ALL-UNNAMED'
+    testLogging {
+        events 'passed', 'failed', 'skipped'
+        showStandardStreams = false
+    }
+}

@@ -1,0 +1,506 @@
+###############################################################################
+# nasa-quarkus — .gitignore
+#
+# PROPÓSITO DE NEGÓCIO
+#   Impedir que credencial, chave de API ou material criptográfico saia deste
+#   repositório. O `origin` é PÚBLICO (medido em 2026-09-02:
+#   api.github.com/repos/carmipa/nasa-quarkus -> "private": false), e o projeto
+#   consome APIs com chave (NASA EONET, Google Geocoding). Um `git add -A`
+#   descuidado publica a chave na internet aberta, de onde não se recolhe.
+#
+# INVARIANTES
+#   1. Arquivo cujo NOME indica segredo nunca é versionado — a menos que seja
+#      explicitamente um exemplo (`.example`, `.sample`, `.template`).
+#   2. Exemplo versionado carrega placeholder, nunca valor real.
+#   3. Este arquivo protege por CAMINHO. Ele NÃO enxerga segredo colado dentro
+#      de arquivo legítimo — quem faz isso é `guardas/guarda-segredos.ps1`,
+#      ligado no hook `pre-commit`. As duas camadas são obrigatórias.
+#
+# COMPORTAMENTO EM CASO DE FALHA
+#   `.gitignore` não protege arquivo JÁ RASTREADO. Se algo entrou no índice
+#   antes desta regra, é preciso `git rm --cached <arquivo>` — e, se já foi
+#   empurrado, a credencial está queimada e tem de ser REVOGADA na origem.
+#   Reescrever histórico não desfaz o que já foi clonado ou indexado.
+###############################################################################
+
+
+# =============================================================================
+# 1. SEGREDOS — a razão de este arquivo existir
+# =============================================================================
+
+# ---- 1.1 Variáveis de ambiente (todas as convenções) ------------------------
+.env
+.env.*
+*.env
+env/.env*
+.envrc
+.direnv/
+*.dotenv
+dotenv
+.flaskenv
+.python-version-env
+
+# ---- 1.2 Material criptográfico: chave privada, certificado, keystore -------
+*.pem
+*.key
+*.keystore
+*.jks
+*.p12
+*.pfx
+*.cer
+*.crt
+*.der
+*.csr
+*.gpg
+*.asc
+*.kdbx
+*.ppk
+*.jceks
+*.bks
+*.truststore
+id_rsa
+id_dsa
+id_ecdsa
+id_ed25519
+*_rsa
+*_dsa
+*_ecdsa
+*_ed25519
+.certs/
+certs/
+certificates/
+secrets/
+.secrets/
+private/
+.ssh/
+.gnupg/
+
+# ---- 1.3 Nome que denuncia o conteúdo ---------------------------------------
+# Casa em qualquer diretório, em qualquer caixa comum de escrita.
+*secret*
+*Secret*
+*SECRET*
+*credential*
+*Credential*
+*CREDENTIAL*
+*credentials*
+*senha*
+*Senha*
+*password*
+*Password*
+*passwd*
+*apikey*
+*ApiKey*
+*api-key*
+*api_key*
+*API_KEY*
+*token*
+*Token*
+*TOKEN*
+*.private.*
+*-private.*
+
+# ---- 1.3-bis CÓDIGO-FONTE NUNCA É EXCLUÍDO POR NOME -------------------------
+# As regras de 1.3 casam por SUBSTRING em qualquer posição. Sem esta ressalva,
+# um `TokenService.java`, um `useAuthToken.ts` ou um `SecretsIT.java` sumiriam
+# do repositório EM SILÊNCIO — o commit passa, o arquivo não vai, e ninguém
+# percebe até o build quebrar em outra máquina. Medido nesta árvore antes de
+# fechar: `git status --ignored` acusou `next-env.d.ts` como única perda
+# colateral, mas o dano é prospectivo — nasce quando o código nascer.
+#
+# A divisão de trabalho é explícita:
+#   - o .gitignore barra CONFIGURAÇÃO E DADO por nome (json, yml, properties,
+#     env, chave, dump) — formatos onde o segredo mora de verdade;
+#   - `guardas/guarda-segredos.ps1` barra CONTEÚDO em qualquer arquivo,
+#     inclusive nestes que voltam aqui.
+# Nenhuma das duas cobre sozinha; é por isso que existem as duas.
+!*.java
+!*.kt
+!*.kts
+!*.groovy
+!*.cs
+!*.ts
+!*.tsx
+!*.js
+!*.jsx
+!*.mjs
+!*.cjs
+!*.py
+!*.sql
+!*.ddl
+!*.html
+!*.htm
+!*.css
+!*.scss
+!*.md
+!*.adoc
+!*.txt
+!*.http
+# O arquivo gerado pelo Next.js do legado é parte do acervo entregue em 2025.
+!gs/**/next-env.d.ts
+
+# ---- 1.4 Configuração local que costuma receber valor real ------------------
+application-local.properties
+application-local.yml
+application-local.yaml
+application-secret*.properties
+application-prod.properties
+application-prod.yml
+application-*-local.*
+appsettings.Development.json
+appsettings.Local.json
+appsettings.Production.json
+appsettings.*.local.json
+settings.local.json
+settings.local.*
+config.local.*
+local.settings.json
+.npmrc
+.yarnrc
+.yarnrc.yml
+.netrc
+_netrc
+.pypirc
+.dockercfg
+.docker/config.json
+.git-credentials
+credentials.json
+client_secret*.json
+service-account*.json
+serviceaccount*.json
+gcloud-*.json
+*-sa.json
+firebase-adminsdk*.json
+
+# ---- 1.5 Nuvem, infraestrutura e orquestração -------------------------------
+.aws/
+.azure/
+.gcloud/
+.kube/
+kubeconfig
+*.kubeconfig
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+.vault-token
+.vault/
+ansible-vault*
+vault-password*
+*.retry
+
+# ---- 1.6 Backup e cópia — o vazamento pela porta dos fundos -----------------
+# Backup de arquivo de config carrega o mesmo segredo do original, e ninguém
+# lembra dele. Precedente do vault: `.env.bak` a 644 ao lado do `.env` a 600.
+*.bak
+*.backup
+*.old
+*.orig
+*.save
+*.swp
+*.swo
+*.tmp
+*.temp
+*~
+*.rej
+*.copy
+*copy.json
+*copia*.json
+*-backup.*
+*.dump
+*.sql.gz
+dump.rdb
+*.dmp
+
+# ---- 1.7 EXCEÇÕES — exemplo e modelo PODEM (e devem) ser versionados --------
+# Regra: o exemplo carrega o NOME da variável e um placeholder, nunca o valor.
+!*.example
+!*.example.*
+!*.sample
+!*.sample.*
+!*.template
+!*.template.*
+!*.dist
+!.env.example
+!.env.sample
+!.env.template
+!appsettings.Example.json
+!application.properties.example
+!**/exemplo/**
+!**/exemplos/**
+
+# ---- 1.7-bis O ACERVO `gs/` INTEIRO FICA FORA DO VERSIONAMENTO --------------
+# Decisão do Paulo, 2026-09-02: *"bloquear o commit específico da pasta gs, para não
+# ser commitada junto com nosso projeto"*.
+#
+# `gs/` é a entrega acadêmica de 2025 — 308 arquivos de material de referência que
+# alimentam a auditoria, não código deste sistema. Ela permanece no disco e continua
+# legível para consulta; o que muda é que **nada dela entra em commit**.
+#
+# CONSEQUÊNCIA DECLARADA, porque ela é real: fora do versionamento, a pasta não tem
+# histórico nem cópia neste repositório. Ela existe apenas nesta máquina. Se o
+# acervo importar a longo prazo, o lugar dele é um repositório próprio e privado —
+# não este, que é público.
+#
+# Esta regra é a primeira camada. A segunda é `guardas/guarda-caminhos-proibidos.ps1`,
+# porque `.gitignore` é contornável com `git add -f` e por edição deste arquivo —
+# e regra que se contorna sem querer não é proteção, é intenção.
+gs/
+
+# ---- 1.8 ALVOS NOMINAIS deste repositório -----------------------------------
+# Mantidos mesmo com `gs/` inteiro ignorado acima: defesa em profundidade. Se algum
+# dia a pasta voltar ao versionamento, estas linhas continuam de pé sozinhas.
+# Medido em 2026-09-02 com `grep -rnoE "AIza[0-9A-Za-z_-]{35}"`: este arquivo
+# carrega uma chave do Google Cloud (formato AIza…, 39 caracteres) e a
+# credencial Oracle da FIAP em texto claro. Está fora do índice do git hoje
+# (`git ls-files gs/` devolveu vazio) e assim tem de continuar.
+gs/**/appsettings.json
+gs/Advanced_Business_Development_with.NET/gsApi/gsApi/appsettings.json
+
+# Coleção do Postman guarda variável de ambiente com valor real.
+**/teste-postman/*environment*.json
+**/postman/*environment*.json
+*.postman_environment.json
+
+
+# =============================================================================
+# 2. JAVA / GRADLE / MAVEN / QUARKUS
+# =============================================================================
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
+out/
+target/
+bin/
+!src/**/bin/
+*.class
+*.jar
+!gradle/wrapper/*.jar
+!.mvn/wrapper/*.jar
+*.war
+*.ear
+*.nar
+*.zip
+*.tar
+*.tar.gz
+*.rar
+hs_err_pid*
+replay_pid*
+.mtj.tmp/
+.quarkus/
+/.quarkus/cli/plugins/
+quarkus.log
+*-runner
+*-runner.jar
+.flattened-pom.xml
+dependency-reduced-pom.xml
+
+
+# =============================================================================
+# 3. BANCO DE DADOS — SQLite é arquivo, e arquivo entra em commit sem avisar
+# =============================================================================
+# O banco desta reconstrução é SQLite: um arquivo no disco, com DADO REAL
+# dentro. Versionar o banco publica o conteúdo dele. O que se versiona é a
+# MIGRATION, nunca o arquivo do banco.
+*.db
+*.db3
+*.sqlite
+*.sqlite3
+*.db-shm
+*.db-wal
+*.db-journal
+*.sqlite-shm
+*.sqlite-wal
+*.sqlite-journal
+data/*.db
+data/*.sqlite*
+/dados/
+# Exceção: banco de fixture pequeno e SEM dado real, declarado de propósito.
+!src/test/resources/**/*.db
+
+
+# =============================================================================
+# 4. NODE / FRONTEND (o legado em gs/ ainda é Next.js)
+# =============================================================================
+node_modules/
+.pnp
+.pnp.js
+.yarn/
+!.yarn/patches
+!.yarn/releases
+!.yarn/plugins
+.next/
+out/
+.nuxt/
+dist/
+.cache/
+.parcel-cache/
+.turbo/
+.svelte-kit/
+.vercel/
+.netlify/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+# ...exceto no acervo congelado de 2025: `gs/` é entrega acadêmica preservada,
+# não projeto vivo, e lá o arquivo gerado faz parte do que foi entregue.
+# (A regra genérica acima precisa vir ANTES desta linha — em .gitignore vence a
+#  ÚLTIMA regra que casa, e foi assim que a primeira tentativa desta exceção,
+#  colocada na seção 1, foi anulada aqui embaixo sem nenhum aviso.)
+!gs/**/next-env.d.ts
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+
+# =============================================================================
+# 5. .NET (o legado em gs/ tem um módulo C#)
+# =============================================================================
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Ll]og/
+[Ll]ogs/
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.userprefs
+*.pubxml
+*.publishproj
+PublishProfiles/
+*.azurePubxml
+*.pubxml.user
+packages/
+!packages/build/
+*.nupkg
+*.snupkg
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+
+# =============================================================================
+# 6. PYTHON (há scripts de conversão em gs/outros/)
+# =============================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+ENV/
+.eggs/
+*.egg-info/
+*.egg
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.coverage
+.coverage.*
+htmlcov/
+pip-log.txt
+pip-delete-this-directory.txt
+
+
+# =============================================================================
+# 7. IDE E EDITOR
+# =============================================================================
+.idea/
+*.ipr
+*.iml
+*.iws
+.project
+.classpath
+.settings/
+.factorypath
+.apt_generated/
+.apt_generated_test/
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.shared.json
+.history/
+.ionide/
+nb-configuration.xml
+nbproject/
+.metadata/
+*.launch
+.recommenders/
+.sts4-cache/
+.cursor/
+.claude/settings.local.json
+.aider*
+.continue/
+
+
+# =============================================================================
+# 8. SISTEMA OPERACIONAL
+# =============================================================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+.AppleDouble
+.LSOverride
+Icon
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+*.stackdump
+.fuse_hidden*
+.nfs*
+
+
+# =============================================================================
+# 9. LOG E ARTEFATO DE EXECUÇÃO
+# =============================================================================
+# Log carrega token em URL, header de autorização e stack trace com conexão.
+*.log
+logs/
+log/
+*.log.*
+*.pid
+*.seed
+*.pid.lock
+report.html
+*.hprof
+*.heapdump
+flight-recorder/
+*.jfr
+
+
+# =============================================================================
+# 10. DOCKER E COMPOSE LOCAL
+# =============================================================================
+docker-compose.override.yml
+docker-compose.local.yml
+.docker-data/
+volumes/
+
+
+# =============================================================================
+# 11. SCRATCH E MATERIAL DE TRABALHO
+# =============================================================================
+scratchpad/
+.scratch/
+tmp/
+temp/
+_local/
+_privado/
+NOTAS-LOCAIS.md

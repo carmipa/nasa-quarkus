@@ -1,0 +1,69 @@
+#!/bin/sh
+# ---------------------------------------------------------------------------
+# pre-commit — a guarda de segredos roda ANTES de o commit existir.
+#
+# PROPÓSITO DE NEGÓCIO
+#   O `origin` deste repositório é público. Credencial que entra em commit e
+#   é empurrada está publicada; reescrever histórico não desfaz clone nem
+#   índice de terceiro. Por isso o ponto de bloqueio é AQUI, antes do commit.
+#
+# INVARIANTES
+#   1. Falha do próprio instrumento NÃO aprova. `pwsh` ausente => o commit
+#      para, com instrução de como proceder. Guarda que aprova por omissão é
+#      pior que guarda nenhuma.
+#   2. Três estados respeitados: 0 segue, 1 bloqueia, 2 bloqueia (não verificou
+#      não é aprovação) — mas o 2 explica que é falta de verificação, não
+#      achado.
+#
+# COMPORTAMENTO EM CASO DE FALHA
+#   Sai != 0 e o git aborta o commit. Emergência real: `git commit --no-verify`
+#   existe e é declarado aqui de propósito — é saída conhecida, não furo
+#   esquecido. Usá-la para contornar a guarda é furar a decisão, não a
+#   ferramenta.
+#
+# Instalação (uma vez por clone):
+#   git config core.hooksPath .githooks
+# ---------------------------------------------------------------------------
+set -u
+
+RAIZ="$(git rev-parse --show-toplevel)"
+# Endereço único: o hook chama `guardas.ps1`, nunca uma guarda específica. Guarda nova
+# entra lá e passa a valer aqui no mesmo commit — sem isso, alguém escreve a guarda,
+# ninguém a invoca, e ela vira documentação com sorte.
+GUARDA="$RAIZ/guardas/guardas.ps1"
+
+if [ ! -f "$GUARDA" ]; then
+    echo "pre-commit: guarda ausente em $GUARDA" >&2
+    echo "pre-commit: NAO VERIFICOU -- isto nao e aprovacao. Commit abortado." >&2
+    exit 2
+fi
+
+if command -v pwsh >/dev/null 2>&1; then
+    PWSH=pwsh
+elif [ -x "/c/Program Files/PowerShell/7/pwsh.exe" ]; then
+    PWSH="/c/Program Files/PowerShell/7/pwsh.exe"
+else
+    echo "pre-commit: PowerShell 7 (pwsh) nao encontrado." >&2
+    echo "pre-commit: NAO VERIFICOU -- isto nao e aprovacao. Commit abortado." >&2
+    echo "pre-commit: instale o pwsh 7 ou rode a guarda a mao antes de commitar." >&2
+    exit 2
+fi
+
+"$PWSH" -NoProfile -File "$GUARDA" -Modo staged
+RC=$?
+
+if [ "$RC" -eq 0 ]; then
+    exit 0
+fi
+
+if [ "$RC" -eq 1 ]; then
+    echo "" >&2
+    echo "pre-commit: COMMIT BLOQUEADO -- uma guarda reprovou o que voce esta commitando." >&2
+    echo "pre-commit: o placar acima diz qual." >&2
+    exit 1
+fi
+
+echo "" >&2
+echo "pre-commit: COMMIT BLOQUEADO -- a guarda NAO CONSEGUIU VERIFICAR (rc=$RC)." >&2
+echo "pre-commit: nao verificar nao e aprovar. Resolva a causa e tente de novo." >&2
+exit "$RC"
