@@ -1,0 +1,71 @@
+/*
+ * ESTILO DA PÁGINA DE CONTATO — e só dela.
+ */
+
+.cartao-pessoa {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.5rem;
+  width: 100%;
+  padding: 1.5rem;
+  border: 1px solid var(--cor-borda);
+  border-left: 4px solid var(--cor-destaque);
+  border-radius: 0.5rem;
+  background: var(--cor-superficie);
+}
+
+.pessoa-identidade { flex: 1 1 16rem; min-width: 0; }
+.pessoa-nome { margin: 0 0 0.25rem; font-size: 1.4rem; }
+.pessoa-papel { margin: 0; color: var(--cor-texto-fraco); }
+
+.pessoa-links { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; }
+.pessoa-links a { color: var(--cor-destaque); text-decoration: none; font-weight: 600; }
+.pessoa-links a:hover { text-decoration: underline; }
+
+/* ----------------------------------------------------------- tabela de fontes */
+
+/* A tabela rola DENTRO de si em tela estreita. Sem isto, ela empurraria a
+   largura da página e criaria barra horizontal no documento inteiro — que é
+   exatamente o que a regra de layout proíbe. */
+.fontes {
+  display: block;
+  overflow-x: auto;
+  width: 100%;
+  margin: 1rem 0;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+.fontes-legenda {
+  caption-side: top;
+  text-align: left;
+  color: var(--cor-texto-fraco);
+  font-size: 0.85rem;
+  padding-bottom: 0.6rem;
+}
+
+.fontes th, .fontes td {
+  padding: 0.7rem 0.9rem;
+  border-bottom: 1px solid var(--cor-borda);
+  text-align: left;
+  vertical-align: top;
+}
+
+.fontes thead th {
+  color: var(--cor-texto-fraco);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 2px solid var(--cor-borda);
+}
+
+.fontes tbody th { font-weight: 700; white-space: nowrap; }
+
+/* "Não exige chave" é a informação mais importante desta tabela: é o que faz o
+   sistema continuar funcionando sem cadastro, sem cota e sem credencial que
+   possa vazar. */
+.sem-chave { color: #4ade80; font-weight: 600; white-space: nowrap; }
+
+.fontes-notas { margin: 0.6rem 0 0; padding-left: 1.1rem; display: grid; gap: 0.5rem; }
+.fontes-notas li { font-size: 0.9rem; }

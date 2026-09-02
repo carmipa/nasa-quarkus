@@ -59,6 +59,16 @@ public class PaginaInicialResource {
     @Location("painel/index.html")
     Template index;
 
+    /**
+     * A página pública de contato e equipe.
+     *
+     * <p>Mora nesta classe porque é conteúdo do painel — a mesma fatia da home. Criar uma
+     * fatia só para uma página estática seria estrutura sem dono.</p>
+     */
+    @Inject
+    @Location("paginas/contato/pagina.html")
+    Template contato;
+
     @Inject
     MolduraDaPagina moldura;
 
@@ -75,5 +85,19 @@ public class PaginaInicialResource {
                 .data("noticias", noticiario.noticias())
                 .data("noticiarioIndisponivel", noticiario.fonteIndisponivel())
                 .data("motivoDoNoticiario", noticiario.motivo()), "inicio");
+    }
+
+    /**
+     * Contato e equipe — PÚBLICA, e continua pública quando houver login.
+     *
+     * <p>É uma das quatro telas que o sistema mostra sem exigir autenticação, junto com a
+     * home, a documentação e a equipe. Quem chega pela primeira vez precisa saber com quem
+     * fala antes de decidir entrar.</p>
+     */
+    @GET
+    @Path("/contato")
+    @Produces(MediaType.TEXT_HTML)
+    public TemplateInstance contato() {
+        return moldura.vestir(contato.instance(), "contato");
     }
 }

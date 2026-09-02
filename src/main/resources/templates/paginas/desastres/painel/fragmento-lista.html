@@ -1,0 +1,66 @@
+<!--
+  LISTA DE EVENTOS DA BASE LOCAL.
+
+  INVARIANTE: cada evento DIZ se participa do alerta de proximidade, e o motivo
+    quando nao participa. Evento encerrado e evento sem coordenada sao comuns e
+    legitimos — e invisiveis de qualquer outra forma. No legado, um evento sem
+    coordenada aparecia igual aos demais, e ninguem descobria que ele nunca
+    geraria aviso.
+-->
+{#if vazio}
+  <div class="vazio">
+    {#if categoria.isEmpty()}
+      <p>Nenhum evento na base ainda.</p>
+      <p class="vazio-dica">Use a aba <strong>Sincronizar com a NASA</strong> para trazê-los.</p>
+    {#else}
+      <p>Nenhum evento na categoria <strong translate="no">{categoria}</strong>.</p>
+      <p class="vazio-dica">A base pode não ter eventos dessa categoria na janela sincronizada.</p>
+    {/if}
+  </div>
+{#else}
+  <ul class="eventos">
+    {#for e in eventos}
+    <li class="evento {#if e.ativo}evento-ativo{#else}evento-encerrado{/if}">
+      <div class="evento-dados">
+        <div class="evento-cabecalho">
+          <span class="evento-situacao" translate="no">
+            {#if e.ativo}Em curso{#else}Encerrado{/if}
+          </span>
+          {#if e.categoria}<span class="evento-categoria" translate="no">{e.categoria}</span>{/if}
+        </div>
+        <a class="evento-titulo" href="/desastres/{e.id}">{e.titulo}</a>
+        <dl class="evento-campos">
+          <div><dt>Ocorrido em</dt>
+              <dd translate="no">{e.ocorridoEm} <span class="campo-fuso">UTC</span></dd></div>
+          <div><dt>Identificador</dt><dd translate="no">{e.eonetId}</dd></div>
+          {#if e.coordenada}
+          <div><dt>Posição</dt>
+              <dd translate="no">{e.coordenada.latitude}, {e.coordenada.longitude}</dd></div>
+          {/if}
+        </dl>
+        {#if !e.participaDoAlertaDeProximidade}
+        <p class="evento-fora-do-alerta">
+          <strong>Não entra no alerta de proximidade:</strong> {e.motivoForaDoAlerta}
+        </p>
+        {/if}
+      </div>
+    </li>
+    {/for}
+  </ul>
+
+  {#if pagina > 0 || temProxima}
+  <nav class="paginacao" aria-label="Paginação">
+    {#if pagina > 0}
+    <button type="button" class="botao botao-discreto"
+            hx-get="/desastres/fragmento/lista?categoria={categoria.urlEncoded}&pagina={pagina - 1}"
+            hx-target="#lista-eventos">Anterior</button>
+    {/if}
+    <span class="paginacao-atual" translate="no">página {pagina + 1}</span>
+    {#if temProxima}
+    <button type="button" class="botao botao-discreto"
+            hx-get="/desastres/fragmento/lista?categoria={categoria.urlEncoded}&pagina={pagina + 1}"
+            hx-target="#lista-eventos">Próxima</button>
+    {/if}
+  </nav>
+  {/if}
+{/if}

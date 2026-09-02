@@ -1,0 +1,125 @@
+{#include layout/base}
+{#titulo}Contato e equipe{/titulo}
+
+{#estilos}
+<link rel="stylesheet" href="/paginas/contato/estilo.css?v={versaoAssets}">
+{/estilos}
+
+{#corpo}
+<!--
+  CONTATO E EQUIPE — página PÚBLICA.
+
+  O QUE MUDOU EM RELAÇÃO AO LEGADO (contato/page.tsx, 257 linhas):
+    1. A equipe tinha três integrantes com RM. Agora é só o Paulo, e sem RM:
+       ele já é formado, e este projeto é vitrine, não entrega de turma.
+    2. O formulário "fale conosco" do legado montava um `mailto:` e abria o
+       programa de e-mail do visitante. Aqui o endereço está À VISTA, clicável.
+       É a mesma coisa com um passo a menos — e funciona para quem não tem
+       cliente de e-mail configurado, que é a maioria em navegador moderno.
+    3. A lista de APIs virou tabela HONESTA: diz o que cada uma faz, se exige
+       chave, e o que MUDOU em relação ao original. Duas das cinco do legado não
+       estão mais aqui, e a página diz por quê em vez de omitir.
+
+  INVARIANTE: nada nesta página inventa credencial, chave ou serviço. O que
+    está escrito aqui foi medido — inclusive as duas APIs que morreram.
+-->
+<section class="secao">
+  <h1 class="secao-titulo">Contato</h1>
+  <p class="secao-texto">
+    Projeto de reconstrução do sistema de alerta de desastres naturais, em Java 25 com
+    Quarkus, <span translate="no">Qute</span> e <span translate="no">HTMX</span>.
+  </p>
+
+  <div class="cartao-pessoa">
+    <div class="pessoa-identidade">
+      <h2 class="pessoa-nome">Paulo Carminati</h2>
+      <p class="pessoa-papel">Desenvolvimento e arquitetura</p>
+    </div>
+    <ul class="pessoa-links">
+      <li>
+        <a href="https://github.com/carmipa" target="_blank" rel="noopener noreferrer">
+          <span translate="no">GitHub</span> — carmipa
+        </a>
+      </li>
+      <li>
+        <a href="mailto:pabcarminati@gmail.com">
+          <span translate="no">pabcarminati@gmail.com</span>
+        </a>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<section class="secao">
+  <h2 class="secao-titulo">De onde vêm os dados</h2>
+  <p class="secao-texto">
+    Todas as fontes em uso são <strong>abertas e sem chave de API</strong>. Isso não é
+    detalhe de implementação: significa que este sistema continua funcionando sem cadastro,
+    sem cota e sem uma credencial que possa vazar.
+  </p>
+
+  <table class="fontes">
+    <caption class="fontes-legenda">
+      Fontes de dados, o que fazem, e o que mudou em relação ao projeto original.
+    </caption>
+    <thead>
+      <tr>
+        <th scope="col">Fonte</th>
+        <th scope="col">Para quê</th>
+        <th scope="col">Chave</th>
+        <th scope="col">Situação</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <th scope="row" translate="no">NASA EONET v3</th>
+        <td>Os eventos naturais que disparam o alerta</td>
+        <td class="sem-chave">Não exige</td>
+        <td>Mantida do projeto original</td>
+      </tr>
+      <tr>
+        <th scope="row" translate="no">BrasilAPI CEP</th>
+        <td>Endereço a partir do CEP, já com coordenada</td>
+        <td class="sem-chave">Não exige</td>
+        <td>Nova — é a mais rápida e a única que devolve coordenada junto</td>
+      </tr>
+      <tr>
+        <th scope="row" translate="no">ViaCEP</th>
+        <td>Endereço pelo CEP, quando a primeira não responde</td>
+        <td class="sem-chave">Não exige</td>
+        <td>Mantida, agora como reserva</td>
+      </tr>
+      <tr>
+        <th scope="row" translate="no">Nominatim / OpenStreetMap</th>
+        <td>Coordenada quando o CEP não a traz</td>
+        <td class="sem-chave">Não exige</td>
+        <td>Substituiu o <span translate="no">Google Geocoding</span></td>
+      </tr>
+      <tr>
+        <th scope="row" translate="no">GDACS (ONU / UE)</th>
+        <td>O noticiário de desastres da página inicial</td>
+        <td class="sem-chave">Não exige</td>
+        <td>Substituiu a <span translate="no">ReliefWeb</span>, que foi desativada</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="aviso" role="note">
+    <strong>Duas fontes do projeto original não estão aqui, e vale dizer por quê.</strong>
+    <ul class="fontes-notas">
+      <li>
+        <span translate="no">Google Geocoding</span> exigia chave de API e cobrança por uso.
+        Foi trocada pelo <span translate="no">Nominatim</span>, que é aberto — e a chave que
+        o projeto original carregava não deve mesmo continuar viva.
+      </li>
+      <li>
+        <span translate="no">ReliefWeb</span> foi <strong>desativada</strong>: a versão 1 da
+        API responde <span translate="no">HTTP 410</span> e a versão 2 exige um identificador
+        de aplicação previamente aprovado. Medido em 02/09/2026 — o carrossel de notícias do
+        projeto original não funciona mais, e não é por causa desta reconstrução.
+      </li>
+    </ul>
+  </div>
+</section>
+{/corpo}
+{/include}

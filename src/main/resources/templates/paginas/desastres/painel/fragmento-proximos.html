@@ -1,0 +1,42 @@
+<!--
+  RESULTADO DA BUSCA POR PROXIMIDADE.
+
+  INVARIANTE: TRES estados, nunca dois. "Ainda nao procurei", "procurei e nao ha
+    nada perto" e "a coordenada ou o raio sao invalidos" pedem reacoes
+    diferentes — esperar, respirar aliviado, ou corrigir o que foi digitado.
+    Colapsar os dois ultimos numa lista vazia faz alguem concluir que esta
+    seguro quando na verdade digitou a latitude errada.
+-->
+{#if !procurou}
+  <p class="vazio">Informe uma coordenada e um raio para buscar.</p>
+{#else if erro}
+  <div class="aviso aviso-erro" role="alert">
+    <strong>Não consegui buscar.</strong> {erro}
+  </div>
+{#else if achados.isEmpty()}
+  <div class="aviso aviso-sucesso" role="status">
+    <strong>Nenhum evento ativo dentro de {raioKm} km.</strong>
+    <p class="aviso-nota">
+      Esta é a resposta desejável na maior parte dos dias. Ela vale para o que está
+      <em>na base</em> — se faz tempo que não se sincroniza, sincronize antes de concluir.
+    </p>
+  </div>
+{#else}
+  <p class="secao-texto" translate="no">
+    <strong>{achados.size()}</strong> evento(s) ativo(s) a até {raioKm} km de
+    {latitude}, {longitude} — do mais próximo ao mais distante.
+  </p>
+  <ul class="proximos">
+    {#for p in achados}
+    <li class="proximo">
+      <span class="proximo-distancia" translate="no">{p.distanciaKm.longValue} km</span>
+      <div class="proximo-dados">
+        <a class="proximo-titulo" href="/desastres/{p.evento.id}">{p.evento.titulo}</a>
+        <span class="proximo-meta" translate="no">
+          {#if p.evento.categoria}{p.evento.categoria} · {/if}{p.evento.ocorridoEm} UTC
+        </span>
+      </div>
+    </li>
+    {/for}
+  </ul>
+{/if}

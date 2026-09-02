@@ -1,0 +1,160 @@
+/*
+ * ESTILO DO PAINEL DE DESASTRES — e só dele.
+ *
+ * Filtro, aviso, botão, vazio e paginação são componentes e vivem no base.css.
+ * Aqui fica o que só esta tela tem: as abas e as listas de evento.
+ */
+
+.desastres-topo {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  width: 100%;
+  margin-bottom: 1.2rem;
+}
+.desastres-topo .secao-titulo { margin: 0; }
+
+/* ------------------------------------------------------------------- abas */
+
+.abas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  width: 100%;
+  border-bottom: 1px solid var(--cor-borda);
+  margin-bottom: 1.2rem;
+}
+
+.aba {
+  padding: 0.7rem 1.2rem;
+  border: none;
+  border-bottom: 3px solid transparent;
+  background: none;
+  color: var(--cor-texto-fraco);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.aba:hover { color: var(--cor-texto); }
+.aba-ativa, .aba-ativa:hover {
+  color: var(--cor-destaque);
+  border-bottom-color: var(--cor-destaque);
+}
+
+/* -------------------------------------------------------- resultado do sync */
+
+.resultado-numeros {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.75rem 1.5rem;
+  margin: 0.75rem 0 0;
+}
+.resultado-numeros dt {
+  color: var(--cor-texto-fraco);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.resultado-numeros dd { margin: 0; font-size: 1.3rem; font-weight: 700; }
+/* O número de NOVOS é o que responde "a NASA publicou algo?" — e é diferente
+   de "a sincronização rodou", que é o que os outros números dizem. */
+.resultado-numeros .destaque { color: var(--cor-destaque); }
+
+/* ---------------------------------------------------------------- eventos */
+
+.eventos { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.65rem; width: 100%; }
+
+.evento {
+  width: 100%;
+  padding: 0.9rem 1.1rem;
+  border: 1px solid var(--cor-borda);
+  border-left: 4px solid var(--cor-borda);
+  border-radius: 0.5rem;
+  background: var(--cor-superficie);
+}
+/* Em curso é laranja; encerrado fica cinza. A cor carrega a informação que
+   mais decide o que fazer com aquele evento. */
+.evento-ativo { border-left-color: var(--cor-alerta); }
+.evento-encerrado { border-left-color: var(--cor-borda); opacity: .78; }
+
+.evento-cabecalho { display: flex; gap: 0.6rem; align-items: center; margin-bottom: 0.4rem; }
+
+.evento-situacao {
+  padding: 0.12rem 0.5rem;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.evento-ativo .evento-situacao { color: var(--cor-alerta); }
+.evento-encerrado .evento-situacao { color: var(--cor-texto-fraco); }
+.evento-categoria { color: var(--cor-texto-fraco); font-size: 0.8rem; }
+
+.evento-titulo {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--cor-texto);
+  font-size: 1.05rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+.evento-titulo:hover { color: var(--cor-destaque); }
+
+.evento-campos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.4rem 1.5rem;
+  margin: 0;
+}
+.evento-campos dt {
+  color: var(--cor-texto-fraco);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.evento-campos dd { margin: 0; overflow-wrap: anywhere; font-size: 0.9rem; }
+
+/* Nunca discreto: é a informação que revela que aquele evento jamais vai
+   gerar aviso — e ela é invisível de qualquer outra forma. */
+.evento-fora-do-alerta {
+  margin: 0.6rem 0 0;
+  padding: 0.5rem 0.7rem;
+  border-left: 3px solid var(--cor-alerta);
+  background: rgba(255, 159, 67, .08);
+  font-size: 0.85rem;
+}
+
+/* --------------------------------------------------------------- proximos */
+
+.proximos { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; width: 100%; }
+
+.proximo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 0.5rem;
+  background: var(--cor-superficie);
+}
+
+/* A distância vem PRIMEIRO e em destaque: numa lista ordenada por proximidade,
+   é o número que a pessoa está procurando. */
+.proximo-distancia {
+  flex: 0 0 auto;
+  min-width: 5rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 0.4rem;
+  background: var(--cor-fundo);
+  color: var(--cor-destaque);
+  font-weight: 700;
+  text-align: center;
+}
+
+.proximo-dados { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
+.proximo-titulo { color: var(--cor-texto); font-weight: 600; text-decoration: none; }
+.proximo-titulo:hover { color: var(--cor-destaque); }
+.proximo-meta { color: var(--cor-texto-fraco); font-size: 0.8rem; }

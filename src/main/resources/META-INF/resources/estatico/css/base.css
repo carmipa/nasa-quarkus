@@ -350,3 +350,77 @@ body {
   gap: 0.75rem;
   margin-top: 0.5rem;
 }
+
+/* -------------------------------------------------------------------------
+ * FILTROS, VAZIO E PAGINAÇÃO — componentes do sistema.
+ *
+ * Estão aqui porque desastres, estatísticas, alertas e as telas de cliente
+ * usam os mesmos. É a mesma linha de sempre: é DA PÁGINA o que só existe nela;
+ * é DO SISTEMA o que aparece em várias.
+ * ------------------------------------------------------------------------- */
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem;
+  width: 100%;
+  padding: 1rem 1.2rem;
+  margin-bottom: 1.2rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 0.5rem;
+  background: var(--cor-superficie);
+}
+
+.filtro { display: flex; flex-direction: column; gap: 0.3rem; min-width: 9rem; flex: 0 1 auto; }
+.filtro-caixa { min-width: 16rem; }
+
+.rotulo-caixa {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  padding: 0.55rem 0;
+}
+
+.filtros-acoes { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+
+.carregando { color: var(--cor-destaque); font-size: 0.85rem; }
+
+.vazio {
+  width: 100%;
+  padding: 2.5rem 1rem;
+  border: 1px dashed var(--cor-borda);
+  border-radius: 0.5rem;
+  text-align: center;
+  color: var(--cor-texto-fraco);
+}
+.vazio .botao { margin-top: 1rem; }
+.vazio-dica { font-size: 0.9rem; }
+
+.paginacao {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  width: 100%;
+  margin-top: 1.2rem;
+}
+.paginacao-atual { color: var(--cor-texto-fraco); font-size: 0.9rem; }
+
+/* Contadores do topo das telas de desastre. */
+.desastres-numeros { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+
+.numero {
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 999px;
+  color: var(--cor-texto-fraco);
+  font-size: 0.85rem;
+}
+.numero strong { color: var(--cor-texto); }
+.numero-ativo { border-color: var(--cor-alerta); }
+.numero-ativo strong { color: var(--cor-alerta); }
+
+.desastres-atalhos { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-left: auto; }
+
+.aviso-nota { margin: 0.6rem 0 0; font-size: 0.9rem; color: var(--cor-texto-fraco); }

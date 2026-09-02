@@ -1,0 +1,105 @@
+{#include layout/base}
+{#titulo}Alertas — auditoria{/titulo}
+
+{#estilos}
+<link rel="stylesheet" href="/paginas/alertas/painel/estilo.css?v={versaoAssets}">
+{/estilos}
+
+{#corpo}
+<!--
+  PAINEL DE ALERTAS.
+
+  A RESSALVA DO MEIO DE ENTREGA FICA NO TOPO, e nao num rodape. Enquanto nao
+  houver servidor de e-mail, "ENVIADO" nesta tela significa REGISTRADO, e
+  ninguem recebeu nada. A unica coisa pior que nao ter alerta e acreditar que
+  se tem — e a descoberta viria no dia do desastre.
+-->
+<section class="secao">
+  <div class="alertas-topo">
+    <h1 class="secao-titulo">Alertas</h1>
+    <div class="desastres-atalhos">
+      <a class="botao botao-discreto" href="/desastres">Desastres</a>
+      <a class="botao botao-discreto" href="/desastres/mapa">Mapa</a>
+    </div>
+  </div>
+
+  {#if !meio.entregaDeVerdade}
+  <div class="aviso aviso-erro" role="alert">
+    <strong>Os alertas NÃO estão sendo entregues.</strong>
+    {meio.ressalva}
+    <p class="aviso-nota">
+      Meio em uso: <span translate="no">{meio.descricao}</span>.
+      Nesta tela, <strong>ENVIADO</strong> significa <em>registrado no log</em>.
+    </p>
+  </div>
+  {/if}
+
+  <div class="resumo-situacoes">
+    {#for c in contagens}
+    <div class="situacao-cartao situacao-{c.situacao.toLowerCase}">
+      <span class="situacao-numero" translate="no">{c.quantos}</span>
+      <span class="situacao-nome" translate="no">{c.situacao}</span>
+    </div>
+    {/for}
+    {#if contagens.isEmpty()}
+    <p class="vazio-inline">Nenhum alerta registrado ainda.</p>
+    {/if}
+  </div>
+</section>
+
+<section class="secao">
+  <h2 class="secao-titulo">Operações</h2>
+  <p class="secao-texto">
+    <strong>Varrer</strong> cruza os eventos ativos com os endereços cadastrados e
+    <strong>registra</strong> os avisos — sem enviar. <strong>Despachar</strong> envia o que
+    está na fila. As duas são seguras de repetir: a chave
+    <span translate="no">(cliente, evento)</span> do banco impede que uma tempestade de
+    cinco dias vire cinco mensagens para a mesma pessoa.
+  </p>
+
+  <form class="filtros" hx-post="/alertas/varrer" hx-target="#resultado-operacao"
+        hx-indicator="#operando">
+    <div class="filtro">
+      <label class="formulario-rotulo" for="raioKm">Raio do alerta (km)</label>
+      <input class="campo-formulario" id="raioKm" name="raioKm" type="number"
+             step="any" value="100" min="0.1" max="20000">
+    </div>
+    <div class="filtro">
+      <label class="formulario-rotulo" for="dias">Janela (dias)</label>
+      <input class="campo-formulario" id="dias" name="dias" type="number"
+             value="30" min="1" max="365">
+    </div>
+    <div class="filtros-acoes">
+      <button class="botao botao-principal" type="submit">Varrer e registrar</button>
+      <button class="botao" type="button"
+              hx-post="/alertas/despachar?limite=50"
+              hx-target="#resultado-operacao"
+              hx-indicator="#operando">Despachar a fila</button>
+      <span class="htmx-indicator carregando" id="operando" translate="no">processando…</span>
+    </div>
+  </form>
+
+  <div id="resultado-operacao"></div>
+</section>
+
+<section class="secao">
+  <h2 class="secao-titulo">Avisos registrados</h2>
+  <form class="filtros" hx-get="/alertas/fragmento/lista" hx-target="#lista-alertas"
+        hx-trigger="change from:#situacao">
+    <div class="filtro">
+      <label class="formulario-rotulo" for="situacao">Situação</label>
+      <select class="campo-formulario" id="situacao" name="situacao">
+        <option value="">Todas</option>
+        <option value="PENDENTE">Pendentes</option>
+        <option value="ENVIADO">Enviados</option>
+        <option value="FALHOU">Falhos</option>
+      </select>
+    </div>
+  </form>
+
+  <div id="lista-alertas" hx-get="/alertas/fragmento/lista" hx-trigger="load" hx-target="this">
+    <p class="vazio">Carregando…</p>
+  </div>
+</section>
+{/corpo}
+{/include}

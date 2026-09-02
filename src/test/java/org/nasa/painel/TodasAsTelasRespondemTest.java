@@ -1,0 +1,170 @@
+package org.nasa.painel;
+
+import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.http.ContentType;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+import static io.restassured.RestAssured.given;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+/**
+ * Toda tela do sistema RENDERIZA — inclusive os ramos que só aparecem com dados.
+ *
+ * <p><b>PROPÓSITO DE NEGÓCIO.</b> Template não é código compilado. Uma expressão errada
+ * dentro de um {@code {#if}} fica <b>invisível</b> até aquele ramo acontecer — e aí derruba
+ * a página com 500 na cara de quem estava usando.</p>
+ *
+ * <p><b>O DEFEITO QUE ORIGINOU ESTE ARQUIVO</b> (02/09/2026). Escrevi
+ * {@code {termo.urlEncoded}} na paginação da lista de clientes, supondo uma extensão que o
+ * Qute <b>não tem</b>. A expressão vive dentro do bloco de paginação, que só é renderizado
+ * quando existe página anterior ou próxima. Com quatro clientes na base, o bloco nunca foi
+ * desenhado: passou nos testes, passou no uso à mão, e ficou lá esperando o quinto
+ * cadastro. Só apareceu quando a lista de desastres, com quarenta eventos, paginou de
+ * verdade — e aí eram <b>duas</b> telas quebradas, não uma.</p>
+ *
+ * <p><b>POR ISSO ESTE TESTE CRIA DADOS ANTES DE OLHAR.</b> Percorrer as rotas com a base
+ * vazia provaria apenas que o caminho do "não há nada" funciona — que é o ramo mais fácil
+ * e o menos usado. Aqui a base ganha registros suficientes para <b>paginar</b>, e é a
+ * paginação que se quer ver desenhada.</p>
+ *
+ * <p><b>INVARIANTES DO DOMÍNIO.</b></p>
+ * <ol>
+ *   <li><b>Toda rota de tela devolve 200 e HTML.</b> Um 500 aqui é template quebrado.</li>
+ *   <li><b>A moldura aparece em todas.</b> Se o relógio ou o menu sumirem de uma tela, é
+ *       porque alguém deixou de passar pela {@code MolduraDaPagina}.</li>
+ *   <li><b>Nenhuma tela vaza rastro de pilha.</b> Página de erro do Quarkus na tela é
+ *       informação de infraestrutura para quem não deveria vê-la.</li>
+ * </ol>
+ *
+ * <p><b>COMPORTAMENTO EM CASO DE FALHA.</b> Reprova nomeando a rota e o status — e o corpo
+ * da resposta contém a mensagem do Qute, que diz qual expressão e qual linha.</p>
+ */
+@QuarkusTest
+@DisplayName("todas as telas renderizam — inclusive os ramos que so aparecem COM dados")
+class TodasAsTelasRespondemTest {
+
+    /**
+     * Quantos registros criar antes de olhar.
+     *
+     * <p>Precisa passar do tamanho de página das listas — que é 20 — para que o bloco de
+     * paginação seja <b>realmente</b> desenhado. Foi exatamente esse bloco que escondeu o
+     * defeito por um dia inteiro.</p>
+     */
+    private static final int REGISTROS = 22;
+
+    private static String documentoNovo() {
+        return String.format("%011d", System.nanoTime() % 100_000_000_000L);
+    }
+
+    private void criarClientesSuficientesParaPaginar() {
+        for (int i = 0; i < REGISTROS; i++) {
+            given().contentType(ContentType.JSON)
+                    .body("""
+                            {"nome":"Paginacao%d","sobrenome":"Teste",
+                             "dataNascimento":"1990-01-01","documento":"%s"}"""
+                            .formatted(i, documentoNovo()))
+                    .when().post("/api/clientes");
+        }
+    }
+
+    @Test
+    @DisplayName("as telas de CLIENTE renderizam, e a PAGINACAO e desenhada de verdade")
+    void telasDeClienteComPaginacao() {
+        criarClientesSuficientesParaPaginar();
+
+        // A lista inteira, com o bloco de paginacao desenhado — o ramo que escondia o
+        // `urlEncoded` inexistente.
+        String lista = corpoDe("/clientes/fragmento/lista");
+        assertTrue(lista.contains("paginacao") || lista.contains("Próxima"),
+                "o bloco de paginacao NAO foi desenhado: este teste nao esta exercitando "
+                        + "o ramo que escondeu o defeito. Aumente REGISTROS.");
+
+        // E com TERMO, que e o valor que passa pelo urlEncoded.
+        deveResponder("/clientes/fragmento/lista?termo=paginacao");
+        deveResponder("/clientes/fragmento/lista?termo=nome%20com%20espaco%20e%20acento");
+        deveResponder("/clientes/fragmento/lista?termo=paginacao&pagina=1");
+    }
+
+    @Test
+    @DisplayName("as telas de DESASTRE renderizam, com e sem filtro")
+    void telasDeDesastre() {
+        Map<String, String> rotas = new LinkedHashMap<>();
+        rotas.put("painel", "/desastres");
+        rotas.put("mapa", "/desastres/mapa");
+        rotas.put("estatisticas", "/desastres/estatisticas");
+        rotas.put("estatisticas com janela", "/desastres/estatisticas?dias=365");
+        rotas.put("lista", "/desastres/fragmento/lista");
+        rotas.put("lista com categoria", "/desastres/fragmento/lista?categoria=wildfires");
+        rotas.put("lista pagina 1", "/desastres/fragmento/lista?categoria=&pagina=1");
+        rotas.put("proximos sem procurar", "/desastres/fragmento/proximos");
+        rotas.put("proximos com busca",
+                "/desastres/fragmento/proximos?procurou=true&latitude=-23.55"
+                        + "&longitude=-46.63&raioKm=500&dias=60");
+        // Raio invalido: o ramo de ERRO da tela, que so aparece quando algo falha.
+        rotas.put("proximos com raio invalido",
+                "/desastres/fragmento/proximos?procurou=true&latitude=-23.55"
+                        + "&longitude=-46.63&raioKm=-1");
+
+        rotas.forEach((nome, rota) -> deveResponder(rota));
+    }
+
+    @Test
+    @DisplayName("as telas de ALERTA renderizam, com e sem filtro de situacao")
+    void telasDeAlerta() {
+        deveResponder("/alertas");
+        deveResponder("/alertas/fragmento/lista");
+        // Os tres ramos da lista por situacao — cada um com seu texto proprio.
+        deveResponder("/alertas/fragmento/lista?situacao=PENDENTE");
+        deveResponder("/alertas/fragmento/lista?situacao=ENVIADO");
+        deveResponder("/alertas/fragmento/lista?situacao=FALHOU");
+        deveResponder("/alertas/fragmento/lista?situacao=ENVIADO&pagina=1");
+    }
+
+    @Test
+    @DisplayName("as telas PUBLICAS renderizam, e trazem a moldura inteira")
+    void telasPublicas() {
+        for (String rota : new String[] { "/", "/contato" }) {
+            String corpo = corpoDe(rota);
+            // A moldura e o que garante relogio, menu e seletor de idioma. Se ela sumir de
+            // uma tela, e porque alguem deixou de passar pela MolduraDaPagina.
+            assertTrue(corpo.contains("data-instante-servidor"),
+                    "sem o relogio da moldura em " + rota);
+            assertTrue(corpo.contains("class=\"menu\""), "sem o menu em " + rota);
+            assertTrue(corpo.contains("data-idioma=\"pt\""), "sem o seletor de idioma em " + rota);
+        }
+    }
+
+    @Test
+    @DisplayName("nenhuma tela vaza rastro de pilha")
+    void nenhumaTelaVazaRastroDePilha() {
+        // Pagina de erro do Quarkus mostra pacote, classe e linha — informacao de
+        // infraestrutura para quem nao deveria ve-la.
+        for (String rota : new String[] { "/", "/contato", "/desastres", "/desastres/mapa",
+                "/desastres/estatisticas", "/clientes/listar", "/clientes/cadastrar",
+                "/clientes/buscar", "/alertas" }) {
+            String corpo = corpoDe(rota);
+            assertTrue(!corpo.contains("org.nasa.") || !corpo.contains("at java."),
+                    "rastro de pilha visivel em " + rota);
+        }
+    }
+
+    // ------------------------------------------------------------------ apoio
+
+    private void deveResponder(String rota) {
+        int status = given().when().get(rota).statusCode();
+        assertEquals(200, status, "a rota " + rota + " respondeu " + status
+                + " — provavelmente template quebrado; o corpo diz a expressao e a linha");
+    }
+
+    private String corpoDe(String rota) {
+        var r = given().when().get(rota);
+        assertEquals(200, r.statusCode(), "a rota " + rota + " respondeu " + r.statusCode()
+                + ": " + r.asString().substring(0, Math.min(400, r.asString().length())));
+        return r.asString();
+    }
+}

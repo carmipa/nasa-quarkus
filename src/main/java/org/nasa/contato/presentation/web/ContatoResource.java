@@ -18,6 +18,7 @@ import org.nasa.contato.application.AlterarContatoUseCase;
 import org.nasa.contato.application.CadastrarContatoUseCase;
 import org.nasa.contato.application.ConsultarContatosUseCase;
 import org.nasa.contato.application.ExcluirContatoUseCase;
+import org.nasa.contato.application.VincularContatoAoClienteUseCase;
 import org.nasa.contato.domain.Contato;
 
 import java.net.URI;
@@ -63,6 +64,9 @@ public class ContatoResource {
 
     @Inject
     ExcluirContatoUseCase excluir;
+
+    @Inject
+    VincularContatoAoClienteUseCase vincular;
 
     @POST
     public Response criar(ContatoPedido pedido) {
@@ -128,6 +132,24 @@ public class ContatoResource {
     @Path("/emergencia/cliente/{clienteId}")
     public List<ContatoResposta> deEmergencia(@PathParam("clienteId") long clienteId) {
         return ContatoResposta.de(consultar.deEmergenciaDoCliente(clienteId));
+    }
+
+    /**
+     * Liga um contato a um cliente.
+     *
+     * <p><b>É este vínculo que faz o alerta existir.</b> Um contato de emergência solto,
+     * sem cliente, nunca recebe aviso: a varredura parte dos endereços do cliente, e sem a
+     * ligação não há caminho até o contato. Sem este endpoint, montar a cadeia completa
+     * exigia SQL à mão — e o fluxo do sistema não podia ser exercitado pela API.</p>
+     *
+     * <p><b>Idempotente:</b> vincular duas vezes não duplica nem falha. Repetir é o
+     * resultado normal de um clique duplo.</p>
+     */
+    @POST
+    @Path("/{id}/vincular/{clienteId}")
+    public Response vincular(@PathParam("id") long id, @PathParam("clienteId") long clienteId) {
+        vincular.executar(id, clienteId);
+        return Response.noContent().build();
     }
 
     @PUT

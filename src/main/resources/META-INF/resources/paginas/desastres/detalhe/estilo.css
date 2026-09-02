@@ -1,0 +1,62 @@
+/*
+ * ESTILO DO DETALHE DO EVENTO — e só dele.
+ */
+
+.detalhe-volta { width: 100%; margin-bottom: 0.75rem; }
+.detalhe-volta a { color: var(--cor-texto-fraco); text-decoration: none; font-size: 0.9rem; }
+.detalhe-volta a:hover { color: var(--cor-destaque); }
+
+.evento-cabecalho-detalhe { display: flex; gap: 0.6rem; align-items: center; margin-bottom: 0.5rem; }
+
+.evento-situacao {
+  padding: 0.15rem 0.6rem;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.situacao-ativa { color: var(--cor-alerta); }
+.situacao-encerrada { color: var(--cor-texto-fraco); }
+.evento-categoria { color: var(--cor-texto-fraco); font-size: 0.85rem; }
+
+.detalhe-campos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 1rem 2rem;
+  width: 100%;
+  margin: 1rem 0 1.5rem;
+}
+
+.detalhe-campo {
+  min-width: 0;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 0.5rem;
+  background: var(--cor-superficie);
+}
+.detalhe-campo-largo { grid-column: 1 / -1; }
+
+.detalhe-campo dt {
+  color: var(--cor-texto-fraco);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 0.25rem;
+}
+.detalhe-campo dd { margin: 0; font-size: 1rem; overflow-wrap: anywhere; }
+
+.detalhe-mapa {
+  width: 100%;
+  height: 45vmin;
+  min-height: 16rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 0.5rem;
+  background: var(--cor-superficie);
+}
+.detalhe-mapa .leaflet-control-attribution {
+  background: rgba(13, 17, 23, .85);
+  color: var(--cor-texto-fraco);
+}
+.detalhe-mapa .leaflet-control-attribution a { color: var(--cor-destaque); }

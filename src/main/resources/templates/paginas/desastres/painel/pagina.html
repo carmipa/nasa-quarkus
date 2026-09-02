@@ -1,0 +1,179 @@
+{#include layout/base}
+{#titulo}Desastres — NASA EONET{/titulo}
+
+{#estilos}
+<link rel="stylesheet" href="/paginas/desastres/painel/estilo.css?v={versaoAssets}">
+{/estilos}
+
+{#corpo}
+<!--
+  PAINEL DE DESASTRES.
+
+  O QUE O LEGADO TINHA (desastres/page.tsx, 757 linhas de React, 4 abas):
+    sincronizar · listar locais · buscar próximos · alertar usuário.
+
+  A quarta saiu daqui e virou tela própria em /alertas — não por organização,
+  mas porque a regra da arquitetura proíbe uma fatia conhecer outra, e misturar
+  alerta com evento faria a guarda de fronteira reprovar o build. Está certa:
+  é assim que duas fatias começam a se enrolar.
+
+  INVARIANTES:
+    1. Cada aba troca SÓ o seu pedaço, por HTMX. Recarregar a página inteira
+       perderia os filtros já digitados na aba ao lado.
+    2. As abas são <button>, não <a>: elas não mudam de página, e um link que
+       não navega confunde quem usa teclado e leitor de tela.
+    3. Sincronizar é POST. Escreve no banco, e um GET que escreve é executado
+       por rastreador e por pré-carregamento de navegador, sem ninguém clicar.
+-->
+<section class="secao">
+  <div class="desastres-topo">
+    <h1 class="secao-titulo">Desastres naturais</h1>
+    <div class="desastres-numeros" translate="no">
+      <span class="numero"><strong>{total}</strong> na base</span>
+      <span class="numero numero-ativo"><strong>{ativos}</strong> ativos</span>
+    </div>
+    <div class="desastres-atalhos">
+      <a class="botao botao-discreto" href="/desastres/mapa">Mapa</a>
+      <a class="botao botao-discreto" href="/desastres/estatisticas">Estatísticas</a>
+      <a class="botao botao-discreto" href="/alertas">Alertas</a>
+    </div>
+  </div>
+
+  <div class="abas" role="tablist">
+    <button class="aba aba-ativa" type="button" role="tab" data-aba="sincronizar">
+      Sincronizar com a NASA
+    </button>
+    <button class="aba" type="button" role="tab" data-aba="lista">
+      Eventos na base
+    </button>
+    <button class="aba" type="button" role="tab" data-aba="proximos">
+      Buscar por proximidade
+    </button>
+  </div>
+
+  <!-- ================================================ aba: sincronizar -->
+  <div class="painel-aba" data-painel="sincronizar">
+    <p class="secao-texto">
+      Traz eventos da <span translate="no">EONET v3</span> da NASA para a base local.
+      A operação é <strong>segura de repetir</strong>: o mesmo evento não entra duas vezes,
+      e a posição dele é atualizada a cada sincronização.
+    </p>
+
+    <form class="filtros"
+          hx-post="/desastres/sincronizar"
+          hx-target="#resultado-sincronizacao"
+          hx-indicator="#sincronizando">
+      <div class="filtro">
+        <label class="formulario-rotulo" for="limite">Limite de eventos</label>
+        <input class="campo-formulario" id="limite" name="limite" type="number"
+               value="50" min="1" max="500">
+      </div>
+      <div class="filtro">
+        <label class="formulario-rotulo" for="dias">Janela (dias)</label>
+        <input class="campo-formulario" id="dias" name="dias" type="number"
+               value="30" min="1" max="365">
+      </div>
+      <div class="filtro filtro-caixa">
+        <label class="rotulo-caixa">
+          <input type="checkbox" name="apenasAtivos" value="true" checked>
+          <span>Só eventos ainda em curso</span>
+        </label>
+        <span class="formulario-dica">
+          Desmarque para trazer também os que a NASA já encerrou.
+        </span>
+      </div>
+      <div class="filtros-acoes">
+        <button class="botao botao-principal" type="submit">Sincronizar</button>
+        <span class="htmx-indicator carregando" id="sincronizando" translate="no">
+          falando com a NASA…
+        </span>
+      </div>
+    </form>
+
+    <div id="resultado-sincronizacao"></div>
+  </div>
+
+  <!-- ====================================================== aba: lista -->
+  <div class="painel-aba" data-painel="lista" hidden>
+    <form class="filtros"
+          hx-get="/desastres/fragmento/lista"
+          hx-target="#lista-eventos"
+          hx-trigger="submit, change from:#categoria">
+      <div class="filtro">
+        <label class="formulario-rotulo" for="categoria">Categoria</label>
+        <select class="campo-formulario" id="categoria" name="categoria">
+          <option value="">Todas</option>
+          <option value="wildfires">Incêndios florestais</option>
+          <option value="severeStorms">Tempestades severas</option>
+          <option value="volcanoes">Vulcões</option>
+          <option value="floods">Enchentes</option>
+          <option value="drought">Secas</option>
+          <option value="earthquakes">Terremotos</option>
+          <option value="landslides">Deslizamentos</option>
+          <option value="seaLakeIce">Gelo marinho</option>
+        </select>
+      </div>
+      <div class="filtros-acoes">
+        <button class="botao" type="submit">Filtrar</button>
+      </div>
+    </form>
+
+    <div id="lista-eventos"
+         hx-get="/desastres/fragmento/lista"
+         hx-trigger="load"
+         hx-target="this">
+      <p class="vazio">Carregando…</p>
+    </div>
+  </div>
+
+  <!-- =================================================== aba: proximos -->
+  <div class="painel-aba" data-painel="proximos" hidden>
+    <p class="secao-texto">
+      Busca em <strong>duas etapas</strong>: uma caixa em graus reduz o conjunto pelo índice
+      do banco, e a <strong>geodésia</strong> decide quem fica. Parar na caixa avisaria gente
+      a até 41% além do raio pedido — o canto de um retângulo fica mais longe que o raio.
+    </p>
+
+    <form class="filtros"
+          hx-get="/desastres/fragmento/proximos"
+          hx-target="#resultado-proximos"
+          hx-indicator="#buscando-proximos">
+      <input type="hidden" name="procurou" value="true">
+      <div class="filtro">
+        <label class="formulario-rotulo" for="latitude">Latitude</label>
+        <input class="campo-formulario" id="latitude" name="latitude" type="number"
+               step="any" value="-23.5505" required>
+      </div>
+      <div class="filtro">
+        <label class="formulario-rotulo" for="longitude">Longitude</label>
+        <input class="campo-formulario" id="longitude" name="longitude" type="number"
+               step="any" value="-46.6333" required>
+      </div>
+      <div class="filtro">
+        <label class="formulario-rotulo" for="raioKm">Raio (km)</label>
+        <input class="campo-formulario" id="raioKm" name="raioKm" type="number"
+               step="any" value="100" min="0.1" max="20000" required>
+      </div>
+      <div class="filtro">
+        <label class="formulario-rotulo" for="diasProx">Janela (dias)</label>
+        <input class="campo-formulario" id="diasProx" name="dias" type="number"
+               value="30" min="1" max="365">
+      </div>
+      <div class="filtros-acoes">
+        <button class="botao botao-principal" type="submit">Buscar por perto</button>
+        <button class="botao" type="button" data-usar-minha-posicao>Usar minha posição</button>
+        <span class="htmx-indicator carregando" id="buscando-proximos" translate="no">
+          calculando…
+        </span>
+      </div>
+    </form>
+
+    <div id="resultado-proximos"></div>
+  </div>
+</section>
+{/corpo}
+
+{#scripts}
+<script src="/paginas/desastres/painel/script.js?v={versaoAssets}" defer></script>
+{/scripts}
+{/include}

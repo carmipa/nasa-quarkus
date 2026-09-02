@@ -1,0 +1,89 @@
+{#include layout/base}
+{#titulo}Desastre — {evento.titulo}{/titulo}
+
+{#estilos}
+<link rel="stylesheet" href="/paginas/desastres/detalhe/estilo.css?v={versaoAssets}">
+{/estilos}
+
+{#corpo}
+<!--
+  DETALHE DE UM EVENTO.
+
+  INVARIANTE: a tela DIZ, em voz alta, se o evento participa do alerta de
+    proximidade — e por que nao, quando nao participa. As duas razoes possiveis
+    (encerrado, ou sem coordenada publicada) sao comuns, legitimas e
+    completamente invisiveis de outra forma.
+-->
+<section class="secao">
+  <nav class="detalhe-volta"><a href="/desastres">&larr; Painel de desastres</a></nav>
+
+  <div class="evento-cabecalho-detalhe">
+    <span class="evento-situacao {#if evento.ativo}situacao-ativa{#else}situacao-encerrada{/if}"
+          translate="no">
+      {#if evento.ativo}Em curso{#else}Encerrado{/if}
+    </span>
+    {#if evento.categoria}<span class="evento-categoria" translate="no">{evento.categoria}</span>{/if}
+  </div>
+
+  <h1 class="secao-titulo">{evento.titulo}</h1>
+
+  {#if evento.participaDoAlertaDeProximidade}
+  <div class="aviso aviso-sucesso" role="status">
+    Este evento <strong>entra</strong> no alerta de proximidade: está em curso e tem posição.
+  </div>
+  {#else}
+  <div class="aviso" role="status">
+    <strong>Este evento não entra no alerta de proximidade.</strong> {evento.motivoForaDoAlerta}
+  </div>
+  {/if}
+
+  <dl class="detalhe-campos">
+    <div class="detalhe-campo">
+      <dt>Identificador da NASA</dt><dd translate="no">{evento.eonetId}</dd>
+    </div>
+    <div class="detalhe-campo">
+      <dt>Ocorrido em</dt>
+      <dd translate="no">{evento.ocorridoEm} <span class="campo-fuso">UTC</span></dd>
+    </div>
+    {#if evento.encerradoEm}
+    <div class="detalhe-campo">
+      <dt>Encerrado em</dt>
+      <dd translate="no">{evento.encerradoEm} <span class="campo-fuso">UTC</span></dd>
+    </div>
+    {/if}
+    {#if evento.coordenada}
+    <div class="detalhe-campo">
+      <dt>Latitude</dt><dd translate="no">{evento.coordenada.latitude}</dd>
+    </div>
+    <div class="detalhe-campo">
+      <dt>Longitude</dt><dd translate="no">{evento.coordenada.longitude}</dd>
+    </div>
+    {/if}
+    {#if evento.sincronizadoEm}
+    <div class="detalhe-campo detalhe-campo-largo">
+      <dt>Lido da NASA em</dt>
+      <dd translate="no">{evento.sincronizadoEm} <span class="campo-fuso">UTC</span></dd>
+    </div>
+    {/if}
+  </dl>
+
+  {#if evento.coordenada}
+  <!--
+    A posicao e a do ponto MAIS RECENTE da trajetoria. O legado usava o
+    primeiro, e num evento medido isso dava 456 km de diferenca.
+  -->
+  <div class="detalhe-mapa" id="mapa"
+       data-latitude="{evento.coordenada.latitude}"
+       data-longitude="{evento.coordenada.longitude}"
+       data-titulo="{evento.titulo}"
+       data-ativo="{evento.ativo}"></div>
+  {/if}
+</section>
+{/corpo}
+
+{#scripts}
+<link rel="stylesheet" href="/estatico/vendor/leaflet/leaflet.css?v={versaoAssets}">
+<script src="/estatico/vendor/leaflet/leaflet.js?v={versaoAssets}"></script>
+<script src="/paginas/desastres/detalhe/script.js?v={versaoAssets}" defer></script>
+{/scripts}
+{/include}

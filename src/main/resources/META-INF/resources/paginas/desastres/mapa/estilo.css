@@ -1,0 +1,74 @@
+/*
+ * ESTILO DO MAPA DE DESASTRES — e só dele.
+ */
+
+.mapa-topo {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  width: 100%;
+  margin-bottom: 1.2rem;
+}
+.mapa-topo .secao-titulo { margin: 0; }
+
+.mapa-caixa { position: relative; width: 100%; margin-bottom: 1.5rem; }
+
+.mapa {
+  width: 100%;
+  /* Altura em `vmin`, não em pixels: o mapa acompanha a menor dimensão da tela
+     e não fica uma faixa espremida no celular deitado. */
+  height: 55vmin;
+  min-height: 18rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 0.5rem;
+  background: var(--cor-superficie);
+}
+
+/* O aviso de "precisa de JavaScript" some quando o mapa liga. Enquanto o
+   Leaflet não desenhar, ele explica o retângulo vazio em vez de deixar a
+   pessoa achar que a página quebrou. */
+.mapa-sem-js {
+  margin: 0.5rem 0 0;
+  color: var(--cor-texto-fraco);
+  font-size: 0.85rem;
+  text-align: center;
+}
+.mapa[data-mapa-ativo] + .mapa-sem-js { display: none; }
+
+/* O Leaflet desenha os controles com fundo claro; sem isto eles somem no
+   tema escuro. */
+.mapa .leaflet-control-attribution {
+  background: rgba(13, 17, 23, .85);
+  color: var(--cor-texto-fraco);
+}
+.mapa .leaflet-control-attribution a { color: var(--cor-destaque); }
+.mapa .leaflet-popup-content-wrapper,
+.mapa .leaflet-popup-tip {
+  background: var(--cor-superficie);
+  color: var(--cor-texto);
+}
+.mapa .leaflet-popup-content a { color: var(--cor-destaque); }
+
+.mapa-lista-titulo { font-size: 1.1rem; margin-bottom: 0.75rem; }
+
+.mapa-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; width: 100%; }
+
+.mapa-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.65rem 0.9rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 0.4rem;
+  background: var(--cor-superficie);
+}
+
+/* Quem NÃO está no mapa fica visivelmente diferente de quem está — senão a
+   lista e o mapa parecem discordar sem explicação. */
+.mapa-item-sem-posicao { border-style: dashed; opacity: .7; }
+
+.mapa-item-titulo { color: var(--cor-texto); font-weight: 600; text-decoration: none; }
+.mapa-item-titulo:hover { color: var(--cor-destaque); }
+.mapa-item-meta { color: var(--cor-texto-fraco); font-size: 0.8rem; }
+.mapa-item-aviso { color: var(--cor-alerta); font-size: 0.78rem; }

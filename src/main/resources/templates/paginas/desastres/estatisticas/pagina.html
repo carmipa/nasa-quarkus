@@ -1,0 +1,91 @@
+{#include layout/base}
+{#titulo}Desastres — estatísticas{/titulo}
+
+{#estilos}
+<link rel="stylesheet" href="/paginas/desastres/estatisticas/estilo.css?v={versaoAssets}">
+{/estilos}
+
+{#corpo}
+<!--
+  ESTATÍSTICAS POR CATEGORIA.
+
+  SEM BIBLIOTECA DE GRÁFICO, E É DECISÃO, NÃO PREGUIÇA. O legado usava
+    Chart.js + react-chartjs-2 — dois pacotes, ~200 KB, para desenhar um gráfico
+    de barras. Barra é um retângulo com uma largura proporcional: o CSS faz isso
+    com uma linha, o servidor já sabe o maior valor, e o resultado é legível com
+    o JavaScript desligado, imprimível, e acessível a leitor de tela porque é uma
+    LISTA DE DEFINIÇÃO de verdade — não um <canvas>, que para um leitor de tela é
+    um retângulo mudo.
+
+  A ESCALA É O MAIOR VALOR, não o total. Com o total, uma categoria dominante
+    achataria as demais a ponto de não dar para compará-las entre si — e comparar
+    é a única coisa que este gráfico serve para fazer.
+
+  `SEM_CATEGORIA` aparece como grupo próprio, nomeado. Escondê-lo faria a soma
+    das barras não bater com o total de eventos, e alguém procuraria o defeito na
+    contagem — que estaria certa.
+-->
+<section class="secao">
+  <div class="est-topo">
+    <h1 class="secao-titulo">Estatísticas</h1>
+    <div class="desastres-atalhos">
+      <a class="botao botao-discreto" href="/desastres">Painel</a>
+      <a class="botao botao-discreto" href="/desastres/mapa">Mapa</a>
+    </div>
+  </div>
+
+  <form class="filtros" method="get" action="/desastres/estatisticas">
+    <div class="filtro">
+      <label class="formulario-rotulo" for="dias">Janela (dias)</label>
+      <input class="campo-formulario" id="dias" name="dias" type="number"
+             value="{dias}" min="1" max="3650">
+      <span class="formulario-dica">
+        A janela conta para trás a partir de agora, em <span translate="no">UTC</span>.
+      </span>
+    </div>
+    <div class="filtros-acoes">
+      <button class="botao botao-principal" type="submit">Recalcular</button>
+    </div>
+  </form>
+
+  {#if vazio}
+    <div class="vazio">
+      <p>Nenhum evento nos últimos {dias} dias.</p>
+      <p class="vazio-dica">
+        Ou a janela é curta demais, ou a base ainda não foi sincronizada.
+      </p>
+      <a class="botao botao-principal" href="/desastres">Sincronizar com a NASA</a>
+    </div>
+  {#else}
+    <p class="secao-texto" translate="no">
+      <strong>{soma}</strong> evento(s) nos últimos <strong>{dias}</strong> dias,
+      em <strong>{categorias}</strong> categoria(s).
+    </p>
+
+    <dl class="grafico">
+      {#for c in barras}
+      <div class="barra-linha">
+        <dt class="barra-rotulo" translate="no">{c.categoria}</dt>
+        <dd class="barra-valor">
+          <!--
+            A largura vem calculada do SERVIDOR. Duas razões: o Qute não faz
+            aritmética em expressão (medido: `Method "*(100)" not found`), e
+            conta dentro de template é regra escondida num lugar que ninguém
+            testa. Fazê-la no navegador exigiria JavaScript para desenhar um
+            retângulo — e sem ele o gráfico viraria uma lista de números.
+          -->
+          <span class="barra" style="width: {c.porcentagem}%"></span>
+          <span class="barra-numero">{c.quantos}</span>
+        </dd>
+      </div>
+      {/for}
+    </dl>
+
+    <p class="grafico-legenda">
+      A barra mais longa é a categoria com mais eventos na janela; as demais são
+      proporcionais a ela.
+    </p>
+  {/if}
+</section>
+{/corpo}
+{/include}

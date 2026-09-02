@@ -1,0 +1,73 @@
+<!--
+  LISTA DE AVISOS REGISTRADOS — a tela de auditoria.
+
+  INVARIANTES:
+    1. O destino aparece MASCARADO. Esta e a tela que alguem abre para mostrar a
+       outra pessoa: da para conferir para onde foi, nao da para colher enderecos.
+    2. "ENVIADO" carrega a ressalva quando o meio nao entrega de verdade. Sem
+       ela, a coluna diz que a pessoa foi avisada — e ela nao foi.
+    3. Falhou mostra a CAUSA-RAIZ. Sem isso, "falhou" obriga a abrir o log de
+       semanas atras para descobrir se foi o servidor, o endereco, ou nos.
+-->
+{#if vazio}
+  <div class="vazio">
+    {#if situacao.isEmpty()}
+      <p>Nenhum aviso registrado ainda.</p>
+      <p class="vazio-dica">Use <strong>Varrer e registrar</strong> acima.</p>
+    {#else}
+      <p>Nenhum aviso na situação <strong translate="no">{situacao}</strong>.</p>
+    {/if}
+  </div>
+{#else}
+  <ul class="alertas">
+    {#for a in alertas}
+    <li class="alerta alerta-{a.situacao.toLowerCase}">
+      <div class="alerta-cabecalho">
+        <span class="alerta-situacao" translate="no">{a.situacaoRotulo}</span>
+        {#if a.situacao == 'ENVIADO' && !meio.entregaDeVerdade}
+        <span class="alerta-ressalva">registrado, não entregue</span>
+        {/if}
+        <span class="alerta-tentativas" translate="no">
+          {a.tentativas} tentativa{#if a.tentativas != 1}s{/if}
+        </span>
+      </div>
+
+      <dl class="alerta-campos">
+        <div><dt>Destino</dt><dd translate="no">{a.destinoMascarado}</dd></div>
+        <div><dt>Cliente</dt>
+            <dd><a href="/clientes/{a.clienteId}" translate="no">#{a.clienteId}</a></dd></div>
+        <div><dt>Evento</dt>
+            <dd><a href="/desastres/{a.eventoId}" translate="no">#{a.eventoId}</a></dd></div>
+        <div><dt>Registrado em</dt>
+            <dd translate="no">{a.criadoEm} <span class="campo-fuso">UTC</span></dd></div>
+        {#if a.concluidoEm}
+        <div><dt>Concluído em</dt>
+            <dd translate="no">{a.concluidoEm} <span class="campo-fuso">UTC</span></dd></div>
+        {/if}
+      </dl>
+
+      {#if a.causaRaiz}
+      <p class="alerta-causa">
+        <strong>Causa da falha:</strong> <span translate="no">{a.causaRaiz}</span>
+      </p>
+      {/if}
+    </li>
+    {/for}
+  </ul>
+
+  {#if pagina > 0 || temProxima}
+  <nav class="paginacao" aria-label="Paginação">
+    {#if pagina > 0}
+    <button type="button" class="botao botao-discreto"
+            hx-get="/alertas/fragmento/lista?situacao={situacao.urlEncoded}&pagina={pagina - 1}"
+            hx-target="#lista-alertas">Anterior</button>
+    {/if}
+    <span class="paginacao-atual" translate="no">página {pagina + 1}</span>
+    {#if temProxima}
+    <button type="button" class="botao botao-discreto"
+            hx-get="/alertas/fragmento/lista?situacao={situacao.urlEncoded}&pagina={pagina + 1}"
+            hx-target="#lista-alertas">Próxima</button>
+    {/if}
+  </nav>
+  {/if}
+{/if}

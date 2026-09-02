@@ -1,0 +1,123 @@
+/*
+ * ESTILO DO PAINEL DE ALERTAS — e só dele.
+ */
+
+.alertas-topo {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  width: 100%;
+  margin-bottom: 1.2rem;
+}
+.alertas-topo .secao-titulo { margin: 0; }
+
+.resumo-situacoes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 1rem;
+  width: 100%;
+}
+
+.situacao-cartao {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 1.1rem 1rem;
+  border: 1px solid var(--cor-borda);
+  border-top: 3px solid var(--cor-borda);
+  border-radius: 0.5rem;
+  background: var(--cor-superficie);
+}
+
+.situacao-numero { font-size: 2rem; font-weight: 800; line-height: 1; }
+.situacao-nome {
+  color: var(--cor-texto-fraco);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.situacao-pendente { border-top-color: var(--cor-alerta); }
+.situacao-pendente .situacao-numero { color: var(--cor-alerta); }
+.situacao-enviado { border-top-color: var(--cor-destaque); }
+.situacao-enviado .situacao-numero { color: var(--cor-destaque); }
+.situacao-falhou { border-top-color: #f87171; }
+.situacao-falhou .situacao-numero { color: #fca5a5; }
+
+.vazio-inline { color: var(--cor-texto-fraco); }
+
+/* ---------------------------------------------------------------- alertas */
+
+.alertas { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.65rem; width: 100%; }
+
+.alerta {
+  width: 100%;
+  padding: 0.9rem 1.1rem;
+  border: 1px solid var(--cor-borda);
+  border-left: 4px solid var(--cor-borda);
+  border-radius: 0.5rem;
+  background: var(--cor-superficie);
+}
+.alerta-pendente { border-left-color: var(--cor-alerta); }
+.alerta-enviado { border-left-color: var(--cor-destaque); }
+.alerta-falhou { border-left-color: #f87171; }
+
+.alerta-cabecalho {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 0.5rem;
+}
+
+.alerta-situacao {
+  padding: 0.12rem 0.55rem;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.alerta-pendente .alerta-situacao { color: var(--cor-alerta); }
+.alerta-enviado .alerta-situacao { color: var(--cor-destaque); }
+.alerta-falhou .alerta-situacao { color: #fca5a5; }
+
+/* A ressalva anda COLADA no "Enviado", nunca num rodapé: é ali que a leitura
+   errada acontece, e é ali que ela precisa ser desfeita. */
+.alerta-ressalva {
+  padding: 0.12rem 0.5rem;
+  border-radius: 0.3rem;
+  background: rgba(255, 159, 67, .15);
+  color: var(--cor-alerta);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.alerta-tentativas { color: var(--cor-texto-fraco); font-size: 0.78rem; margin-left: auto; }
+
+.alerta-campos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.4rem 1.5rem;
+  margin: 0;
+}
+.alerta-campos dt {
+  color: var(--cor-texto-fraco);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.alerta-campos dd { margin: 0; font-size: 0.9rem; overflow-wrap: anywhere; }
+.alerta-campos a { color: var(--cor-destaque); text-decoration: none; }
+.alerta-campos a:hover { text-decoration: underline; }
+
+.alerta-causa {
+  margin: 0.6rem 0 0;
+  padding: 0.45rem 0.7rem;
+  border-left: 3px solid #f87171;
+  background: rgba(248, 113, 113, .08);
+  font-size: 0.85rem;
+}

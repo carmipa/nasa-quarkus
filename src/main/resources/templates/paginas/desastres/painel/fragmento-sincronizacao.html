@@ -1,0 +1,42 @@
+<!--
+  RESULTADO DA SINCRONIZACAO.
+
+  INVARIANTE: "trouxe 50" e "os mesmos 50 de sempre" NAO podem produzir a mesma
+    frase. A diferenca entre `novos` e `atualizados` e a diferenca entre a NASA
+    estar publicando e a sincronizacao estar rodando em falso — e a segunda nao
+    da erro nenhum.
+-->
+{#if erro}
+  <div class="aviso aviso-erro" role="alert">
+    <strong>Não foi possível sincronizar.</strong> {erro}
+    <p class="aviso-nota">
+      A base local continua válida: os eventos já sincronizados não foram perdidos, e a
+      busca por proximidade continua funcionando sobre eles.
+    </p>
+  </div>
+{#else}
+  <div class="aviso aviso-sucesso" role="status">
+    <strong>Sincronização concluída.</strong>
+    <dl class="resultado-numeros" translate="no">
+      <div><dt>Trazidos da NASA</dt><dd>{resultado.trazidos}</dd></div>
+      <div><dt>Novos aqui</dt><dd class="destaque">{resultado.novos}</dd></div>
+      <div><dt>Já existiam</dt><dd>{resultado.atualizados}</dd></div>
+      <div><dt>Tempo</dt><dd>{resultado.duracao}</dd></div>
+    </dl>
+    {#if resultado.trazidos == 0}
+    <p class="aviso-nota">
+      <strong>Zero eventos não é sucesso.</strong> A EONET praticamente nunca devolve vazio
+      para uma janela de dias — quase sempre significa filtro apertado demais ou contrato
+      mudado. Tente aumentar a janela ou desmarcar "só eventos em curso".
+    </p>
+    {#else if resultado.novos == 0}
+    <p class="aviso-nota">
+      Nenhum evento novo: a base já estava em dia. As posições dos eventos em curso foram
+      atualizadas.
+    </p>
+    {/if}
+  </div>
+  <p class="secao-texto" translate="no">
+    Base agora: <strong>{total}</strong> eventos, <strong>{ativos}</strong> ativos.
+  </p>
+{/if}

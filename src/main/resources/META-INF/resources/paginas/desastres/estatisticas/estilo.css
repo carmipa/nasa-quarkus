@@ -1,0 +1,66 @@
+/*
+ * ESTILO DAS ESTATÍSTICAS — e só dele.
+ *
+ * O GRÁFICO É CSS PURO, sem biblioteca: barra é um retângulo com largura
+ * proporcional, e a proporção já vem calculada do servidor. O legado usava
+ * Chart.js + react-chartjs-2 (~200 KB) para o mesmo desenho — que, além do
+ * peso, virava um <canvas> mudo para leitor de tela e sumia na impressão.
+ * Aqui é uma lista de definição de verdade.
+ */
+
+.est-topo {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  width: 100%;
+  margin-bottom: 1.2rem;
+}
+.est-topo .secao-titulo { margin: 0; }
+
+.grafico {
+  display: grid;
+  gap: 0.6rem;
+  width: 100%;
+  margin: 1rem 0;
+}
+
+.barra-linha {
+  display: grid;
+  grid-template-columns: minmax(7rem, 12rem) 1fr;
+  align-items: center;
+  gap: 1rem;
+}
+
+.barra-rotulo {
+  color: var(--cor-texto-fraco);
+  font-size: 0.85rem;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.barra-valor { display: flex; align-items: center; gap: 0.6rem; margin: 0; min-width: 0; }
+
+.barra {
+  display: block;
+  height: 1.4rem;
+  min-width: 2px;   /* uma categoria com 1 evento ainda precisa APARECER; sem o
+                       mínimo, ela vira uma barra de zero pixels e some. */
+  border-radius: 0.25rem;
+  background: linear-gradient(90deg, var(--cor-destaque), #5ee9d6);
+}
+
+.barra-numero { font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.grafico-legenda {
+  color: var(--cor-texto-fraco);
+  font-size: 0.85rem;
+  margin-top: 1rem;
+}
+
+/* Em tela estreita o rótulo vai para cima da barra: lado a lado, sobrariam
+   três centímetros para o nome da categoria. */
+@media (max-width: 640px) {
+  .barra-linha { grid-template-columns: 1fr; gap: 0.25rem; }
+  .barra-rotulo { text-align: left; }
+}

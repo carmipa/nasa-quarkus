@@ -1,0 +1,88 @@
+{#include layout/base}
+{#titulo}Desastres — mapa{/titulo}
+
+{#estilos}
+<link rel="stylesheet" href="/estatico/vendor/leaflet/leaflet.css?v={versaoAssets}">
+<link rel="stylesheet" href="/paginas/desastres/mapa/estilo.css?v={versaoAssets}">
+{/estilos}
+
+{#corpo}
+<!--
+  MAPA DOS DESASTRES.
+
+  A DECISÃO DE DESENHO QUE MAIS IMPORTA: os eventos vêm no HTML como uma LISTA
+    de verdade, com os números em atributos `data-`. O JavaScript lê essa lista
+    e desenha os pinos. Se o Leaflet não carregar — e são 147 KB de biblioteca —,
+    a lista continua na tela, legível e navegável, em vez de um retângulo cinza.
+    O legado montava o mapa em react-leaflet: quando a biblioteca falhava, o
+    conteúdo ia junto.
+
+  O LEAFLET É SERVIDO DAQUI, nunca de CDN. É a mesma regra do HTMX: uma tela que
+    depende de um domínio de terceiro para desenhar deixa de funcionar quando
+    aquele domínio cai, e passa a contar ao terceiro quem visita o nosso site.
+
+  MARCADOR VETORIAL, não imagem: `circleMarker` não baixa PNG nenhum, então não
+    há ícone quebrado quando o caminho das imagens do Leaflet muda — que é o
+    defeito mais comum de quem usa a biblioteca.
+-->
+<section class="secao">
+  <div class="mapa-topo">
+    <h1 class="secao-titulo">Mapa dos desastres</h1>
+    <div class="desastres-numeros" translate="no">
+      <span class="numero"><strong>{total}</strong> na base</span>
+      <span class="numero numero-ativo"><strong>{ativos}</strong> ativos</span>
+    </div>
+    <div class="desastres-atalhos">
+      <a class="botao botao-discreto" href="/desastres">Painel</a>
+      <a class="botao botao-discreto" href="/desastres/estatisticas">Estatísticas</a>
+    </div>
+  </div>
+
+  {#if eventos.isEmpty()}
+    <div class="vazio">
+      <p>Nenhum evento na base para desenhar.</p>
+      <a class="botao botao-principal" href="/desastres">Sincronizar com a NASA</a>
+    </div>
+  {#else}
+    <div class="mapa-caixa">
+      <div id="mapa" class="mapa" data-mapa></div>
+      <p class="mapa-sem-js">
+        O mapa precisa de JavaScript. A lista abaixo tem os mesmos eventos.
+      </p>
+    </div>
+
+    <!--
+      A LISTA É A FONTE DOS DADOS DO MAPA, e não uma cópia dele. Ter uma só
+      origem impede que as duas divirjam — que é o que aconteceria com um JSON
+      embutido ao lado de uma lista escrita à mão.
+    -->
+    <h2 class="secao-titulo mapa-lista-titulo">Eventos desenhados</h2>
+    <ul class="mapa-lista" data-mapa-eventos>
+      {#for e in eventos}
+      <li class="mapa-item{#if !e.coordenada} mapa-item-sem-posicao{/if}"
+          {#if e.coordenada}
+          data-latitude="{e.coordenada.latitude}"
+          data-longitude="{e.coordenada.longitude}"
+          {/if}
+          data-id="{e.id}"
+          data-ativo="{e.ativo}"
+          data-titulo="{e.titulo}">
+        <a class="mapa-item-titulo" href="/desastres/{e.id}">{e.titulo}</a>
+        <span class="mapa-item-meta" translate="no">
+          {#if e.categoria}{e.categoria} · {/if}{e.ocorridoEm} UTC
+        </span>
+        {#if !e.coordenada}
+        <span class="mapa-item-aviso">sem coordenada publicada — não aparece no mapa</span>
+        {/if}
+      </li>
+      {/for}
+    </ul>
+  {/if}
+</section>
+{/corpo}
+
+{#scripts}
+<script src="/estatico/vendor/leaflet/leaflet.js?v={versaoAssets}"></script>
+<script src="/paginas/desastres/mapa/script.js?v={versaoAssets}" defer></script>
+{/scripts}
+{/include}
