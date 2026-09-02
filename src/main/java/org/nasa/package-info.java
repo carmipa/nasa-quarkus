@@ -19,6 +19,7 @@
  * │
  * ├── cliente/      FATIA — quem recebe o alerta
  * ├── endereco/     FATIA — CEP, geocodificação, CRUD de endereço
+ * ├── contato/      FATIA — por onde a pessoa e avisada; decide quem recebe alerta
  * └── painel/      FATIA — as telas, em Qute + HTMX
  * </pre>
  *

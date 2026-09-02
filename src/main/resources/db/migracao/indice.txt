@@ -9,3 +9,4 @@
 # Migração aplicada é IMUTÁVEL: correção vira migração nova.
 
 V001__esquema_inicial.sql
+V002__tipo_de_contato_restrito.sql
