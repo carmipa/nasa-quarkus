@@ -28,6 +28,12 @@ dependencies {
     implementation 'io.quarkus:quarkus-agroal'
     implementation 'io.quarkus:quarkus-jdbc-postgresql'
 
+    // Documentacao: Markdown renderizado NO SERVIDOR. A alternativa — montar no
+    // navegador com `marked` — poria a interpretacao de texto do lado de quem le,
+    // e um documento com HTML embutido viraria script executando na pagina.
+    implementation 'org.commonmark:commonmark:0.24.0'
+    implementation 'org.commonmark:commonmark-ext-gfm-tables:0.24.0'
+
     testImplementation 'io.quarkus:quarkus-junit5'
     testImplementation 'io.rest-assured:rest-assured'
 

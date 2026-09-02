@@ -1,0 +1,71 @@
+{#include layout/base}
+{#titulo}{doc.titulo} — documentação{/titulo}
+
+{#estilos}
+<link rel="stylesheet" href="/paginas/documentacao/estilo.css?v={versaoAssets}">
+{/estilos}
+
+{#corpo}
+<!--
+  UM DOCUMENTO.
+
+  O HTML vem PRONTO do servidor, convertido de Markdown com escapeHtml ligado —
+  qualquer marcacao embutida no texto aparece como texto, nunca como tag ativa.
+  Por isso `{html.raw}`: o conteudo ja foi tratado, e escapar de novo mostraria
+  as tags do proprio renderizador na tela.
+
+  Cada documento tem URL propria. Voltar, compartilhar, imprimir e abrir em nova
+  janela funcionam porque sao paginas de verdade, nao abas de JavaScript.
+-->
+<div class="doc-pagina">
+  <nav class="doc-indice-lateral" aria-label="Índice da documentação">
+    <a class="doc-voltar" href="/documentacao">&larr; Documentação</a>
+    {#for s in secoes}
+    <div class="doc-indice-secao">
+      <span class="doc-indice-titulo">{s.titulo}</span>
+      <ul>
+        {#for d in catalogo.daSecao(s.slug)}
+        <li>
+          <a href="/documentacao/{d.slug}"
+             class="{#if d.slug == doc.slug}doc-indice-atual{/if}">{d.titulo}</a>
+        </li>
+        {/for}
+      </ul>
+    </div>
+    {/for}
+  </nav>
+
+  <article class="doc-conteudo">
+    <header class="doc-cabecalho">
+      <h1 class="doc-titulo">{doc.titulo}</h1>
+      <p class="doc-descricao">{doc.descricao}</p>
+    </header>
+
+    <div class="doc-corpo">{html.raw}</div>
+
+    <footer class="doc-rodape">
+      <nav class="doc-navegacao" aria-label="Documento anterior e próximo">
+        {#if anterior}
+        <a class="doc-anterior" href="/documentacao/{anterior.slug}">
+          <span class="doc-nav-rotulo">&larr; Anterior</span>
+          <span class="doc-nav-titulo">{anterior.titulo}</span>
+        </a>
+        {/if}
+        {#if proximo}
+        <a class="doc-proximo" href="/documentacao/{proximo.slug}">
+          <span class="doc-nav-rotulo">Próximo &rarr;</span>
+          <span class="doc-nav-titulo">{proximo.titulo}</span>
+        </a>
+        {/if}
+      </nav>
+
+      <p class="doc-cru">
+        Este documento em texto cru:
+        <a href="/documentacao/{doc.slug}.md" translate="no">{doc.slug}.md</a>
+        — para ler no editor, versionar ou converter.
+      </p>
+    </footer>
+  </article>
+</div>
+{/corpo}
+{/include}

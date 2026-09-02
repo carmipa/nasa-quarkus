@@ -1,0 +1,48 @@
+{#include layout/base}
+{#titulo}Documentação{/titulo}
+
+{#estilos}
+<link rel="stylesheet" href="/paginas/documentacao/estilo.css?v={versaoAssets}">
+{/estilos}
+
+{#corpo}
+<!--
+  INDICE DA DOCUMENTACAO.
+
+  A ordem e DECLARADA no catalogo, em codigo — nao deduzida da pasta. Varredura
+  de diretorio muda de resultado entre a IDE e o jar, e um documento novo
+  apareceria sem secao, no fim da lista, sem ninguem perceber.
+
+  E PUBLICA, junto com a home, o contato e a equipe: documentacao atras de login
+  nao serve a uma vitrine, e nao ha nada aqui que exija segredo — descreve-se o
+  que o codigo-fonte ja mostra.
+-->
+<section class="secao">
+  <h1 class="secao-titulo">Documentação</h1>
+  <p class="secao-texto">
+    <strong>{quantos} documentos</strong> sobre como este sistema funciona e por que ele é
+    assim. Escritos em Markdown, versionados junto com o código, e renderizados no
+    servidor — cada um também está disponível em texto cru, no fim da própria página.
+  </p>
+
+  <div class="doc-secoes">
+    {#for s in secoes}
+    <section class="doc-secao">
+      <h2 class="doc-secao-titulo">{s.titulo}</h2>
+      <p class="doc-secao-resumo">{s.resumo}</p>
+      <ul class="doc-lista">
+        {#for d in catalogo.daSecao(s.slug)}
+        <li class="doc-item">
+          <a class="doc-link" href="/documentacao/{d.slug}">
+            <span class="doc-item-titulo">{d.titulo}</span>
+            <span class="doc-item-descricao">{d.descricao}</span>
+          </a>
+        </li>
+        {/for}
+      </ul>
+    </section>
+    {/for}
+  </div>
+</section>
+{/corpo}
+{/include}
