@@ -39,11 +39,15 @@ SESSÃO / PORTÃO
       catraca calibrada; retenção de log por 30 dias
 - [x] **2-sexies. Home em Qute + HTMX** — relógio de página (UTC + local) e i18n
       automática com bandeiras BR/EUA/Espanha, com guarda de i18n
-- [ ] 3. Peer `persistencia` (migração com checksum, WAL, PRAGMA, transação)
-- [ ] 4. Esquema + invariantes no banco (UNIQUE de A4, UTC, complemento opcional)
-- [ ] 5. Peer `geo` (bounding box e distância)
-- [ ] 6. Fatia `cliente`
-- [ ] 7. Fatias `contato` e `endereco`
+- [x] **3. Peer `persistencia`** — migração com checksum imutável, WAL/PRAGMA
+      provados NA CONEXÃO
+- [x] **4. Esquema V001** com as invariantes no banco (UNIQUE de A4, UTC,
+      complemento opcional, CHECK do null island)
+- [x] **5. Peer `geo`** — haversine conferido contra distâncias reais + caixa
+      delimitadora com polo, antimeridiano e locale
+- [x] **6. Fatia `cliente`** completa, com concorrência provada (8 simultâneos → 1)
+- [x] **7a. Fatia `endereco`** — CEP e geocodificação por provedores abertos
+- [ ] 7b. Fatia `contato` (CRUD, espelha `cliente`)
 - [ ] 8. Fatia `eventoEonet`
 - [ ] 9. Fatia `estatistica`
 - [ ] 10. Fatia `alerta` (outbox + idempotência)
@@ -269,6 +273,50 @@ SUITE: 66 testes · 1 pulado (declarado) · 0 falhas
 os assets estão provados por HTTP, mas a planta exige olho na tela — rode
 `./gradlew quarkusDev` e abra `http://localhost:8080`.
 
+**Itens 3 a 7a — do banco à primeira integração externa**
+
+```
+BRANCH: main @ 8f2e104, EMPURRADO para origin (autorizado por Paulo em 02/09).
+SUITE: 122 testes · 0 falhas · 0 sem veredito nas guardas.
+
+ITEM 3+4 — persistencia e esquema
+  registro: 1|5ed9ff98855c36cf...|2026-09-02T12:59:55.402904400Z
+  journal_mode=wal · busy_timeout=5000ms · PRAGMA foreign_keys=1
+  9 testes NEGATIVOS: cada invariante provada tentando viola-la.
+  MEDIDO E CORRIGIDO: o teste dos PRAGMA acusou `journal_mode=delete` — faltava
+  `journal_mode=WAL` no perfil de TESTE, que media configuracao que ninguem roda.
+
+ITEM 5 — geo
+  SP->Rio 357km · SP->Manaus 2.689km (a longa pega erro proporcional)
+  antipodas sem NaN · polo e antimeridiano abrem o globo em vez de caixa invalida
+  Locale.US provado com a JVM em pt-BR
+
+ITEM 6 — cliente (a primeira fatia completa, molde das outras)
+  [API] concorrencia: criados=1 recusados=7   <- 8 cadastros SIMULTANEOS
+  O defeito do legado consertado: "111.222.333-44" e "11122233344" eram DUAS
+  pessoas; agora colidem no UNIQUE, provado por HTTP.
+
+ITEM 7a — endereco
+  As duas respostas que enganam, provadas com o corpo REAL medido:
+    BrasilAPI sem `location` -> AUSENCIA, nunca (0,0)
+    ViaCEP com erro          -> HTTP 200 e {"erro":"true"}
+```
+
+**A GUARDA DE FRONTEIRA REPROVOU O BUILD, e estava certa.** O `ConsultarCepUseCase`
+injetava os adaptadores direto para declarar a ordem dos provedores — violando
+"`application` não depende de `infrastructure`". A ordem virou
+`CadeiaDeProvedoresDeCepPort`. Ceder ali teria custado exatamente o que a regra
+compra: o caso de uso rodar em teste **sem rede**.
+
+**Três defeitos meus nesta rodada, todos de instrumento ou de teste:**
+1. `journal_mode` divergindo entre teste e produção (acima).
+2. Sombreamento de nome em classe anônima: `List.of(primario, reserva)` pegava o
+   campo herdado **nulo** em vez do parâmetro, e o NPE não dizia nada sobre isso.
+   Curado tirando a subclasse anônima e injetando a porta como lambda — o teste
+   passou a exercitar o caminho real.
+3. Asserção contraditória no teste de locale (`não contém vírgula` num parâmetro
+   que tem 3 vírgulas separadoras). Virou contagem, que diz a coisa certa.
+
 ---
 
 ## EM ANDAMENTO AGORA
@@ -294,7 +342,8 @@ com os 3 pilares no Javadoc e a `CausaRaiz` escolhida — nunca
 
 ## PRÓXIMA AÇÃO EXECUTÁVEL EXATA
 
-**Item 3 — peer `persistencia`.** Na ordem:
+**Item 7b — fatia `contato`**, espelhando `cliente` (é CRUD puro, e o molde já
+existe). Depois, na ordem:
 
 1. Criar `org.nasa.peer.persistencia` com o gerenciador de migração: arquivos
    `V001__esquema.sql` em `src/main/resources/db/migracao/`, aplicados na ordem,
