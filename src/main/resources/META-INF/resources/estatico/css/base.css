@@ -1,0 +1,198 @@
+/*
+ * BASE DO PAINEL — largura cheia, porcentagem, sem coluna central.
+ *
+ * PROPÓSITO DE NEGÓCIO: a tela aproveita o monitor inteiro, lado a lado. Regra de Paulo
+ *   (~15 anos de CSS, com precedência): o conteúdo nunca fica "pingando no meio" numa
+ *   coluna estreita.
+ *
+ * INVARIANTES:
+ *   1. `width:100%` + padding lateral em `%`. NUNCA `max-width` + `margin:0 auto`.
+ *   2. Grid que preenche: `repeat(auto-fit, minmax(Xrem, 1fr))` — `auto-fit`, nunca
+ *      `auto-fill`, que cria colunas vazias e cola os cartões à esquerda.
+ *   3. Full-bleed sem `100vw`: o `100vw` inclui a barra de rolagem e cria barra
+ *      horizontal. A trava é `html,body{overflow-x:hidden;max-width:100%}`.
+ *   4. `px` só em borda fina, sombra e breakpoint de @media. Todo o resto em
+ *      `%`, `rem` ou `vmin`.
+ *
+ * FALHA: nenhuma — é folha de estilo. O que ela impede é o layout quebrar em resolução
+ *   diferente da de quem escreveu.
+ */
+
+:root {
+  --cor-fundo: #0d1117;
+  --cor-superficie: #161b22;
+  --cor-borda: #30363d;
+  --cor-texto: #e6edf3;
+  --cor-texto-fraco: #9198a1;
+  --cor-destaque: #2dd4bf;
+  --cor-alerta: #ff9f43;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  overflow-x: hidden;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  width: 100%;
+  background: var(--cor-fundo);
+  color: var(--cor-texto);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-size: 1rem;
+  line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ---------------------------------------------------------------- cabeçalho */
+.cabecalho {
+  width: 100%;
+  padding: 1.2rem 2%;
+  background: var(--cor-superficie);
+  border-bottom: 1px solid var(--cor-borda);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem 2%;
+}
+
+.cabecalho-marca { display: flex; flex-direction: column; }
+
+.marca-titulo {
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.marca-fonte {
+  font-size: 0.8rem;
+  color: var(--cor-texto-fraco);
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+}
+
+/* ------------------------------------------------------------------ relógio */
+.relogio {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 0.85rem;
+  padding: 0.5rem 1.5%;
+  border: 1px solid var(--cor-borda);
+  border-radius: 0.4rem;
+  background: var(--cor-fundo);
+}
+
+.relogio-linha { display: flex; align-items: baseline; gap: 0.5rem; }
+
+.relogio-rotulo {
+  min-width: 3.2rem;
+  color: var(--cor-texto-fraco);
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+}
+
+.relogio-valor { color: var(--cor-destaque); }
+
+.relogio-fuso { color: var(--cor-texto-fraco); font-size: 0.7rem; }
+
+/* ------------------------------------------------------------------ idiomas */
+.idiomas { display: flex; gap: 0.5rem; align-items: center; }
+
+.bandeira {
+  background: none;
+  border: 1px solid var(--cor-borda);
+  border-radius: 0.25rem;
+  padding: 0.2rem;
+  cursor: pointer;
+  line-height: 0;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.bandeira:hover, .bandeira:focus-visible {
+  border-color: var(--cor-destaque);
+  transform: translateY(-1px);
+  outline: none;
+}
+
+/* ----------------------------------------------------------------- conteúdo */
+.conteudo {
+  width: 100%;
+  flex: 1 1 auto;
+  padding: 2rem 2%;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.secao { width: 100%; }
+
+.secao-titulo {
+  margin: 0 0 0.6rem 0;
+  font-size: 1.35rem;
+  font-weight: 600;
+}
+
+.secao-texto {
+  margin: 0;
+  max-width: 100%;
+  color: var(--cor-texto);
+}
+
+/* Grid que PREENCHE a largura: auto-fit, nunca auto-fill. */
+.cartoes {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: 1.5%;
+  row-gap: 1rem;
+}
+
+.cartao {
+  background: var(--cor-superficie);
+  border: 1px solid var(--cor-borda);
+  border-radius: 0.5rem;
+  padding: 1.1rem 1.3%;
+}
+
+.cartao-titulo {
+  margin: 0 0 0.4rem 0;
+  font-size: 1.02rem;
+  color: var(--cor-destaque);
+}
+
+.cartao-texto { margin: 0; color: var(--cor-texto-fraco); font-size: 0.92rem; }
+
+/* -------------------------------------------------------------------- rodapé */
+.rodape {
+  width: 100%;
+  padding: 1rem 2%;
+  border-top: 1px solid var(--cor-borda);
+  background: var(--cor-superficie);
+  color: var(--cor-texto-fraco);
+  font-size: 0.82rem;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.5rem 2%;
+}
+
+.rodape-atribuicao { font-family: ui-monospace, Consolas, monospace; }
+
+/* Indicador de requisição do HTMX: sem ele o operador clica duas vezes achando
+   que não funcionou — a lente de boa-fé, e ela cobra caro. */
+.htmx-indicator { opacity: 0; transition: opacity 0.2s ease; }
+.htmx-request .htmx-indicator, .htmx-request.htmx-indicator { opacity: 1; }
+.htmx-request { opacity: 0.55; }
+
+@media (max-width: 720px) {
+  .cabecalho { flex-direction: column; align-items: flex-start; }
+  .relogio { width: 100%; }
+}

@@ -1,0 +1,29 @@
+# Normalização de fim de linha.
+#
+# PROPÓSITO: o repositório guarda LF; cada checkout aplica o que a máquina usa.
+# Sem esta declaração, o `core.autocrlf` de cada clone decide sozinho — e a mesma
+# árvore passa a ter SHA diferente em duas máquinas. É o defeito que já fez um
+# portão de leitura reprovar documento INTACTO por "hash não bate", porque uma
+# cópia estava em CRLF e a outra em LF.
+* text=auto eol=lf
+
+# Binário: nunca tocar.
+*.png binary
+*.jpg binary
+*.webp binary
+*.ico binary
+*.pdf binary
+*.jar binary
+*.zip binary
+*.db binary
+*.sqlite binary
+
+# Scripts que o Windows executa precisam de CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Script de shell e hook de git precisam de LF, mesmo no Windows: com CRLF o
+# `#!/bin/sh` vira `#!/bin/sh\r` e o interpretador não é encontrado.
+*.sh text eol=lf
+gradlew text eol=lf
+.githooks/* text eol=lf

@@ -1,0 +1,60 @@
+{#include layout/base}
+{#titulo}Início — Alerta de Desastres Naturais{/titulo}
+
+{#corpo}
+<section class="secao">
+  <h1 class="secao-titulo">Alerta de desastres naturais</h1>
+  <p class="secao-texto">
+    O sistema acompanha eventos naturais publicados pela NASA e avisa quando um deles
+    acontece perto de um endereço cadastrado. Os eventos são consultados na
+    <span translate="no">EONET v3</span>, que é aberta e não exige chave de API.
+  </p>
+</section>
+
+<section class="secao">
+  <h2 class="secao-titulo">Sobre o horário desta página</h2>
+  <p class="secao-texto">
+    O relógio no topo mostra <strong>duas</strong> horas, e isso é deliberado. A hora
+    <span translate="no">UTC</span> é a do servidor: é nela que os eventos são gravados e
+    comparados, porque um alerta que erra o fuso erra justamente na virada do dia — que é
+    quando a janela de risco muda de resposta. A hora local é a do seu aparelho, e existe
+    só para você não precisar converter de cabeça.
+  </p>
+</section>
+
+<section class="secao">
+  <h2 class="secao-titulo">O que já está de pé</h2>
+  <div class="cartoes">
+    <article class="cartao">
+      <h3 class="cartao-titulo">Banco em arquivo</h3>
+      <p class="cartao-texto">
+        <span translate="no">SQLite</span> com integridade referencial ligada por conexão
+        e escrita serializada. Sem servidor de banco e sem credencial.
+      </p>
+    </article>
+    <article class="cartao">
+      <h3 class="cartao-titulo">Fronteira congelada</h3>
+      <p class="cartao-texto">
+        Fatias verticais com as arestas travadas por teste: dependência nova entre
+        módulos reprova a compilação, nomeando a linha exata.
+      </p>
+    </article>
+    <article class="cartao">
+      <h3 class="cartao-titulo">Falha com nome e número</h3>
+      <p class="cartao-texto">
+        Cada erro tem exceção própria, causa-raiz e uma linha de registro — e um contador
+        do que aconteceu <em>e</em> do que deixou de acontecer.
+      </p>
+    </article>
+    <article class="cartao">
+      <h3 class="cartao-titulo">Endereço vira ponto no mapa</h3>
+      <p class="cartao-texto">
+        Consulta de <span translate="no">CEP</span> e coordenada por serviços abertos.
+        Quando a coordenada não vem, o endereço é salvo <strong>dizendo</strong> que está
+        sem coordenada — nunca com um ponto inventado.
+      </p>
+    </article>
+  </div>
+</section>
+{/corpo}
+{/include}

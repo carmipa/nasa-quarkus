@@ -15,6 +15,11 @@ dependencies {
     implementation 'io.quarkus:quarkus-rest-jackson'
     implementation 'io.quarkus:quarkus-arc'
 
+    // Camada web: Qute renderiza no servidor, HTMX troca pedaco de tela.
+    // Regua §6.1 da planta: ha banco e ha pagina derivada do estado do servidor
+    // => linha 1 (Qute + HTMX), nao SPA.
+    implementation 'io.quarkus:quarkus-rest-qute'
+
     // --- SQLite (item 1 do docs/PLANO-MESTRE.md) -----------------------------
     // O SQLite NAO e extensao oficial do Quarkus: entra como driver JDBC comum
     // sob o pool Agroal, com `quarkus.datasource.db-kind=other`. A viabilidade
@@ -54,10 +59,44 @@ compileTestJava {
 // in a future release unless native access is enabled" — ou seja, hoje é ruído e num
 // JDK futuro vira falha de boot. Declarar o acesso agora custa uma linha e evita que
 // a atualização do JDK derrube a aplicação sem ninguém entender por quê.
+// ---------------------------------------------------------------------------
+// CARIMBO DA EXECUÇÃO (§9.1 da planta canônica)
+//
+// Um arquivo de log por execução exige um nome único por execução, e ele é
+// gerado AQUI, no lançamento — não pela aplicação, que já subiria com o handler
+// de arquivo apontando para lugar nenhum.
+//
+// `-Dnasa.log.execucao=...` vindo de fora VENCE: é o que permite reproduzir uma
+// execução antiga sem sobrescrever o log dela.
+// ---------------------------------------------------------------------------
+def carimboDaExecucao = providers.systemProperty('nasa.log.execucao')
+        .orElse(new java.text.SimpleDateFormat('yyyyMMdd-HHmmss').format(new Date()))
+
+// ---------------------------------------------------------------------------
+// UTC ENFORÇADO — mecanismo nomeado, não afirmação (ordem de Paulo, 2026-09-02)
+//
+// "UTC enforçado" precisa de MECANISMO, senão é intenção: a JVM adota o fuso do
+// host, e a mesma linha de log sai `-03:00` aqui e `+00:00` no contêiner. Log de
+// duas máquinas deixa de ser comparável, e a janela de "últimos N dias" erra por
+// horas justamente na virada.
+//
+// Medido antes de corrigir: a linha saía `2026-09-02T08:55:36.032-03:00`.
+// ---------------------------------------------------------------------------
+def FUSO_UTC = '-Duser.timezone=UTC'
+
 tasks.withType(Test).configureEach {
-    jvmArgs '--enable-native-access=ALL-UNNAMED'
+    jvmArgs '--enable-native-access=ALL-UNNAMED', FUSO_UTC
+    // Propriedade de sistema não chega sozinha ao JVM de teste: precisa estar
+    // nesta lista NOMINAL. É proposital, e a planta avisa (§12.3) — mas quando a
+    // chave não chega, o teste tem de DIZER, não rodar calado.
+    systemProperty 'nasa.log.execucao', "teste-${carimboDaExecucao.get()}"
     testLogging {
         events 'passed', 'failed', 'skipped'
         showStandardStreams = false
     }
+}
+
+tasks.withType(JavaExec).configureEach {
+    jvmArgs FUSO_UTC
+    systemProperty 'nasa.log.execucao', carimboDaExecucao.get()
 }

@@ -84,6 +84,13 @@ FROM registry.access.redhat.com/ubi9/openjdk-25-runtime:1.24
 
 ENV LANGUAGE='en_US:en'
 
+# UTC ENFORCADO no conteiner (ordem de Paulo, 2026-09-02). Sem isto a JVM adota o
+# fuso da imagem e a mesma linha de log sai com offset diferente do da maquina de
+# desenvolvimento -- log de dois ambientes deixa de ser comparavel, e a janela de
+# "ultimos N dias" erra na virada do dia. Duas pontas: o TZ do sistema e a
+# propriedade da JVM, porque uma sozinha nao cobre a outra.
+ENV TZ=UTC
+
 
 # We make four distinct layers so if there are application changes the library layers can be re-used
 COPY --chown=185 build/quarkus-app/lib/ /deployments/lib/
@@ -93,7 +100,7 @@ COPY --chown=185 build/quarkus-app/quarkus/ /deployments/quarkus/
 
 EXPOSE 8080
 USER 185
-ENV JAVA_OPTS_APPEND="-Dquarkus.http.host=0.0.0.0 -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
+ENV JAVA_OPTS_APPEND="-Dquarkus.http.host=0.0.0.0 -Duser.timezone=UTC -Djava.util.logging.manager=org.jboss.logmanager.LogManager"
 ENV JAVA_APP_JAR="/deployments/quarkus-run.jar"
 
 ENTRYPOINT [ "/opt/jboss/container/java/run/run-java.sh" ]

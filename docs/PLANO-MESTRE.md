@@ -24,7 +24,22 @@ consulta e alerta de desastres naturais), trocando a pilha inteira:
 | arquitetura | camadas horizontais (controller/service/repository) | **fatias verticais + peers + kernel + portas** |
 
 Padrão arquitetural de referência: KRONOS CORE, ASPM Pride Security, Framework Net e
-binmapper — consolidado em `instrucoes/regra-arquitetura-desacoplamento` do vault.
+binmapper.
+
+> **A PLANTA CANÔNICA manda neste projeto.**
+> `C:\cerebro_de_ia\cerebro_de_ia\instrucoes\regra-arquitetura-desacoplamento-total-kronos.md`
+> (1366 linhas, ordem de Paulo em 2026-09-02) — estrutura de pastas e pacotes, camada web
+> Qute+HTMX, multithread, JIT, log e telemetria. Ela **vence qualquer default ou "melhor
+> prática" genérica** nesses assuntos; discordância vira item de checklist, nunca troca a
+> regra pelo palpite.
+>
+> Ordem de autoridade: (1) estado real provado por artefato · (2) ENGENHARIA-DE-ALTA-GARANTIA
+> + REGRA-DO-DOCKER · (3) **a planta** · (4) `regra-arquitetura-desacoplamento` (o mesmo
+> padrão sem stack) · (5) `regra-java-quarkus-qute` (detalhe de plataforma).
+>
+> **Régua §6.1 aplicada a este projeto:** há banco, há páginas derivadas do estado do
+> servidor, há dados que o servidor já tem e autoriza ⇒ **Qute + HTMX**, linha 1 da régua.
+> É a mesma escolha que Paulo já tinha determinado, agora com o critério escrito atrás.
 
 ---
 
@@ -230,28 +245,47 @@ Princípio raiz: **duplicação consciente > acoplamento.**
 
 ### 5.2 Os módulos
 
+> **Corrigido em 2026-09-02** para a árvore canônica de
+> `instrucoes/regra-arquitetura-desacoplamento-total-kronos.md` §5.1, que Paulo tornou
+> canônica no mesmo dia. A primeira versão deste plano agrupava os módulos em
+> `peer/` e `fatia/`; **o canon põe peers e fatias lado a lado na raiz do pacote**, sem
+> agrupador. A correção foi aplicada no código enquanto ele tinha 5 classes — que é
+> quando ela é de graça.
+>
+> **A consequência não é cosmética:** sem `peer.`/`fatia.` no caminho, a categoria de um
+> módulo deixa de ser dedutível do nome da pasta. Por isso ela passa a ser **declarada**
+> em `org/nasa/package-info.java` e em `FronteiraArquiteturaTest`, e existe uma regra
+> nova (**0-bis**) que reprova o build quando nasce um pacote de topo fora da lista.
+> Categoria deduzida seria adivinhação; declarada, é contrato.
+
 ```
 org.nasa
-├── core/                      KERNEL TÉCNICO — todos podem depender; ele não depende de fatia
-│   ├── util/                  escrita atômica, formatação, relógio (Clock injetável)
-│   ├── exception/             raiz das exceções
-│   ├── presentation/web/      chrome do painel, resposta padrão, fragmento HTMX
-│   └── execucao/              fila de trabalho pesado / virtual threads
+├── core/                 KERNEL TÉCNICO — todos podem depender; ele não depende de ninguém
+│   ├── erro/             ErroDePipeline, a raiz das exceções
+│   ├── execucao/         FilaExecucaoPipeline — a fila única
+│   ├── io/               ArquivoAtomicoUtil — temp+move, corrompido preservado
+│   ├── tempo/            Relogio injetável (UTC)
+│   └── presentation/web/ chrome do painel, resposta padrão, fragmento HTMX
+├── config/               bootstrap da aplicação
 │
-├── peer/                      PEERS COMPARTILHADOS — dono único de um conceito
-│   ├── geo/                   coordenada, bounding box, distância (o GeoUtils do legado, testado)
-│   ├── persistencia/          acesso SQLite, migração, transação
-│   └── eventoNatural/         modelo do evento EONET (domínio puro)
+├── geo/                  PEER — coordenada, distância, caixa delimitadora
+├── persistencia/         PEER — SQLite, migração, transação
+├── eventoNatural/        PEER — modelo do evento EONET (domínio puro)
 │
-└── fatia/                     FATIAS VERTICAIS — uma por caso de uso completo
-    ├── cliente/               CRUD + pesquisa
-    ├── contato/               CRUD
-    ├── endereco/              CRUD + CEP + geocodificação
-    ├── eventoEonet/           consulta, sincronização com a NASA, proximidade
-    ├── estatistica/           contagem por categoria e por tempo
-    ├── alerta/                casar evento × endereço e notificar
-    └── painel/                as 12 telas em Qute + HTMX
+├── cliente/              FATIA — CRUD + pesquisa
+├── contato/              FATIA — CRUD
+├── endereco/             FATIA — CEP, geocodificação, CRUD
+├── eventoEonet/          FATIA — consulta, sincronização com a NASA, proximidade
+├── estatistica/          FATIA — contagem por categoria e por tempo
+├── alerta/               FATIA — casar evento × endereço e notificar
+└── painel/               FATIA — as 12 telas em Qute + HTMX
 ```
+
+**As três classes que o canon manda existirem no `core` antes da primeira regra de
+negócio** (§1-bis, Passo 4) já estão de pé: `ArquivoAtomicoUtil` (a primeira escrita de
+arquivo já nasce atômica — retrofitar depois é auditar cada gravação existente),
+`FilaExecucaoPipeline` (a segunda operação pesada já vai competir com a primeira) e
+`ErroDePipeline` (sem raiz de exceção, o mapeamento HTTP vira `catch (Exception)`).
 
 Camadas dentro de cada fatia:
 
@@ -463,9 +497,12 @@ Cada item fecha com artefato antes do próximo começar.
 | # | item | critério de fechamento |
 |---|---|---|
 | **0** | ~~Bloqueio de segredos: `.gitignore` + guarda executável + hook~~ | ✅ **FEITO** — controle positivo em produção |
-| **1** | **Prova de viabilidade SQLite** em Quarkus 3.39.1 / Java 25 | app sobe, cria tabela, grava e lê linha; saída colada |
-| 2 | Esqueleto arquitetural: `core`, `peer`, `fatia` + guarda de fronteira ArchUnit | guarda **vista reprovando** violação montada à mão |
-| 3 | Peer `persistencia`: migração, WAL, `foreign_keys=ON`, `busy_timeout` | `PRAGMA foreign_keys` = 1 provado em runtime |
+| **0-bis** | ~~`gs/` fora do versionamento: `.gitignore` + guarda de caminhos~~ | ✅ **FEITO** — `git add -f` bloqueado, HEAD intacto |
+| **1** | ~~**Prova de viabilidade SQLite** em Quarkus 3.39.1 / Java 25~~ | ✅ **FEITO** — 5 testes, `PRAGMA foreign_keys = 1` |
+| **2** | ~~Esqueleto canônico + `core` do dia zero + guarda ArchUnit~~ | ✅ **FEITO** — 4 violações plantadas, 4 reprovadas |
+| 2-bis | **Log por execução com carimbo** (§9 da planta): um arquivo por run, `execucaoId` em toda linha, alvo e duração, faxina apontada para pasta exclusiva | linha de log colada, com os 4 campos |
+| 2-ter | **Telemetria: a porta e os contadores** (§10): `Telemetria<Fatia>Port` no `domain/ports` da primeira fatia, contador do que **agiu** E do que se **absteve**, `Integer` e não `int` (`null` = "não medi", `0` = "medi e deu zero") | amostra do JSON + o campo do que se absteve |
+| 3 | Peer `persistencia`: migração com checksum, WAL, `foreign_keys=ON`, `busy_timeout` | os três PRAGMA provados **na conexão**, não na configuração |
 | 4 | Esquema + invariantes **no banco** (UNIQUE de A4, datas em UTC, complemento opcional) | teste negativo recusado pelo banco, erro colado |
 | 5 | Peer `geo` (bounding box e distância do legado) | teste com coordenada conhecida |
 | 6 | Fatia `cliente` completa (domínio → porta → adaptador → REST → tela HTMX) | positivo + negativo + efeito no banco + tela no navegador |
