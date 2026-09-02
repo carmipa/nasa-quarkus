@@ -8,6 +8,8 @@ import org.nasa.cliente.domain.exceptions.DocumentoJaCadastradoException;
 import org.nasa.cliente.domain.ports.RepositorioDeClientesPort;
 import org.nasa.core.tempo.Relogio;
 
+import org.nasa.persistencia.infrastructure.adapters.Conexoes;
+
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -61,7 +63,7 @@ public class RepositorioDeClientesSqlite implements RepositorioDeClientesPort {
         String sql = "INSERT INTO cliente (nome, sobrenome, data_nascimento, documento, criado_em) "
                 + "VALUES (?, ?, ?, ?, ?)";
         Instant agora = relogio.agora();
-        try (Connection c = dataSource.getConnection();
+        try (Connection c = Conexoes.abrir(dataSource, "cliente");
              PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, novo.nome());
             ps.setString(2, novo.sobrenome());
@@ -84,7 +86,7 @@ public class RepositorioDeClientesSqlite implements RepositorioDeClientesPort {
     public Cliente atualizar(Cliente existente) {
         String sql = "UPDATE cliente SET nome = ?, sobrenome = ?, data_nascimento = ?, "
                 + "documento = ? WHERE id = ?";
-        try (Connection c = dataSource.getConnection();
+        try (Connection c = Conexoes.abrir(dataSource, "cliente");
              PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setString(1, existente.nome());
             ps.setString(2, existente.sobrenome());
@@ -100,7 +102,7 @@ public class RepositorioDeClientesSqlite implements RepositorioDeClientesPort {
 
     @Override
     public boolean remover(long id) {
-        try (Connection c = dataSource.getConnection();
+        try (Connection c = Conexoes.abrir(dataSource, "cliente");
              PreparedStatement ps = c.prepareStatement("DELETE FROM cliente WHERE id = ?")) {
             ps.setLong(1, id);
             return ps.executeUpdate() > 0;
@@ -111,7 +113,7 @@ public class RepositorioDeClientesSqlite implements RepositorioDeClientesPort {
 
     @Override
     public Optional<Cliente> porId(long id) {
-        try (Connection c = dataSource.getConnection();
+        try (Connection c = Conexoes.abrir(dataSource, "cliente");
              PreparedStatement ps = c.prepareStatement(
                      "SELECT " + COLUNAS + " FROM cliente WHERE id = ?")) {
             ps.setLong(1, id);
@@ -123,7 +125,7 @@ public class RepositorioDeClientesSqlite implements RepositorioDeClientesPort {
 
     @Override
     public Optional<Cliente> porDocumento(Documento documento) {
-        try (Connection c = dataSource.getConnection();
+        try (Connection c = Conexoes.abrir(dataSource, "cliente");
              PreparedStatement ps = c.prepareStatement(
                      "SELECT " + COLUNAS + " FROM cliente WHERE documento = ?")) {
             ps.setString(1, documento.digitos());
@@ -144,7 +146,7 @@ public class RepositorioDeClientesSqlite implements RepositorioDeClientesPort {
         // paginação repete um e pula outro, sem erro nenhum.
         String sql = "SELECT " + COLUNAS + " FROM cliente ORDER BY nome, sobrenome, id "
                 + "LIMIT ? OFFSET ?";
-        try (Connection c = dataSource.getConnection();
+        try (Connection c = Conexoes.abrir(dataSource, "cliente");
              PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setInt(1, tamanho);
             ps.setInt(2, pagina * tamanho);
@@ -162,7 +164,7 @@ public class RepositorioDeClientesSqlite implements RepositorioDeClientesPort {
         // O termo é PARÂMETRO, nunca concatenado: é aqui que a injeção de SQL entraria.
         String curinga = "%" + termo.replaceAll("[^\\p{L}\\p{N} ]", "") + "%";
         String soDigitos = "%" + termo.replaceAll("[^0-9]", "") + "%";
-        try (Connection c = dataSource.getConnection();
+        try (Connection c = Conexoes.abrir(dataSource, "cliente");
              PreparedStatement ps = c.prepareStatement(sql)) {
             ps.setString(1, curinga);
             ps.setString(2, curinga);
@@ -177,7 +179,7 @@ public class RepositorioDeClientesSqlite implements RepositorioDeClientesPort {
 
     @Override
     public long contar() {
-        try (Connection c = dataSource.getConnection();
+        try (Connection c = Conexoes.abrir(dataSource, "cliente");
              Statement st = c.createStatement();
              ResultSet rs = st.executeQuery("SELECT count(*) FROM cliente")) {
             return rs.next() ? rs.getLong(1) : 0L;

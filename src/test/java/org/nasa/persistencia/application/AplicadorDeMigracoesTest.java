@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.nasa.persistencia.domain.Migracao;
 import org.nasa.persistencia.domain.exceptions.MigracaoAlteradaException;
 import org.nasa.persistencia.domain.ports.FonteDeMigracoesPort;
+import org.nasa.persistencia.domain.ports.PreparacaoDoArmazenamentoPort;
 import org.nasa.persistencia.domain.ports.RegistroDeMigracoesPort;
 
 import java.time.Instant;
@@ -36,9 +37,14 @@ class AplicadorDeMigracoesTest {
     static final class RegistroFalso implements RegistroDeMigracoesPort {
         final Map<Integer, String> banco = new LinkedHashMap<>();
         final List<String> aplicadasNestaRodada = new ArrayList<>();
+        /** Ordem REAL das chamadas — sem isto, "antes" e "depois" nao sao observaveis. */
+        final List<String> trilha = new ArrayList<>();
         boolean controlePreparado;
 
-        @Override public void prepararControle() { controlePreparado = true; }
+        @Override public void prepararControle() {
+            controlePreparado = true;
+            trilha.add("prepararControle");
+        }
 
         @Override public Map<Integer, String> checksumsAplicados() { return new LinkedHashMap<>(banco); }
 
@@ -53,6 +59,10 @@ class AplicadorDeMigracoesTest {
         a.registro = registro;
         a.fonte = (FonteDeMigracoesPort) () -> declaradas;
         a.relogio = () -> Instant.parse("2026-09-02T12:00:00Z");
+        a.armazenamento = () -> {
+            registro.trilha.add("garantirDisponibilidade");
+            return new PreparacaoDoArmazenamentoPort.Local("duble", false);
+        };
         return a;
     }
 
@@ -155,4 +165,17 @@ class AplicadorDeMigracoesTest {
         assertEquals(0, r.aplicadas());
         assertEquals(0, r.jaEstavam());
     }
+    @Test
+    @DisplayName("ORDEM: o armazenamento e preparado ANTES da primeira conexao")
+    void preparaOArmazenamentoAntesDeTudo() {
+        // Em 02/09/2026 esta ordem nao existia, e o quarkusDev morria com SQLITE_CANTOPEN
+        // num clone onde `data/` ainda nao tinha sido criada — enquanto 122 testes passavam,
+        // porque o perfil de teste apontava para `build/`, que o Gradle cria.
+        var registro = new RegistroFalso();
+        aplicador(registro, List.of(m(1, "CREATE TABLE a(x INT);"))).executar();
+
+        assertEquals(List.of("garantirDisponibilidade", "prepararControle"), registro.trilha,
+                "preparar depois de abrir a conexao nao prepara nada: a conexao ja falhou");
+    }
+
 }

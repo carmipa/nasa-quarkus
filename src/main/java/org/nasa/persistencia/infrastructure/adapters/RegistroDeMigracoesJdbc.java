@@ -64,7 +64,7 @@ public class RegistroDeMigracoesJdbc implements RegistroDeMigracoesPort {
                     checksum     TEXT NOT NULL,
                     aplicada_em  TEXT NOT NULL
                 )""".formatted(TABELA);
-        try (Connection c = dataSource.getConnection(); Statement st = c.createStatement()) {
+        try (Connection c = Conexoes.abrir(dataSource, TABELA); Statement st = c.createStatement()) {
             st.executeUpdate(ddl);
         } catch (SQLException e) {
             throw new MigracaoFalhouException("tabela-de-controle", e);
@@ -75,7 +75,7 @@ public class RegistroDeMigracoesJdbc implements RegistroDeMigracoesPort {
     public Map<Integer, String> checksumsAplicados() {
         Map<Integer, String> aplicadas = new LinkedHashMap<>();
         String sql = "SELECT versao, checksum FROM " + TABELA + " ORDER BY versao";
-        try (Connection c = dataSource.getConnection();
+        try (Connection c = Conexoes.abrir(dataSource, TABELA);
              Statement st = c.createStatement();
              ResultSet rs = st.executeQuery(sql)) {
             while (rs.next()) {
@@ -89,7 +89,7 @@ public class RegistroDeMigracoesJdbc implements RegistroDeMigracoesPort {
 
     @Override
     public void aplicarERegistrar(Migracao migracao) {
-        try (Connection c = dataSource.getConnection()) {
+        try (Connection c = Conexoes.abrir(dataSource, TABELA)) {
             boolean autocommitOriginal = c.getAutoCommit();
             c.setAutoCommit(false);
             try {

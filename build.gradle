@@ -106,3 +106,70 @@ tasks.withType(JavaExec).configureEach {
     jvmArgs FUSO_UTC
     systemProperty 'nasa.log.execucao', carimboDaExecucao.get()
 }
+
+// ---------------------------------------------------------------------------
+// `quarkusDev` NAO e uma tarefa JavaExec: o bloco acima nao a alcanca.
+//
+// CORRECAO DE 02/09, e vale registrar o erro: eu escrevi aqui, primeiro, que UTC
+// nao precisava vir ao dev porque "a hora e UTC por mecanismo no codigo". Isso e
+// verdade para os `Instant` da aplicacao — e FALSO para o carimbo do log, que
+// quem escreve e o framework de logging, usando o fuso padrao da JVM. Medido
+// lado a lado no mesmo commit:
+//
+//     producao (jar, sem flag)   2026-09-02T09:06:13.599-03:00
+//     teste    (com a flag)      2026-09-02T15:04:19.138Z
+//
+// A API respondia `criadoEm: ...T15:05:51Z` enquanto a linha de log do MESMO
+// instante dizia `12:05:51-03:00`. Quem cruza os dois ve tres horas de diferenca
+// e vai cacar um defeito de gravacao que nao existe.
+//
+// Tentativa descartada, com medicao: `%d{...}{UTC}` no formato do log. O JBoss
+// LogManager nao aceita zona no `%d` — imprimiu o literal `{UTC}` e manteve o
+// `-03:00`. Configuracao nao resolve; a flag e o unico caminho.
+//
+// E como flag se esquece — foi assim que este defeito nasceu — quem garante o
+// invariante e a CatracaDeFusoUtc, que derruba o arranque se a JVM nao estiver
+// em UTC. A flag e a conveniencia; a catraca e o mecanismo.
+//
+// O `--enable-native-access` conserta outra coisa: o driver do SQLite carrega a
+// biblioteca nativa via `System.load`, e o Java 25 ja avisa que "restricted
+// methods will be blocked in a future release". Quando bloquear, o SQLite nao
+// carrega, e o modo dev seria o primeiro a parar.
+//
+// Escrito defensivamente: se a tarefa mudar de forma numa versao futura do
+// plugin, o build AVISA em vez de aplicar nada calado.
+// ---------------------------------------------------------------------------
+tasks.matching { it.name == 'quarkusDev' }.configureEach { tarefa ->
+    def flags = ['--enable-native-access=ALL-UNNAMED', FUSO_UTC]
+    def prop = tarefa.hasProperty('jvmArgs') ? tarefa.jvmArgs : null
+    if (prop instanceof org.gradle.api.provider.ListProperty) {
+        prop.addAll(flags)
+    } else if (prop instanceof List) {
+        tarefa.jvmArgs = prop + flags
+    } else {
+        logger.warn("AVISO: nao consegui passar ${flags} ao quarkusDev " +
+                    "(jvmArgs ausente ou de tipo inesperado: ${prop?.getClass()?.name}). " +
+                    "A CatracaDeFusoUtc vai derrubar o arranque — e esta certa em fazer isso.")
+    }
+}
+
+// ---------------------------------------------------------------------------
+// `gradlew rodar` — sobe o jar empacotado com as flags certas.
+//
+// Existe para que o caminho normal de execucao nao dependa de alguem lembrar de
+// digitar `-Duser.timezone=UTC`. Quem digitar `java -jar` na mao continua
+// funcionando: a catraca recusa o arranque e a mensagem traz o comando pronto.
+// ---------------------------------------------------------------------------
+tasks.register('rodar', Exec) {
+    group = 'application'
+    description = 'Sobe o jar empacotado em UTC (depende de quarkusBuild)'
+    dependsOn tasks.named('quarkusBuild')
+    // `Exec`, e nao `JavaExec`: o quarkus-run.jar se localiza pelo proprio caminho
+    // para achar `lib/`, entao ele precisa ser aberto com `-jar`, que nao e uma
+    // classe principal. A primeira versao disto usava JavaExec com
+    // `mainClass = '-jar'`; a tarefa REGISTRAVA sem erro e so quebrava ao rodar.
+    commandLine "${System.getProperty('java.home')}/bin/java",
+            '--enable-native-access=ALL-UNNAMED', FUSO_UTC,
+            '-jar', layout.buildDirectory.file('quarkus-app/quarkus-run.jar').get().asFile.absolutePath
+}
+

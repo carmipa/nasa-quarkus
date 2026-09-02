@@ -8,6 +8,7 @@ import org.nasa.core.tempo.Relogio;
 import org.nasa.persistencia.domain.Migracao;
 import org.nasa.persistencia.domain.exceptions.MigracaoAlteradaException;
 import org.nasa.persistencia.domain.ports.FonteDeMigracoesPort;
+import org.nasa.persistencia.domain.ports.PreparacaoDoArmazenamentoPort;
 import org.nasa.persistencia.domain.ports.RegistroDeMigracoesPort;
 
 import java.time.Duration;
@@ -24,6 +25,9 @@ import java.util.Map;
  *
  * <p><b>INVARIANTES DO DOMÍNIO.</b></p>
  * <ol>
+ *   <li><b>O armazenamento é preparado ANTES da primeira conexão.</b> O diretório do
+ *       arquivo é garantido aqui, em ordem declarada — não na esperança de que algum
+ *       observador de arranque rode antes.</li>
  *   <li><b>Migração já aplicada e editada ABORTA o boot</b> ({@link MigracaoAlteradaException}).
  *       É a invariante mais importante daqui, e a única que não tem cura automática.</li>
  *   <li><b>Ordem crescente, sem pular.</b> A fonte entrega ordenado; este caso de uso
@@ -49,6 +53,9 @@ public class AplicadorDeMigracoes {
     FonteDeMigracoesPort fonte;
 
     @Inject
+    PreparacaoDoArmazenamentoPort armazenamento;
+
+    @Inject
     RegistroDeMigracoesPort registro;
 
     @Inject
@@ -66,6 +73,15 @@ public class AplicadorDeMigracoes {
 
     public Resultado executar() {
         var inicio = relogio.agora();
+
+        // PRIMEIRO de tudo: o SQLite cria o ARQUIVO do banco, nunca o DIRETORIO. Sem
+        // isto, um clone novo morre na primeira conexao com SQLITE_CANTOPEN — erro que
+        // nao menciona diretorio nenhum. A ordem aqui e DECLARADA, e nao herdada da
+        // ordem em que o container resolve observadores de arranque, que nao e garantida.
+        var local = armazenamento.garantirDisponibilidade();
+        if (local.criouDiretorio()) {
+            LOG.info(Registro.de(OPERACAO, local.descricao(), "diretorio do banco criado agora"));
+        }
 
         registro.prepararControle();
         List<Migracao> declaradas = fonte.disponiveis();
