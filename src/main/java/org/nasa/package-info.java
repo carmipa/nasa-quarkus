@@ -14,7 +14,8 @@
  * ├── core/        KERNEL TÉCNICO — utilidade transversal, zero regra de negócio
  * ├── config/      bootstrap da aplicação
  * │
- * ├── geo/         PEER — coordenada, distância, caixa delimitadora
+ * ├── geo/           PEER — coordenada, distância, caixa delimitadora
+ * ├── persistencia/  PEER — esquema do banco e as migrações
  * │
  * ├── endereco/    FATIA — CEP, geocodificação, CRUD de endereço
  * └── painel/      FATIA — as telas, em Qute + HTMX

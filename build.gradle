@@ -85,6 +85,12 @@ def carimboDaExecucao = providers.systemProperty('nasa.log.execucao')
 def FUSO_UTC = '-Duser.timezone=UTC'
 
 tasks.withType(Test).configureEach {
+    // Banco de teste NOVO a cada execução. Sem isto o resultado depende do que
+    // sobrou da rodada anterior — e teste cujo veredito depende do passado não
+    // prova nada sobre o presente.
+    doFirst {
+        delete fileTree(dir: project.layout.buildDirectory.get(), includes: ['teste-nasa.db*'])
+    }
     jvmArgs '--enable-native-access=ALL-UNNAMED', FUSO_UTC
     // Propriedade de sistema não chega sozinha ao JVM de teste: precisa estar
     // nesta lista NOMINAL. É proposital, e a planta avisa (§12.3) — mas quando a

@@ -1,0 +1,11 @@
+# ÍNDICE DAS MIGRAÇÕES — a ordem é DECLARADA, nunca deduzida.
+#
+# Varredura de diretório muda de resultado entre a IDE e o jar, e ordem de DDL
+# que depende do empacotamento produz bancos diferentes a partir do mesmo
+# código. Arquivo esquecido aqui falha ALTO, em vez de simplesmente não ser
+# aplicado — que é o silêncio que esta lista existe para impedir.
+#
+# Uma linha por arquivo, no formato V<numero>__<descricao>.sql
+# Migração aplicada é IMUTÁVEL: correção vira migração nova.
+
+V001__esquema_inicial.sql
