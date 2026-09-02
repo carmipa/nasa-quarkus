@@ -195,7 +195,10 @@ public class GdacsRssAdapter implements FonteDeNoticiasPort {
                 NivelDeAlerta.de(texto(item, "gdacs:alertlevel")),
                 texto(item, "gdacs:country"),
                 texto(item, "gdacs:severity"),
-                coordenada(texto(item, "geo:lat"), texto(item, "geo:long")));
+                coordenada(texto(item, "geo:lat"), texto(item, "geo:long")),
+                // O `enclosure` traz o mapa do evento no atributo `url`, nao no texto.
+                atributo(item, "enclosure", "url"),
+                texto(item, "gdacs:icon"));
     }
 
     private static Coordenada coordenada(String lat, String lon) {
@@ -220,6 +223,19 @@ public class GdacsRssAdapter implements FonteDeNoticiasPort {
         } catch (RuntimeException fora) {
             return null;
         }
+    }
+
+    /**
+     * O valor de um ATRIBUTO — o {@code enclosure} guarda a imagem em {@code url=}, e não
+     * no conteúdo do elemento.
+     */
+    private static String atributo(Element item, String tag, String nome) {
+        NodeList n = item.getElementsByTagName(tag);
+        if (n.getLength() == 0 || !(n.item(0) instanceof Element e)) {
+            return null;
+        }
+        String v = e.getAttribute(nome);
+        return v == null || v.isBlank() ? null : v.strip();
     }
 
     private static String texto(Element item, String tag) {

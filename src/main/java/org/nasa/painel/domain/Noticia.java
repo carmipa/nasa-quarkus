@@ -54,10 +54,14 @@ import java.util.Optional;
  * @param pais        região afetada, como a fonte descreve
  * @param severidade  texto livre da fonte, ex.: "Magnitude 5.9M, Depth:10km"
  * @param coordenada  onde aconteceu; ausente quando a fonte não informou
+ * @param imagem      mapa do evento gerado pelo GDACS; ausente quando não há
+ * @param icone       ícone do tipo + nível; são apenas 9 distintos em 348 itens,
+ *                    então o navegador os reaproveita quase sempre
  */
 public record Noticia(String id, String titulo, String link, Instant publicadaEm,
                       String tipoEvento, NivelDeAlerta nivel, String pais,
-                      String severidade, Coordenada coordenada) {
+                      String severidade, Coordenada coordenada,
+                      String imagem, String icone) {
 
     public Optional<Coordenada> coordenadaOpcional() {
         return Optional.ofNullable(coordenada);
@@ -85,6 +89,26 @@ public record Noticia(String id, String titulo, String link, Instant publicadaEm
             // inventar seria afirmar algo que a fonte nao disse.
             default -> tipoEvento.strip().toUpperCase();
         };
+    }
+
+    /**
+     * A imagem que a tela deve mostrar, ou {@code null}.
+     *
+     * <p>Prefere o mapa do evento; cai no ícone quando não há mapa. As duas são
+     * <b>servidas pelo nosso servidor</b>, e não direto do GDACS — porque aquele host
+     * limita vazão (medido: a mesma URL responde 200 isolada e falha em sequência) e
+     * porque um {@code <img>} apontando para fora entrega o IP de cada visitante a um
+     * terceiro que ninguém escolheu contatar.</p>
+     */
+    public String imagemPreferida() {
+        if (imagem != null && !imagem.isBlank()) {
+            return imagem;
+        }
+        return icone == null || icone.isBlank() ? null : icone;
+    }
+
+    public boolean temImagem() {
+        return imagemPreferida() != null;
     }
 
     /** Se esta notícia dá para desenhar no mapa. */

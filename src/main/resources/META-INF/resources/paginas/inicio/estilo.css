@@ -6,10 +6,10 @@
  *
  * O CARROSSEL É UMA LISTA QUE ROLA, e isso é decisão de engenharia, não de
  * estética: `overflow-x:auto` + `scroll-snap` dá rolagem com o dedo, com a
- * roda do mouse, com o teclado e com a barra — tudo isso sem uma linha de
- * JavaScript. O script só acrescenta as setas. Se ele falhar, o carrossel
- * continua inteiro e utilizável; a biblioteca que o legado usava (react-slick)
- * levava o conteúdo junto quando falhava.
+ * roda do mouse e com o teclado — tudo isso sem uma linha de JavaScript. O
+ * script acrescenta o movimento automático e as setas. Se ele falhar, o
+ * carrossel continua inteiro e utilizável; a biblioteca que o legado usava
+ * (react-slick) levava o conteúdo junto quando falhava.
  */
 
 .noticias-topo {
@@ -49,16 +49,15 @@
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   scroll-behavior: smooth;
-  /* Barra fina em vez de escondida: barra invisível esconde que há mais
-     conteúdo à direita, e quem não vê não rola. */
-  scrollbar-width: thin;
+  /* Ver a nota sobre a barra escondida logo abaixo. */
+  scrollbar-width: none;
 }
 
-.carrossel-trilho::-webkit-scrollbar { height: 0.5rem; }
-.carrossel-trilho::-webkit-scrollbar-thumb {
-  background: var(--cor-borda);
-  border-radius: 999px;
-}
+/* BARRA ESCONDIDA, e é seguro esconder porque o carrossel anda SOZINHO e tem
+   setas. A regra geral é o contrário — barra invisível esconde que há mais
+   conteúdo, e quem não vê não rola. Aqui o movimento automático já revela isso
+   melhor que qualquer barra, e a rolagem com o dedo continua funcionando. */
+.carrossel-trilho::-webkit-scrollbar { height: 0; width: 0; }
 
 .noticia {
   flex: 0 0 auto;
@@ -90,6 +89,20 @@
   color: inherit;
   text-decoration: none;
   height: 100%;
+}
+
+/* A imagem tem PROPORÇÃO FIXA e `object-fit: cover`. As imagens do GDACS vêm
+   em tamanhos diferentes — de 458 bytes a dezenas de KB, com formatos variados —
+   e sem a proporção travada cada cartão ficaria de uma altura, e a fileira
+   inteira dançaria a cada rolagem. */
+.noticia-imagem {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 0.35rem;
+  margin-bottom: 0.75rem;
+  background: var(--cor-fundo);
 }
 
 .noticia-cabecalho {
@@ -169,6 +182,10 @@
 }
 
 .carrossel[data-carrossel-ativo] .carrossel-seta { display: block; }
+
+/* Pausa visível: quando o mouse está em cima, o carrossel para de andar — e a
+   borda mostra que ele parou de propósito, em vez de parecer travado. */
+.carrossel[data-pausado] { outline: 1px dashed var(--cor-borda); outline-offset: 6px; }
 
 .carrossel-seta:hover { border-color: var(--cor-destaque); color: var(--cor-destaque); }
 .carrossel-seta[disabled] { opacity: .35; cursor: default; }

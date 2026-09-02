@@ -45,11 +45,35 @@
     return d.innerHTML;
   }
 
-  var mapa = L.map(caixa, { scrollWheelZoom: false });
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 12,
+  // ---------------------------------------------------------------- camadas
+  //
+  // DUAS camadas, e o seletor no canto. Satelite vem do Esri World Imagery, que
+  // responde 200 SEM CHAVE (medido em 02/09/2026) — a alternativa comum, o
+  // Mapbox, exige token e cobra por uso.
+  //
+  // A ATRIBUICAO DE CADA UMA E OBRIGATORIA, e nao e enfeite: o OpenStreetMap
+  // exige por ODbL, e o Esri exige por termo de uso. Sao licencas, e o Leaflet
+  // troca o texto automaticamente quando a camada muda.
+  var ruas = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
     attribution: '&copy; OpenStreetMap contributors'
-  }).addTo(mapa);
+  });
+
+  var satelite = L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    {
+      maxZoom: 18,
+      attribution: 'Imagens: Esri, Maxar, Earthstar Geographics'
+    });
+
+  // `scrollWheelZoom` LIGADO, a pedido do Paulo. O padrao do Leaflet o deixa
+  // ligado; eu o tinha desligado pelo motivo classico — rolar a pagina com o
+  // ponteiro sobre o mapa faz o mapa "sequestrar" a rolagem. Com o mapa alto e
+  // com conteudo abaixo dele, isso incomoda; mas quem esta usando um mapa quer
+  // ampliar com a roda, e essa e a expectativa que vale.
+  var mapa = L.map(caixa, { scrollWheelZoom: true, layers: [ruas] });
+  L.control.layers({ 'Ruas': ruas, 'Satélite': satelite }, null,
+                   { position: 'topright' }).addTo(mapa);
 
   var pontos = [];
   itens.forEach(function (item) {

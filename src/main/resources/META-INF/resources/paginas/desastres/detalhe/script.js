@@ -24,12 +24,34 @@
   }
 
   var ativo = caixa.dataset.ativo === 'true';
-  var mapa = L.map(caixa, { scrollWheelZoom: false }).setView([lat, lon], 6);
 
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 12,
+  // ---------------------------------------------------------------- camadas
+  //
+  // DUAS camadas, e o seletor no canto. Satelite vem do Esri World Imagery, que
+  // responde 200 SEM CHAVE (medido em 02/09/2026) — a alternativa comum, o
+  // Mapbox, exige token e cobra por uso.
+  //
+  // A ATRIBUICAO DE CADA UMA E OBRIGATORIA, e nao e enfeite: o OpenStreetMap
+  // exige por ODbL, e o Esri exige por termo de uso. Sao licencas, e o Leaflet
+  // troca o texto automaticamente quando a camada muda.
+  var ruas = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
     attribution: '&copy; OpenStreetMap contributors'
-  }).addTo(mapa);
+  });
+
+  var satelite = L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    {
+      maxZoom: 18,
+      attribution: 'Imagens: Esri, Maxar, Earthstar Geographics'
+    });
+
+  // Roda do mouse LIGADA, e satelite disponivel: num evento unico, ampliar ate
+  // ver o terreno e exatamente o que se quer fazer.
+  var mapa = L.map(caixa, { scrollWheelZoom: true, layers: [satelite] })
+    .setView([lat, lon], 6);
+  L.control.layers({ 'Satélite': satelite, 'Ruas': ruas }, null,
+                   { position: 'topright' }).addTo(mapa);
 
   L.circleMarker([lat, lon], {
     radius: 10,

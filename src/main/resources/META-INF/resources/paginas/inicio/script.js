@@ -1,28 +1,36 @@
 /*
- * SCRIPT DA HOME — e só dela: as setas do carrossel.
+ * SCRIPT DA HOME — e só dela: o carrossel de notícias.
  *
- * PROPÓSITO: acrescentar navegação por clique a um carrossel que JÁ FUNCIONA
- *   sem JavaScript. O trilho é `overflow-x:auto` com `scroll-snap`, então rola
- *   com o dedo, com a roda do mouse, com o teclado e com a barra — tudo isso
- *   vindo do CSS. Este arquivo só acrescenta os botões.
+ * PROPÓSITO: fazer o carrossel andar sozinho e acrescentar as setas. O trilho
+ *   em si é CSS (`overflow-x` + `scroll-snap`), então rola com o dedo, com a
+ *   roda do mouse e com o teclado mesmo sem este arquivo.
  *
- * POR QUE ISSO IMPORTA: o legado usava `react-slick`, que monta o carrossel
- *   inteiro em JavaScript. Quando a biblioteca falha — e ela é um dos 484
- *   pacotes do `node_modules` —, o conteúdo vai junto: o visitante vê um bloco
- *   vazio onde deveriam estar as notícias. Aqui, se este arquivo não carregar,
- *   perde-se DUAS SETAS. As notícias continuam lá, roláveis.
+ * POR QUE ISSO IMPORTA: o legado usava `react-slick` — um dos 484 pacotes do
+ *   `node_modules` — que monta o carrossel inteiro em JavaScript. Quando a
+ *   biblioteca falha, o CONTEÚDO vai junto e o visitante vê um bloco vazio.
+ *   Aqui, se este arquivo não carregar, perde-se o movimento automático e duas
+ *   setas; as notícias continuam lá, roláveis.
+ *
+ * CONTEÚDO QUE SE MOVE SOZINHO PRECISA PODER PARAR, e isso não é preferência —
+ *   é acessibilidade. Movimento automático atrapalha quem lê devagar, quem usa
+ *   ampliador de tela e quem tem sensibilidade a movimento. Por isso há QUATRO
+ *   formas de parar, e todas automáticas:
+ *     1. `prefers-reduced-motion` — quem pediu menos movimento no sistema
+ *        operacional nunca vê o carrossel andar sozinho;
+ *     2. mouse em cima — para enquanto a pessoa lê;
+ *     3. foco pelo teclado — para para quem navega sem mouse;
+ *     4. aba escondida — para de gastar bateria e requisição quando ninguém vê.
  *
  * INVARIANTES:
- *   1. As setas nascem ESCONDIDAS no CSS e só aparecem quando este script marca
- *      `data-carrossel-ativo`. Botão que não faz nada é pior que botão nenhum:
- *      ensina que a interface está quebrada.
- *   2. As setas desabilitam nas pontas. Botão que rola para lugar nenhum faz a
- *      pessoa clicar de novo achando que não funcionou.
- *   3. Rola por uma LARGURA DE CARTÃO medida do DOM, nunca por um número fixo:
- *      a largura do cartão é `min(22rem, 82%)` e muda com a janela.
+ *   1. `replaceState` não é usado aqui, e nenhuma navegação acontece: o
+ *      carrossel só rola. Andar sozinho nunca pode mexer no histórico.
+ *   2. Rola por uma LARGURA DE CARTÃO medida do DOM, nunca por número fixo — a
+ *      largura é `min(22rem, 82%)` e muda com a janela.
+ *   3. Ao chegar no fim, volta ao começo. Um carrossel que trava na última
+ *      notícia parece quebrado.
  *
- * FALHA: se qualquer coisa aqui quebrar, o carrossel volta a ser o que já era
- *   sem o script — uma lista rolável. É por isso que ele não monta nada.
+ * FALHA: qualquer erro deixa o trilho como estava — uma lista rolável. É por
+ *   isso que este script não monta nada.
  */
 (function () {
   'use strict';
@@ -39,6 +47,14 @@
     return;
   }
 
+  var INTERVALO = parseInt(carrossel.dataset.intervalo, 10) || 6000;
+  var temporizador = null;
+  var pausadoPeloUsuario = false;
+
+  /** Quem pediu menos movimento no sistema NUNCA vê o carrossel andar sozinho. */
+  var querMenosMovimento = window.matchMedia
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
   /** Um cartão + o vão entre eles, medido do DOM — nunca um número fixo. */
   function passo() {
     var cartao = trilho.querySelector('li');
@@ -50,20 +66,82 @@
     return cartao.getBoundingClientRect().width + vao;
   }
 
-  function atualizarSetas() {
-    // 2px de tolerância: navegadores devolvem fração de pixel em `scrollLeft`, e
-    // sem a folga a seta da direita nunca desabilitaria no fim.
-    var fim = trilho.scrollWidth - trilho.clientWidth - 2;
-    anterior.disabled = trilho.scrollLeft <= 2;
-    proximo.disabled = trilho.scrollLeft >= fim;
+  function noFim() {
+    // 2px de tolerância: navegadores devolvem fração de pixel em `scrollLeft`.
+    return trilho.scrollLeft >= trilho.scrollWidth - trilho.clientWidth - 2;
   }
 
+  function atualizarSetas() {
+    anterior.disabled = trilho.scrollLeft <= 2;
+    proximo.disabled = noFim();
+  }
+
+  function avancar() {
+    if (noFim()) {
+      // Volta ao começo: um carrossel que trava na última notícia parece quebrado.
+      trilho.scrollTo({ left: 0, behavior: 'smooth' });
+    } else {
+      trilho.scrollBy({ left: passo(), behavior: 'smooth' });
+    }
+  }
+
+  // ---------------------------------------------------------- andar sozinho
+
+  function comecar() {
+    if (querMenosMovimento || pausadoPeloUsuario || temporizador) {
+      return;
+    }
+    temporizador = window.setInterval(avancar, INTERVALO);
+    carrossel.removeAttribute('data-pausado');
+  }
+
+  function parar(porQuemUsa) {
+    if (porQuemUsa) {
+      pausadoPeloUsuario = true;
+      carrossel.setAttribute('data-pausado', '');
+    }
+    if (temporizador) {
+      window.clearInterval(temporizador);
+      temporizador = null;
+    }
+  }
+
+  function retomar() {
+    pausadoPeloUsuario = false;
+    comecar();
+  }
+
+  // Mouse em cima: para enquanto a pessoa lê.
+  carrossel.addEventListener('mouseenter', function () { parar(true); });
+  carrossel.addEventListener('mouseleave', retomar);
+
+  // Foco pelo teclado: quem navega sem mouse também precisa que pare.
+  carrossel.addEventListener('focusin', function () { parar(true); });
+  carrossel.addEventListener('focusout', function (evento) {
+    if (!carrossel.contains(evento.relatedTarget)) {
+      retomar();
+    }
+  });
+
+  // Aba escondida: nao gasta bateria nem requisicao com o que ninguem ve.
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) {
+      parar(false);
+    } else {
+      comecar();
+    }
+  });
+
+  // ------------------------------------------------------------------ setas
+
   anterior.addEventListener('click', function () {
+    parar(true);   // clicou: assumiu o controle, e o automatico sai da frente
     trilho.scrollBy({ left: -passo(), behavior: 'smooth' });
   });
 
   proximo.addEventListener('click', function () {
-    trilho.scrollBy({ left: passo(), behavior: 'smooth' });
+    parar(true);
+    avancar();
   });
 
   trilho.addEventListener('scroll', atualizarSetas, { passive: true });
@@ -72,4 +150,5 @@
   // Só agora as setas aparecem: até aqui, elas não faziam nada.
   carrossel.setAttribute('data-carrossel-ativo', '');
   atualizarSetas();
+  comecar();
 })();
