@@ -17,7 +17,8 @@
  * ├── geo/           PEER — coordenada, distância, caixa delimitadora
  * ├── persistencia/  PEER — esquema do banco e as migrações
  * │
- * ├── endereco/    FATIA — CEP, geocodificação, CRUD de endereço
+ * ├── cliente/      FATIA — quem recebe o alerta
+ * ├── endereco/     FATIA — CEP, geocodificação, CRUD de endereço
  * └── painel/      FATIA — as telas, em Qute + HTMX
  * </pre>
  *
