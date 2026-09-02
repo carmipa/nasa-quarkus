@@ -47,6 +47,7 @@ SESSÃO / PORTÃO
       delimitadora com polo, antimeridiano e locale
 - [x] **6. Fatia `cliente`** completa, com concorrência provada (8 simultâneos → 1)
 - [x] **7a. Fatia `endereco`** — CEP e geocodificação por provedores abertos
+- [x] **7a-bis. Arranque REAL consertado** — 3 defeitos que a suíte verde não pegava
 - [ ] 7b. Fatia `contato` (CRUD, espelha `cliente`)
 - [ ] 8. Fatia `eventoEonet`
 - [ ] 9. Fatia `estatistica`
@@ -57,6 +58,62 @@ SESSÃO / PORTÃO
 ---
 
 ## FECHADO COM ARTEFATO
+
+### 7a-bis. Os três defeitos do primeiro `quarkusDev` (02/09, commit `cf5632b`)
+
+Paulo rodou `gradle quarkusDev` e a aplicação **não subiu**, com 122 testes verdes.
+Raiz comum aos três: **o instrumento só media o ambiente onde a propriedade já era
+verdadeira**.
+
+**1 — `SQLITE_CANTOPEN`, a aplicação não subia.** O SQLite cria o *arquivo* do banco,
+nunca o *diretório*. Teste apontava para `build/` (o Gradle cria); produção para
+`data/` (ninguém criava). A suíte exercitava o único caminho que já existia.
+Correção: `PreparacaoDoArmazenamentoPort` + `PreparadorDoArquivoSqlite`, chamado em
+ordem **declarada** antes da primeira conexão, com teste de ordem observável.
+
+**2 — diagnóstico que mandava investigar o lugar errado.** `prepararControle()` abria
+a conexão e rodava o DDL no mesmo `try`. Diretório ausente virava
+`"o banco recusou o DDL desta migracao"` — as duas metades falsas. Eram **11 pontos**
+com a mesma estrutura; todos passam por `Conexoes.abrir`, que lança tipo diferente do
+erro de comando. Sem mudança de HTTP (PERSISTENCIA_FALHOU já era 500).
+
+**3 — log em fuso local com a API em UTC.** Medido no mesmo commit:
+
+```
+producao (jar)  2026-09-02T09:06:13.599-03:00
+teste  (flag)   2026-09-02T15:04:19.138Z
+```
+
+A API respondia `criadoEm ...T15:05:51Z` e o log do mesmo instante dizia
+`12:05:51-03:00`: três horas de defeito inexistente para quem cruzasse os dois.
+A catraca de UTC rodava **só no JVM de teste** — o único lugar onde a flag já estava.
+Descartado com medição: `%d{...}{UTC}` — o JBoss LogManager imprime o literal `{UTC}`
+e mantém o `-03:00`. Correção: `CatracaDeFusoUtc` derruba o arranque se a JVM não
+estiver em offset **zero e fixo** (`Europe/London` reprova: só é UTC no inverno), com
+o comando da correção na mensagem. Flag no `quarkusDev` e na tarefa nova
+`gradlew rodar`. **Flag é conveniência; a catraca é o mecanismo.**
+
+**REFUTADO — registrado para não voltar:** o `´┐¢` no terminal **não** é defeito de
+gravação de log. O arquivo está em UTF-8 correto (bytes `342 200 224` para o em-dash,
+zero caracteres de substituição); quem mistura é o console do PowerShell.
+
+**Provas no arranque real, com `data/` ausente:**
+
+```
+diretorio criado sozinho .... preparar-armazenamento alvo=G:\...\data
+asa.db — diretorio CRIADO agora
+migracao .................... declaradas=1 aplicadas=1 jaEstavam=0 (158ms)
+home ........................ HTTP 200 em 0.084s
+java -jar SEM a flag ........ exit 1 + "Suba com -Duser.timezone=UTC"
+com a flag .................. log 15:12:19.049Z / API 15:12:19.046Z (mesmo instante)
+gradlew rodar ............... HTTP 200, log em Z
+POST /api/clientes .......... 201, criadoEm ...Z
+mesmo CPF pontuado .......... 409 CONFLITO_DE_ESTADO (no banco real, nao no teste)
+```
+
+**Como rodar daqui em diante:** `gradlew rodar` (jar) ou `gradlew quarkusDev` (dev).
+`java -jar` na mão exige `-Duser.timezone=UTC` — e a catraca diz isso se faltar.
+
 
 **Item 0 — bloqueio de segredos**
 
