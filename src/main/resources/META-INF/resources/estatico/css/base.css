@@ -18,6 +18,32 @@
  *   diferente da de quem escreveu.
  */
 
+/* =============================================================================
+ * `[hidden]` PRECISA DESTA LINHA PARA FUNCIONAR. Não é redundância com o
+ * navegador.
+ *
+ * O QUE ELA CONSERTA, medido em 03/09/2026 em `/desastres/mapa`: o script
+ * escondia 480 dos 500 cartões com `item.hidden = true` — o mecanismo padrão, e
+ * a escolha certa. A página continuava com 52.204px de altura, CINQUENTA E OITO
+ * TELAS de rolagem, com vinte cartões à mostra e quatrocentos e oitenta
+ * invisíveis ocupando espaço.
+ *
+ * A razão: a folha do NAVEGADOR traz `[hidden] { display: none }`, e QUALQUER
+ * declaração de `display` escrita por nós vence essa regra — estilo de autor
+ * ganha da folha do agente, independentemente de especificidade. Bastou
+ * `.mapa-item { display: flex }` para o atributo virar decoração.
+ *
+ * E o defeito é MUDO nos dois lados: o JavaScript está correto e o CSS está
+ * correto; só a combinação falha. `querySelectorAll('[hidden]')` conta 480 e
+ * confirma que "está escondido", enquanto a tela mostra os 480.
+ *
+ * `!important` aqui é deliberado e é o uso legítimo dele: esta linha existe
+ * para vencer declarações de componente, e sem ele ela perde para a próxima
+ * `.qualquer-coisa { display: flex }` que alguém escrever. É o mesmo motivo
+ * pelo qual normalize.css e todo reset sério carregam esta regra.
+ * ============================================================================= */
+[hidden] { display: none !important; }
+
 :root {
   --cor-fundo: #0d1117;
   --cor-superficie: #161b22;

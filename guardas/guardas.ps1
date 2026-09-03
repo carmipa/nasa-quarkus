@@ -62,6 +62,8 @@ ExecutarGuarda 'guarda de CSS em porcentagem'  'guarda-css-porcentagem.ps1'     
 # Esta guarda mede a TELA, com o navegador, e por isso depende do app no ar.
 # Sem ele ela sai 2 (NAO VERIFICOU) — que nao e aprovacao e aparece como tal.
 ExecutarGuarda 'guarda de geometria da marca'  'guarda-geometria-da-marca.ps1'  @()
+# Tambem mede a TELA: sem o app no ar ela sai 2 (NAO VERIFICOU), nunca 0.
+ExecutarGuarda 'guarda de hidden que esconde' 'guarda-hidden-esconde.ps1'     @()
 
 Write-Host ''
 Write-Host '================ PLACAR ================' -ForegroundColor White
