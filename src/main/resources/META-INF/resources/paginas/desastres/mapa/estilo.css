@@ -331,3 +331,108 @@
   font-weight: 400;
   white-space: nowrap;
 }
+
+
+/* ========================================== filtro e paginação da lista */
+
+/*
+ * Os dois controles são criados por JavaScript, e por isso não existem no HTML
+ * servido: sem script a lista aparece inteira, e não há o que filtrar nem
+ * paginar — o que é o comportamento certo, porque sem script também não há
+ * mapa, e a lista completa é a única coisa que sobrou.
+ */
+
+.lista-filtro {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  margin: 0.8rem 0 1rem;
+  padding: 0.7rem 1.2%;
+  border: 1px solid var(--cor-borda);
+  border-radius: 0.5rem;
+  background: var(--cor-superficie);
+}
+
+.lista-filtro-rotulo {
+  color: var(--cor-texto-fraco);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* A nota que diz que o filtro é LOCAL. Empurrada para a direita: ela explica
+   o conjunto, não pertence à sequência de botões. */
+.lista-filtro-nota {
+  margin-left: auto;
+  color: var(--cor-texto-fraco);
+  font-size: 0.78rem;
+  font-style: italic;
+}
+
+.lista-filtro-tipo {
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 999px;
+  background: none;
+  color: var(--cor-texto-fraco);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color .15s ease, color .15s ease, background .15s ease;
+}
+
+.lista-filtro-tipo:hover {
+  border-color: var(--cor-tipo, var(--cor-destaque));
+  color: var(--cor-tipo, var(--cor-destaque));
+}
+
+/* O foco de teclado precisa ser visível: sem isto, quem navega por Tab não
+   sabe em qual dos botões está. */
+.lista-filtro-tipo:focus-visible {
+  outline: 2px solid var(--cor-tipo, var(--cor-destaque));
+  outline-offset: 2px;
+}
+
+/*
+ * O ATIVO se distingue por três coisas — cor, fundo e o ✓ — nunca só por cor.
+ * Quem não distingue a cor ainda vê o contorno cheio e a marca.
+ */
+.lista-filtro-ativo {
+  border-color: var(--cor-tipo, var(--cor-destaque));
+  background: color-mix(in srgb, var(--cor-tipo, var(--cor-destaque)) 18%, transparent);
+  color: var(--cor-tipo, var(--cor-destaque));
+}
+.lista-filtro-ativo::after { content: ' ✓'; font-weight: 700; }
+
+.lista-paginacao {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  margin-top: 1rem;
+  padding: 0.7rem 1.2%;
+  border: 1px solid var(--cor-borda);
+  border-radius: 0.5rem;
+  background: var(--cor-superficie);
+}
+
+.lista-paginacao-situacao {
+  color: var(--cor-texto-fraco);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Botão no fim da lista fica desabilitado, não some: controle que desaparece
+   muda a posição dos outros e faz errar o clique seguinte. */
+.lista-paginacao button[disabled] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lista-filtro-tipo { transition: none; }
+}

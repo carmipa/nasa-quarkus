@@ -49,6 +49,38 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("todas as telas renderizam — inclusive os ramos que so aparecem COM dados")
 class TodasAsTelasRespondemTest {
 
+    @jakarta.inject.Inject
+    org.nasa.evento.application.ConsultarEventosUseCase consultarEventos;
+
+    @jakarta.inject.Inject
+    org.nasa.evento.domain.ports.RepositorioDeEventosPort repositorioDeEventos;
+
+    /**
+     * Cria eventos COM COORDENADA, para as guardas do mapa julgarem alguma coisa.
+     *
+     * <p><b>Por que isto existe.</b> A base de teste não tem evento nenhum — eventos vêm da
+     * sincronização com a NASA, e teste não fala com a NASA. Sem estes registros, as
+     * guardas do mapa passavam <b>por vacuidade</b>: comparavam zero com zero e nunca
+     * julgavam nada. Guarda que não pode reprovar é documentação, não guarda.</p>
+     *
+     * <p>Duas categorias diferentes de propósito: uma só faria o filtro por tipo parecer
+     * funcionar mesmo se ele ignorasse o parâmetro.</p>
+     */
+    private void criarEventosComCoordenada(int quantos) {
+        for (int i = 0; i < quantos; i++) {
+            repositorioDeEventos.gravarOuAtualizar(
+                    org.nasa.evento.domain.EventoNatural.lidoDaNasa(
+                            "EONET_MAPA_" + i,
+                            "Evento de teste " + i,
+                            i % 2 == 0 ? "wildfires" : "volcanoes",
+                            java.time.Instant.now().minusSeconds(3600L * i),
+                            // Longitudes espalhadas, latitude fixa: coordenada valida em
+                            // qualquer i, sem esbarrar nos polos nem no antimeridiano.
+                            new org.nasa.geo.domain.Coordenada(-10.0, -180.0 + (i % 360)),
+                            "{}", null));
+        }
+    }
+
     /**
      * Quantos registros criar antes de olhar.
      *
@@ -282,6 +314,47 @@ class TodasAsTelasRespondemTest {
                 .count();
         assertEquals(13, caixas,
                 "o filtro do mapa tem " + caixas + " caixas; a EONET tem 13 categorias");
+    }
+
+    @Test
+    @DisplayName("CONTROLE POSITIVO: o mapa manda TODOS os eventos, nao so a primeira pagina")
+    void oMapaMandaTodosOsEventos() {
+        // A lista abaixo do mapa tem DOIS papeis: e a fonte dos pinos (o script le
+        // `data-latitude` de cada item) e e a versao legivel para quem esta sem
+        // JavaScript. A paginacao dela e feita no NAVEGADOR justamente por isso.
+        //
+        // Se alguem paginar no servidor para "arrumar a lista", o mapa passa a desenhar
+        // 50 pinos em vez de 500 — em silencio, e o mapa e o produto da tela. Este teste
+        // e o que reprova essa troca.
+        // Sem estes, o teste comparava zero com zero e nunca julgava nada.
+        criarEventosComCoordenada(60);
+
+        String corpo = corpoDe("/desastres/mapa");
+        long naPagina = corpo.lines().filter(l -> l.contains("data-latitude=")).count();
+
+        // A ASERCAO E CONTRA O QUE O SERVIDOR TEM, nao contra um numero fixo.
+        //
+        // A primeira versao deste teste exigia "mais de 50" e reprovou — corretamente:
+        // o banco de teste tem punhado de eventos, nao o volume de producao. Numero fixo
+        // num teste e uma suposicao sobre o ambiente disfarcada de asercao.
+        long esperado = Math.min(
+                consultarEventos.paraOMapa(java.util.List.of(),
+                        org.nasa.evento.application.ConsultarEventosUseCase.MAXIMO_NO_MAPA).size(),
+                org.nasa.evento.application.ConsultarEventosUseCase.MAXIMO_NO_MAPA);
+
+        assertEquals(esperado, naPagina,
+                "o servidor mandou " + naPagina + " evento(s) com coordenada, mas tem "
+                        + esperado + ". Se alguem paginou a lista NO SERVIDOR para encurtar"
+                        + " a pagina, o mapa passou a desenhar so a primeira pagina de pinos"
+                        + " — em silencio. A paginacao desta lista e do NAVEGADOR.");
+
+        // CONTROLE DO CONTROLE: com zero evento a asercao acima compara 0 com 0 e passa
+        // sem julgar nada. Este piso e o que a torna exigivel — e ele passou de 50 de
+        // proposito, que e o tamanho da pagina da lista: abaixo disso a paginacao do
+        // navegador nem seria acionada, e o teste nao estaria no cenario que importa.
+        assertTrue(esperado > 50,
+                "so " + esperado + " evento(s) com coordenada: a asercao acima passa por"
+                        + " vacuidade e a guarda nao julga nada");
     }
 
     @Test

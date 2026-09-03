@@ -218,3 +218,43 @@ busca inteira antes de ver qualquer coisa.
 
 O noticiário passou a chegar depois, por HTMX. Uma fonte externa lenta, ou fora do ar, deixou
 de segurar a porta de entrada do sistema.
+
+## A lista abaixo do mapa: filtro e paginação
+
+Com 500 eventos desenhados, a lista tinha 500 cartões e metros de rolagem. Ninguém percorre
+500 cartões procurando um. Agora ela tem **filtro por tipo** e **paginação de 50**.
+
+**Os dois são do navegador, e essa é a decisão que define o bloco.** A lista tem dois papéis
+ao mesmo tempo: é a **fonte de dados dos pinos** — o desenhador lê `data-latitude` de cada
+item — e é a versão legível do mapa para quem está sem JavaScript.
+
+Paginar no servidor mandaria 50 itens, e o mapa passaria a desenhar **50 pinos em vez de
+500**, em silêncio. O mapa é o produto da tela; encolhê-lo para arrumar a lista seria
+consertar o menor problema quebrando o maior. Há teste que reprova essa troca, calibrado com
+o defeito reintroduzido — e ele cria 60 eventos com coordenada, porque a versão anterior
+comparava zero com zero e passava **por vacuidade**.
+
+A alternativa seria mandar os 500 duas vezes: uma escondida para o mapa, outra paginada para
+ler. Duas cópias do mesmo dado no mesmo HTML divergem no primeiro dia em que alguém mexer
+numa delas.
+
+**São dois filtros diferentes, e a tela diz qual é qual.** O de cima recarrega a página e
+muda o que o servidor manda; o de baixo recorta só os cartões, e traz escrito *"só os cartões
+— o mapa continua com todos os pinos"*. Eles respondem a momentos diferentes: um escolhe o
+recorte, o outro serve a quem já está lendo a lista e não quer voltar ao topo.
+
+O filtro de baixo lista **só os tipos presentes na lista**, ao contrário do de cima, que
+mostra as 13. Também de propósito: o de cima é um **controle** ("posso pedir isto ao
+servidor"); o de baixo é um **recorte** do que já chegou, e oferecer um tipo ausente daria um
+clique que leva a lista vazia.
+
+## O vão preto acima e abaixo do mundo
+
+Com pinos espalhados pelo globo, o `fitBounds` escolhia um zoom baixo — e nesse zoom o
+mapa-múndi fica **mais baixo que o contêiner**. O que sobrava não era mar: era o fundo da
+caixa, uma faixa preta acima e abaixo do planeta, que parecia mapa não carregado.
+
+Horizontalmente o Leaflet repete o mundo e o problema não existe. Verticalmente ele não pode
+repetir — o planeta acaba nos polos. A conta: no zoom `z` o mundo tem `256 × 2^z` pixels de
+altura, então preencher exige `z ≥ log2(altura ÷ 256)`. Tomando o maior entre esse e o zoom
+escolhido, o mundo sempre preenche e o mapa nunca se afasta mais do que o `fitBounds` queria.

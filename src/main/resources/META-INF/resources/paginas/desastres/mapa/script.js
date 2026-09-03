@@ -177,6 +177,30 @@
     mapa.fitBounds(L.latLngBounds(pontos), { padding: [30, 30] });
   }
 
+  /*
+   * SEM VAO ACIMA E ABAIXO DO MUNDO.
+   *
+   * VISTO NA TELA: com pinos espalhados pelo globo, o `fitBounds` escolhe um
+   * zoom baixo — e nesse zoom o mapa-mundi e MAIS BAIXO que o container. O que
+   * sobra nao e mar: e o fundo da caixa, uma faixa preta acima e abaixo do
+   * planeta, que parece o mapa nao ter carregado inteiro.
+   *
+   * Horizontalmente o Leaflet repete o mundo e o problema nao existe.
+   * Verticalmente ele nao pode repetir — o planeta acaba nos polos.
+   *
+   * A conta: no zoom `z` o mundo tem `256 * 2^z` pixels de altura. Para cobrir
+   * a caixa e preciso `256 * 2^z >= altura`, ou seja `z >= log2(altura / 256)`.
+   * Arredondando para cima e tomando o maior entre esse e o zoom escolhido, o
+   * mundo sempre preenche — e nunca se afasta MAIS do que o `fitBounds` queria.
+   */
+  var alturaDaCaixa = caixa.clientHeight;
+  if (alturaDaCaixa > 0) {
+    var zoomQuePreenche = Math.ceil(Math.log2(alturaDaCaixa / 256));
+    if (mapa.getZoom() < zoomQuePreenche) {
+      mapa.setZoom(zoomQuePreenche);
+    }
+  }
+
   caixa.setAttribute('data-mapa-ativo', '');
 })();
 
@@ -231,4 +255,216 @@
     }
     formulario.submit();
   });
+})();
+
+
+/*
+ * A LISTA ABAIXO DO MAPA — filtro por tipo e paginação de 50.
+ *
+ * PROPÓSITO: com 500 eventos desenhados, a lista tinha 500 cartões e metros de
+ * rolagem. Ninguém percorre 500 cartões procurando um. O filtro escolhe o tipo
+ * e a paginação corta o resto em pedaços legíveis.
+ *
+ * ─────────────────────────────────────────────────────────────────────────
+ * POR QUE NO NAVEGADOR, E NÃO NO SERVIDOR — a decisão que define este bloco.
+ *
+ * Esta lista tem DOIS papéis ao mesmo tempo:
+ *
+ *   1. é a fonte de dados dos PINOS: o desenhador acima lê `data-latitude` de
+ *      cada item para plantar os marcadores;
+ *   2. é a versão legível do mapa para quem está sem JavaScript.
+ *
+ * Paginar no servidor mandaria 50 itens — e o mapa passaria a desenhar 50
+ * pinos em vez de 500, EM SILÊNCIO. O mapa é o produto da tela; encolhê-lo
+ * para arrumar a lista seria consertar o menor problema quebrando o maior.
+ * Há teste que reprova essa troca, calibrado com o defeito reintroduzido.
+ *
+ * A alternativa seria mandar os 500 duas vezes: uma escondida para o mapa,
+ * outra paginada para ler. Duas cópias do mesmo dado no mesmo HTML divergem
+ * no primeiro dia em que alguém mexer numa delas.
+ * ─────────────────────────────────────────────────────────────────────────
+ *
+ * ESTE FILTRO É LOCAL, E A TELA DIZ ISSO. Ele recorta os CARTÕES; os pinos
+ * continuam todos no mapa. É diferente do filtro de cima, que recarrega a
+ * página e muda o que o servidor manda. Os dois existem porque respondem a
+ * momentos diferentes: o de cima escolhe o recorte; este é para quem já está
+ * lendo a lista e não quer voltar ao topo e esperar uma requisição.
+ *
+ * SEM JAVASCRIPT a lista aparece inteira, sem filtro e sem paginação — e isso
+ * é coerente, não uma falha: sem JavaScript também não há mapa nenhum, e a
+ * lista completa é exatamente o que se quer quando ela é a única coisa que
+ * sobrou.
+ *
+ * FALHA: qualquer erro aqui deixa a lista inteira visível, como veio do
+ * servidor. O bloco não apaga nem move item nenhum — só esconde e mostra.
+ */
+(function () {
+  'use strict';
+
+  var POR_PAGINA = 50;
+
+  var lista = document.querySelector('[data-mapa-eventos]');
+  if (!lista) {
+    return;
+  }
+
+  var todos = Array.prototype.slice.call(lista.children);
+  if (todos.length === 0) {
+    return;
+  }
+
+  var tipoEscolhido = null;   // null = todos
+  var visiveis = todos;
+  var paginaAtual = 0;
+
+  // ------------------------------------------------------------- filtro
+
+  /*
+   * Os tipos vêm do que ESTÁ na lista, não das 13 do catálogo. Aqui é chave
+   * de leitura do que já chegou: oferecer "Vulcões" num recorte que não tem
+   * nenhum daria um clique que leva a lista vazia.
+   *
+   * É o oposto do filtro de cima, e de propósito: aquele é um CONTROLE
+   * ("posso pedir isto ao servidor") e por isso mostra as 13, inclusive as que
+   * não têm o que desenhar. Este é um RECORTE do que está na tela.
+   */
+  var porTipo = {};
+  todos.forEach(function (item) {
+    var tipo = item.dataset.tipo || 'Sem categoria';
+    if (!porTipo[tipo]) {
+      porTipo[tipo] = { cor: item.dataset.cor || '#8b949e', itens: [] };
+    }
+    porTipo[tipo].itens.push(item);
+  });
+  var tipos = Object.keys(porTipo).sort();
+
+  var barra = document.createElement('div');
+  barra.className = 'lista-filtro';
+
+  var rotulo = document.createElement('span');
+  rotulo.className = 'lista-filtro-rotulo';
+  rotulo.textContent = 'Filtrar cartões:';
+  barra.appendChild(rotulo);
+
+  var nota = document.createElement('span');
+  nota.className = 'lista-filtro-nota';
+  // A tela DIZ que este filtro é local. Sem esta linha, alguém marcaria um
+  // tipo, veria a lista encolher e concluiria que os pinos sumiram também.
+  nota.textContent = 'só os cartões — o mapa continua com todos os pinos';
+
+  var botoes = [];
+
+  function criarBotao(texto, tipo, cor) {
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'lista-filtro-tipo';
+    b.textContent = texto;
+    if (cor) {
+      b.style.setProperty('--cor-tipo', cor);
+    }
+    b.addEventListener('click', function () {
+      tipoEscolhido = tipo;
+      aplicar();
+    });
+    barra.appendChild(b);
+    botoes.push({ elemento: b, tipo: tipo });
+    return b;
+  }
+
+  criarBotao('Todos (' + todos.length + ')', null, null);
+  tipos.forEach(function (t) {
+    criarBotao(t + ' (' + porTipo[t].itens.length + ')', t, porTipo[t].cor);
+  });
+  barra.appendChild(nota);
+
+  // Um tipo só: o filtro não decide nada, e dois botões que não mudam a lista
+  // são ruído. A paginação continua, porque ela ainda serve.
+  if (tipos.length > 1) {
+    lista.parentNode.insertBefore(barra, lista);
+  }
+
+  // ---------------------------------------------------------- paginação
+
+  var controle = document.createElement('nav');
+  controle.className = 'lista-paginacao';
+  controle.setAttribute('aria-label', 'Páginas da lista de eventos');
+
+  var anterior = document.createElement('button');
+  anterior.type = 'button';
+  anterior.className = 'botao botao-discreto';
+  anterior.textContent = '‹ Anteriores';
+
+  var proximo = document.createElement('button');
+  proximo.type = 'button';
+  proximo.className = 'botao botao-discreto';
+  proximo.textContent = 'Próximos ›';
+
+  var situacao = document.createElement('span');
+  situacao.className = 'lista-paginacao-situacao';
+  // `polite` avisa quem usa leitor de tela que a página mudou, sem interromper
+  // o que estiver sendo lido. Sem isto, trocar de página seria silencioso.
+  situacao.setAttribute('aria-live', 'polite');
+
+  controle.appendChild(anterior);
+  controle.appendChild(situacao);
+  controle.appendChild(proximo);
+  lista.parentNode.insertBefore(controle, lista.nextSibling);
+
+  anterior.addEventListener('click', function () { irPara(paginaAtual - 1); });
+  proximo.addEventListener('click', function () { irPara(paginaAtual + 1); });
+
+  function irPara(pagina) {
+    paginaAtual = pagina;
+    desenhar();
+    // Volta ao topo da lista: sem isto, quem clica no fim continua no fim,
+    // olhando o rodapé de uma lista que acabou de trocar por completo.
+    lista.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  }
+
+  // ------------------------------------------------------------ desenho
+
+  function aplicar() {
+    visiveis = tipoEscolhido === null ? todos : porTipo[tipoEscolhido].itens;
+    paginaAtual = 0;
+
+    botoes.forEach(function (b) {
+      var ativo = b.tipo === tipoEscolhido;
+      b.elemento.classList.toggle('lista-filtro-ativo', ativo);
+      // `aria-pressed` diz o estado a quem usa leitor de tela. Sem ele, o
+      // botão marcado é indistinguível dos outros fora da tela.
+      b.elemento.setAttribute('aria-pressed', ativo ? 'true' : 'false');
+    });
+    desenhar();
+  }
+
+  function desenhar() {
+    var totalDePaginas = Math.max(1, Math.ceil(visiveis.length / POR_PAGINA));
+    paginaAtual = Math.max(0, Math.min(paginaAtual, totalDePaginas - 1));
+
+    var primeiro = paginaAtual * POR_PAGINA;
+    var ultimo = Math.min(primeiro + POR_PAGINA, visiveis.length);
+
+    // Esconde TUDO e mostra a fatia. Percorrer só o que mudou seria mais
+    // rápido e mais fácil de errar: bastaria um caminho esquecido para sobrar
+    // cartão de outro tipo no meio do recorte.
+    todos.forEach(function (item) { item.hidden = true; });
+    for (var i = primeiro; i < ultimo; i++) {
+      // `hidden` e não `display:none`: o atributo é o mecanismo padrão, e o
+      // item escondido assim sai da ordem de foco e da leitura de tela — que
+      // é o que se quer de um item fora da página atual.
+      visiveis[i].hidden = false;
+    }
+
+    var quantos = visiveis.length;
+    var deQue = tipoEscolhido === null ? '' : ' de ' + tipoEscolhido;
+    situacao.textContent = quantos === 0
+      ? 'nenhum cartão' + deQue
+      : (primeiro + 1) + '–' + ultimo + ' de ' + quantos + ' cartão(ões)'
+        + deQue + '  (página ' + (paginaAtual + 1) + ' de ' + totalDePaginas + ')';
+
+    anterior.disabled = paginaAtual === 0;
+    proximo.disabled = paginaAtual >= totalDePaginas - 1;
+  }
+
+  aplicar();
 })();
