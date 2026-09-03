@@ -1,0 +1,29 @@
+{!
+  O MENU LATERAL DA DOCUMENTACAO — usado pelo indice E pela pagina do documento.
+
+  Ele e uma TAG e nao um trecho copiado porque as duas telas precisam do mesmo
+  menu com o mesmo item marcado. Duplicado, um dia alguem acrescenta um
+  documento e ele aparece numa tela e nao na outra — e a divergencia nao quebra
+  nada, so confunde quem navega.
+
+  `it` e o slug do documento aberto, ou vazio no indice. Comparar contra vazio
+  nao marca nada, que e o certo: no indice nao ha "documento atual".
+!}
+<nav class="doc-nav" aria-label="Documentos">
+  <a class="doc-nav-topo" href="/documentacao">{#icone 'documentacao' /}Documentação</a>
+
+  {#for s in cdi:catalogoDocs.getSecoes}
+  <div class="doc-grupo" style="--matiz: {s.matiz}">
+    <span class="doc-grupo-titulo">{#icone s.icone /}{s.titulo}</span>
+    <ul class="doc-grupo-lista">
+      {#for d in cdi:catalogoDocs.daSecao(s.slug)}
+      <li>
+        <a class="doc-nav-item{#if d.slug == it} doc-nav-atual{/if}"
+           href="/documentacao/{d.slug}"
+           {#if d.slug == it}aria-current="page"{/if}>{d.titulo}</a>
+      </li>
+      {/for}
+    </ul>
+  </div>
+  {/for}
+</nav>

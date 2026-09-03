@@ -110,12 +110,37 @@
 
   // ---------------------------------------------------------- andar sozinho
 
+  /*
+   * ANDAR SOZINHO, com o relogio se REAGENDANDO a cada passo.
+   *
+   * Era `setInterval`, e a diferenca importa: `setInterval` e disparado uma vez
+   * e nunca reavalia nada. Se qualquer condicao matasse o temporizador, ele
+   * ficava morto para sempre — e a tela nao dava sinal, porque um carrossel
+   * parado e visualmente identico a um carrossel entre dois passos.
+   *
+   * `setTimeout` reagendado revalida o estado em CADA passo. O custo e o mesmo;
+   * o ganho e que uma condicao transitoria atrasa um ciclo em vez de encerrar o
+   * movimento da sessao inteira.
+   */
   function comecar() {
     if (querMenosMovimento || pausadoPeloUsuario || temporizador) {
       return;
     }
-    temporizador = window.setInterval(avancar, INTERVALO);
     carrossel.removeAttribute('data-pausado');
+    agendar();
+  }
+
+  function agendar() {
+    temporizador = window.setTimeout(function () {
+      temporizador = null;
+      if (querMenosMovimento || pausadoPeloUsuario || document.hidden) {
+        // Nao avanca AGORA, e continua vivo: no proximo ciclo reavalia.
+        agendar();
+        return;
+      }
+      avancar();
+      agendar();
+    }, INTERVALO);
   }
 
   function parar(porQuemUsa) {
@@ -124,7 +149,11 @@
       carrossel.setAttribute('data-pausado', '');
     }
     if (temporizador) {
-      window.clearInterval(temporizador);
+      // `clearTimeout`, e nao `clearInterval`: o relogio passou a ser um
+      // `setTimeout` que se reagenda. Os dois cancelam qualquer um dos tipos
+      // nos navegadores, mas o nome errado aqui e uma pista falsa para quem
+      // ler depois procurando o intervalo que nao existe mais.
+      window.clearTimeout(temporizador);
       temporizador = null;
     }
   }
@@ -146,14 +175,63 @@
     }
   });
 
-  // Aba escondida: nao gasta bateria nem requisicao com o que ninguem ve.
+  // Aba escondida: nao gasta bateria nem requisicao com o que ninguem ve. O
+  // relogio reagendado ja pula o passo quando `document.hidden`, entao aqui so
+  // se cuida do RETORNO.
   document.addEventListener('visibilitychange', function () {
-    if (document.hidden) {
-      parar(false);
-    } else {
+    if (!document.hidden) {
+      destravarSePonteiroSaiu();
       comecar();
     }
   });
+
+  /*
+   * A ARMADILHA DO `mouseleave` PERDIDO — o defeito de boa-fe desta tela.
+   *
+   * `mouseenter` chama `parar(true)`, que liga `pausadoPeloUsuario`. A UNICA
+   * coisa que desliga essa marca e um `mouseleave` (ou um `focusout`). E o
+   * `mouseleave` NAO E GARANTIDO: trocar de aba, alternar de janela com o
+   * teclado, ou o cartao ser trocado pelo HTMX debaixo do ponteiro deixam o
+   * ponteiro "fora" sem o evento ter disparado.
+   *
+   * O resultado e o pior tipo de defeito: alguem passa o mouse para ler uma
+   * manchete — que e exatamente o uso pretendido —, vai fazer outra coisa, e o
+   * carrossel nao anda mais pelo resto da sessao. Ninguem relaciona as duas
+   * coisas, e a tela parece so "estar quebrada".
+   *
+   * `:hover` e a fonte de verdade que nao depende de evento: ele responde onde
+   * o ponteiro ESTA, nao onde ele passou. Se a marca de pausa esta ligada e o
+   * ponteiro nao esta em cima, a marca esta errada e e apagada.
+   */
+  function destravarSePonteiroSaiu() {
+    if (!pausadoPeloUsuario) {
+      return;
+    }
+    var aindaEmCima = false;
+    try {
+      aindaEmCima = carrossel.matches(':hover');
+    } catch (semSuporte) {
+      // Navegador que recusa `:hover` em `matches` nao deve travar a tela: sem
+      // conseguir provar que o ponteiro esta em cima, o certo e voltar a andar.
+      aindaEmCima = false;
+    }
+    var comFoco = carrossel.contains(document.activeElement);
+    if (!aindaEmCima && !comFoco) {
+      pausadoPeloUsuario = false;
+      carrossel.removeAttribute('data-pausado');
+    }
+  }
+
+  // A mesma armadilha, pelo outro lado: quando a JANELA recupera o foco, o
+  // ponteiro pode ter saido sem aviso.
+  window.addEventListener('focus', function () {
+    destravarSePonteiroSaiu();
+    comecar();
+  });
+
+  // `pointerleave` alem de `mouseleave`: o primeiro cobre toque e caneta, onde
+  // `mouseleave` e emulado e chega com atraso ou nao chega.
+  carrossel.addEventListener('pointerleave', retomar);
 
   // ------------------------------------------------------------------ setas
 

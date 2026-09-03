@@ -183,4 +183,13 @@
   {/if}
 </section>
 {/corpo}
+
+{#scripts}
+{!
+  A paginacao da tabela "Por operacao". Entra so nesta pagina: a moldura nao
+  carrega script de tela nenhuma, e o custo de um arquivo a mais por tela e
+  menor que o de um arquivo global que roda em todas e serve a uma.
+!}
+<script src="/paginas/telemetria/script.js?v={versaoAssets}" defer></script>
+{/scripts}
 {/include}

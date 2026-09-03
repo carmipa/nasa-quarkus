@@ -91,3 +91,50 @@ A guarda se calibra em toda execução, nos dois sentidos: precisa **reprovar** 
 defeitos num CSS sintético doente, e **não acusar nada** num CSS são que contém borda,
 sombra, breakpoint e o texto da regra em comentário. Sem as duas metades, o `0` dela é
 indistinguível de uma expressão regular quebrada.
+
+## Guarda de geometria da marca — a que mede a TELA
+
+As outras guardas leem código. Esta abre o navegador, monta a marca do cabeçalho e pergunta
+ao próprio motor de layout onde cada peça ficou.
+
+**O prejuízo que a originou, medido em 03/09/2026.** O ícone devia ficar à esquerda do texto.
+A regra existia e estava correta:
+
+```css
+.cabecalho-marca { display: flex; align-items: center; gap: 0.7rem; }   /* linha 734 */
+```
+
+E não valia, porque 670 linhas acima, no **mesmo arquivo**, sobrevivia:
+
+```css
+.cabecalho-marca { display: flex; flex-direction: column; }             /* linha 65 */
+```
+
+No CSS a regra posterior sobrepõe **só as propriedades que repete**. O bloco de baixo
+redeclarava `display` e não `flex-direction` — a coluna venceu, calada, e a tela ficou
+empilhada com um CSS que dizia "ícone à esquerda". Foi pedido duas vezes e "feito" duas
+vezes.
+
+**Por que ela mede a tela, e não o texto do CSS.** A primeira tentativa procurava seletor
+duplicado com geometria órfã. Ela achou o defeito de verdade **e mais dois falsos**: `.menu`
+e `.rodape` também são declarados duas vezes, de propósito, e ali o bloco posterior
+redeclara exatamente a propriedade que quer mudar. Instrumento que grita em código correto é
+desligado na terceira semana. `getComputedStyle` não tem essa ambiguidade — devolve o que o
+navegador aplicou, depois da cascata inteira.
+
+A calibração é o controle positivo, e roda **antes** da medição real: a guarda injeta
+`flex-direction: column !important` e exige que a sonda **reprove**. Se ela aprovar o caso
+doente, o `0` do caso real não vale nada, e a saída é `2` — não `0`.
+
+Dois enganos do próprio instrumento ficaram registrados nela, porque os dois custaram
+execuções achando que a tela estava errada:
+
+- **`--dump-dom` devolve um array de linhas**, e sobre array o `-match` do PowerShell age
+  como *filtro*: ele devolve os elementos que casam e **não popula `$Matches`**. O `if` dava
+  verdadeiro e o grupo capturado vinha vazio.
+- **`msedge.exe` é binário de subsistema gráfico**: lançado com `& $edge`, o stdout não chega
+  ao pipeline do PowerShell — embora a mesma linha funcione no bash.
+  `Start-Process -RedirectStandardOutput` resolve.
+
+Ela depende do app no ar, e sem ele sai `2` (**NÃO VERIFICOU**) — que não é aprovação, e
+aparece como tal no relatório.

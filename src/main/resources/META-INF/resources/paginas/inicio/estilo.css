@@ -238,7 +238,7 @@
  */
 .inicio-capa {
   display: grid;
-  grid-template-columns: 1.2fr 1fr;
+  grid-template-columns: 1fr 1.3fr;
   align-items: center;
   gap: 2rem;
   width: 100%;

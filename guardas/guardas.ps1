@@ -59,6 +59,9 @@ function ExecutarGuarda([string]$nome, [string]$script, [string[]]$argumentos) {
 ExecutarGuarda 'guarda de caminhos proibidos' 'guarda-caminhos-proibidos.ps1' @('-Modo', $Modo, '-Caminho', $raiz)
 ExecutarGuarda 'guarda de segredos'            'guarda-segredos.ps1'            @('-Modo', $Modo, '-Caminho', $raiz)
 ExecutarGuarda 'guarda de CSS em porcentagem'  'guarda-css-porcentagem.ps1'     @('-Caminho', $raiz)
+# Esta guarda mede a TELA, com o navegador, e por isso depende do app no ar.
+# Sem ele ela sai 2 (NAO VERIFICOU) — que nao e aprovacao e aparece como tal.
+ExecutarGuarda 'guarda de geometria da marca'  'guarda-geometria-da-marca.ps1'  @()
 
 Write-Host ''
 Write-Host '================ PLACAR ================' -ForegroundColor White

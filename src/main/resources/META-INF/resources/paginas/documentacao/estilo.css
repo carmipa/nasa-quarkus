@@ -11,104 +11,372 @@
  * única exceção deliberada, e a razão está anotada onde ela aparece.
  */
 
-/* ------------------------------------------------------------------ índice */
+/* ==========================================================================
+ * A MOLDURA DE TRÊS COLUNAS — menu · texto · sumário
+ *
+ * O padrão vem do binmapper (`motor/web/css/documentacao/documentacao.css`),
+ * conferido em 03/09/2026. O que foi copiado é a ESTRUTURA: menu lateral
+ * grudado à esquerda, coluna de texto no meio, sumário "Nesta página" à
+ * direita, e cada seção com uma cor própria.
+ *
+ * O que NÃO foi copiado é a fonte de ícones. O binmapper usa Material Symbols,
+ * que chega por CDN do Google; aqui os ícones são os 46 SVG que já moram no
+ * projeto. Uma vitrine não deve depender de rede alheia para desenhar — e a
+ * fonte de ícones é justamente o recurso cujo bloqueio deixa a tela cheia de
+ * nomes de ícone escritos em texto.
+ *
+ * `flex` e não `grid` de propósito: as três colunas precisam desaparecer de
+ * formas DIFERENTES no telefone — o sumário sai da tela, o menu virá bloco no
+ * topo — e um `flex-direction: column` no ponto de quebra resolve isso sem
+ * redeclarar a grade inteira.
+ * ========================================================================== */
 
-.doc-secoes {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
-  gap: 1.5rem;
-  width: 100%;
-  margin-top: 1.5rem;
-}
-
-.doc-secao {
-  padding: 1.25rem 1.4rem;
-  border: 1px solid var(--cor-borda);
-  border-top: 3px solid var(--cor-destaque);
-  border-radius: 0.5rem;
-  background: var(--cor-superficie);
-}
-
-.doc-secao-titulo { margin: 0 0 0.3rem; font-size: 1.15rem; }
-.doc-secao-resumo { margin: 0 0 1rem; color: var(--cor-texto-fraco); font-size: 0.9rem; }
-
-.doc-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; }
-
-.doc-link {
+.doc-moldura {
   display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  padding: 0.6rem 0.8rem;
-  border: 1px solid transparent;
-  border-radius: 0.4rem;
-  color: inherit;
-  text-decoration: none;
-  transition: border-color .15s, background .15s;
-}
-.doc-link:hover { border-color: var(--cor-borda); background: var(--cor-fundo); }
-
-.doc-item-titulo { font-weight: 700; }
-.doc-link:hover .doc-item-titulo { color: var(--cor-destaque); }
-.doc-item-descricao { color: var(--cor-texto-fraco); font-size: 0.85rem; }
-
-/* ------------------------------------------------------- página do documento */
-
-.doc-pagina {
-  display: grid;
-  grid-template-columns: minmax(14rem, 18rem) 1fr;
-  gap: 2rem;
+  align-items: flex-start;
+  gap: 2%;
   width: 100%;
-  align-items: start;
+  margin-top: 1rem;
 }
 
-.doc-indice-lateral {
+/* --------------------------------------------------------- o menu lateral */
+
+/* `position: sticky` SEM `top` não gruda em nada — a propriedade precisa do
+   limiar para saber onde parar. É o esquecimento mais comum aqui. */
+.doc-nav {
+  flex: 0 0 18%;
   position: sticky;
   top: 1rem;
-  padding: 1rem 1.1rem;
-  border: 1px solid var(--cor-borda);
-  border-radius: 0.5rem;
-  background: var(--cor-superficie);
-  max-height: calc(100vh - 2rem);
-  overflow-y: auto;
-  font-size: 0.9rem;
+  align-self: flex-start;
+  min-width: 0;
 }
 
-.doc-voltar {
-  display: block;
+.doc-nav-topo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
   margin-bottom: 1rem;
   color: var(--cor-texto-fraco);
+  font-size: 0.85rem;
+  font-weight: 600;
   text-decoration: none;
 }
-.doc-voltar:hover { color: var(--cor-destaque); }
 
-.doc-indice-secao { margin-bottom: 1rem; }
+.doc-nav-topo:hover { color: var(--cor-destaque); }
 
-.doc-indice-titulo {
-  display: block;
-  margin-bottom: 0.35rem;
-  color: var(--cor-texto-fraco);
-  font-size: 0.7rem;
+.doc-grupo + .doc-grupo { margin-top: 1.1rem; }
+
+/* A COR DA SEÇÃO vem de `--matiz`, declarado no HTML por seção.
+ *
+ * `oklch` e não `hsl`: em `hsl`, dois matizes com a mesma "lightness" têm
+ * brilho PERCEBIDO muito diferente — o amarelo estoura e o azul afunda, e cada
+ * seção precisaria de ajuste à mão. `oklch` é perceptualmente uniforme, então
+ * as cinco seções ficam legíveis trocando UM número. */
+.doc-grupo-titulo {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.4rem;
+  color: oklch(0.75 0.14 var(--matiz, 210));
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
 
-.doc-indice-secao ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.15rem; }
-.doc-indice-secao a {
+.doc-grupo-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.1rem;
+}
+
+.doc-nav-item {
   display: block;
-  padding: 0.25rem 0.5rem;
+  padding: 0.35rem 0.6rem;
   border-left: 2px solid transparent;
+  border-radius: 0 0.35rem 0.35rem 0;
   color: var(--cor-texto-fraco);
+  font-size: 0.83rem;
+  line-height: 1.35;
   text-decoration: none;
 }
-.doc-indice-secao a:hover { color: var(--cor-texto); }
 
-.doc-indice-atual {
-  border-left-color: var(--cor-destaque) !important;
-  color: var(--cor-destaque) !important;
+.doc-nav-item:hover {
+  color: var(--cor-texto);
+  background: var(--cor-fundo-painel);
+}
+
+/* O item aberto usa a cor da PRÓPRIA seção, herdada pelo `--matiz` do grupo:
+   assim a marca de "onde estou" concorda com o título logo acima dela. */
+.doc-nav-atual {
+  color: oklch(0.8 0.15 var(--matiz, 210));
+  border-left-color: oklch(0.7 0.16 var(--matiz, 210));
+  background: oklch(0.7 0.16 var(--matiz, 210) / 0.1);
   font-weight: 600;
 }
 
-/* ------------------------------------------------------------------ conteúdo */
+/* ----------------------------------------------------- o índice em cartões */
+
+.doc-coluna {
+  flex: 1 1 0;
+  min-width: 0;
+  display: grid;
+  gap: 1.8rem;
+}
+
+.doc-bloco-cabeca {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.3rem;
+}
+
+.doc-bloco-icone {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  flex: none;
+  border-radius: 0.5rem;
+  color: oklch(0.78 0.15 var(--matiz, 210));
+  background: oklch(0.7 0.16 var(--matiz, 210) / 0.13);
+  border: 1px solid oklch(0.65 0.15 var(--matiz, 210) / 0.4);
+}
+
+.doc-bloco-titulo {
+  margin: 0;
+  font-size: 1.1rem;
+  color: oklch(0.85 0.1 var(--matiz, 210));
+}
+
+/* A linha que preenche o vão entre o título e a contagem.
+ *
+ * `flex: 1` faz ela se esticar sozinha — largura declarada teria de mudar a cada
+ * título de tamanho diferente.
+ *
+ * `border-top` e não `height: 1px` + `background`: a guarda de porcentagem
+ * reprovou a primeira versão, e com razão. Isto é um FIO DE RÉGUA, e fio se faz
+ * com borda — que é a exceção declarada da regra — não com altura de layout. A
+ * diferença não é cosmética: `height` em `px` não acompanha quem aumentou a
+ * fonte do sistema, e num zoom alto a linha desaparecia enquanto o texto ao
+ * lado dobrava de tamanho. */
+.doc-bloco-linha {
+  flex: 1;
+  border-top: 1px solid var(--cor-borda);
+}
+
+.doc-bloco-conta {
+  color: var(--cor-texto-fraco);
+  font-size: 0.7rem;
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+}
+
+.doc-bloco-resumo {
+  margin: 0 0 0.8rem;
+  color: var(--cor-texto-fraco);
+  font-size: 0.88rem;
+}
+
+/* `auto-fit` e NUNCA `auto-fill`: com `auto-fill`, uma seção de um só documento
+   deixaria colunas vazias reservadas à direita do cartão. */
+.doc-cartoes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  gap: 0.9rem;
+  width: 100%;
+}
+
+.doc-cartao {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 0.85rem;
+  background: var(--cor-superficie);
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.16s, transform 0.16s, background 0.16s;
+}
+
+.doc-cartao:hover,
+.doc-cartao:focus-visible {
+  border-color: oklch(0.65 0.15 var(--matiz, 210) / 0.6);
+  background: oklch(0.7 0.16 var(--matiz, 210) / 0.06);
+  transform: translateY(-0.15rem);
+}
+
+/* Quem desliga animação no sistema não recebe o deslocamento — mas a borda e o
+   fundo continuam mudando, então o retorno visual do hover não se perde. */
+@media (prefers-reduced-motion: reduce) {
+  .doc-cartao { transition: border-color 0.16s, background 0.16s; }
+  .doc-cartao:hover,
+  .doc-cartao:focus-visible { transform: none; }
+}
+
+.doc-cartao-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.doc-cartao-icone {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  flex: none;
+  border-radius: 0.55rem;
+  color: oklch(0.78 0.15 var(--matiz, 210));
+  background: oklch(0.7 0.16 var(--matiz, 210) / 0.13);
+  border: 1px solid oklch(0.65 0.15 var(--matiz, 210) / 0.4);
+}
+
+.doc-cartao-min {
+  color: var(--cor-texto-fraco);
+  font-size: 0.68rem;
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+}
+
+.doc-cartao-titulo { font-weight: 700; font-size: 0.98rem; }
+.doc-cartao:hover .doc-cartao-titulo { color: oklch(0.85 0.12 var(--matiz, 210)); }
+
+.doc-cartao-descricao {
+  color: var(--cor-texto-fraco);
+  font-size: 0.83rem;
+  line-height: 1.45;
+}
+
+/* `margin-top: auto` cola a ação no rodapé do cartão. Numa grade os cartões têm
+   a mesma altura; sem isto, a ação flutuaria no meio dos de descrição curta. */
+.doc-cartao-acao {
+  margin-top: auto;
+  padding-top: 0.3rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: oklch(0.78 0.15 var(--matiz, 210));
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+/* ---------------------------------------------- a trilha e a medida do doc */
+
+.doc-artigo { flex: 1 1 0; min-width: 0; }
+
+.doc-trilha {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 0.9rem;
+  color: var(--cor-texto-fraco);
+  font-size: 0.8rem;
+}
+
+.doc-trilha a { color: var(--cor-destaque); text-decoration: none; }
+.doc-trilha a:hover { text-decoration: underline; }
+.doc-trilha-seta { color: var(--cor-borda); }
+
+.doc-trilha-secao {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: oklch(0.78 0.14 var(--matiz, 210));
+}
+
+.doc-titulo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.doc-medida {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0.5rem 0 0;
+  color: var(--cor-texto-fraco);
+  font-size: 0.78rem;
+}
+
+/* ------------------------------------------------ o sumário "Nesta página" */
+
+.doc-sumario {
+  flex: 0 0 15%;
+  position: sticky;
+  top: 1rem;
+  align-self: flex-start;
+  min-width: 0;
+}
+
+.doc-sumario-titulo {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--cor-texto-fraco);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.doc-sumario-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-left: 1px solid var(--cor-borda);
+}
+
+.doc-sumario-lista a {
+  display: block;
+  padding: 0.25rem 0.7rem;
+  margin-left: -1px;
+  border-left: 2px solid transparent;
+  color: var(--cor-texto-fraco);
+  font-size: 0.78rem;
+  line-height: 1.4;
+  text-decoration: none;
+}
+
+.doc-sumario-lista a:hover { color: var(--cor-texto); }
+
+.doc-sumario-lista a.doc-sumario-ativo {
+  color: oklch(0.8 0.15 var(--matiz, 210));
+  border-left-color: oklch(0.7 0.16 var(--matiz, 210));
+}
+
+/* Um `h3` é subordinado ao `h2` acima dele, e a indentação é o que mostra isso
+   numa lista plana. */
+.doc-sumario-lista .doc-sumario-sub a {
+  padding-left: 1.4rem;
+  font-size: 0.74rem;
+}
+
+/* --------------------------------------------------------------- telefone */
+
+/* 60rem e não 960px: em `rem` o ponto de quebra acompanha quem aumentou a fonte
+   do sistema — e é exatamente aí que três colunas apertam primeiro. `px` em
+   `@media` é permitido pela regra do projeto, mas aqui `rem` é melhor. */
+@media (max-width: 60rem) {
+  .doc-moldura { flex-direction: column; gap: 1.25rem; }
+
+  .doc-nav {
+    position: static;
+    flex: 1 1 auto;
+    width: 100%;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--cor-borda);
+  }
+
+  /* O SUMÁRIO SAI DA TELA no telefone, e não vira uma quarta pilha. Ele é
+     navegação secundária de uma página que, nessa largura, já se percorre
+     rolando — empilhado, empurraria o texto para baixo da dobra. */
+  .doc-sumario { display: none; }
+}
 
 .doc-conteudo { min-width: 0; }
 

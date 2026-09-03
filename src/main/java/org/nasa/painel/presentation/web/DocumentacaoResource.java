@@ -13,6 +13,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.nasa.core.presentation.web.MolduraDaPagina;
 import org.nasa.core.texto.MarkdownSeguro;
+import org.nasa.painel.domain.exceptions.SecaoDeDocumentoInexistenteException;
 
 /**
  * A documentação do sistema, renderizada no servidor.
@@ -103,8 +104,19 @@ public class DocumentacaoResource {
         var todos = DocumentacaoCatalogo.DOCUMENTOS;
         int posicao = todos.indexOf(doc);
 
+        // A SECAO E OBRIGATORIA NA TELA: a trilha e o titulo colorido dependem dela, e
+        // o Qute e ESTRITO — chave ausente e 500, nao espaco em branco. Documento cuja
+        // secao nao existe no catalogo e erro de catalogo, nao de quem navegou; ele para
+        // aqui, com o nome do slug, em vez de virar uma pagina meio desenhada.
+        var secao = catalogo.secaoDe(doc).orElseThrow(
+                () -> new SecaoDeDocumentoInexistenteException(slug, doc.secao()));
+
         return moldura.vestir(telaDocumento
                 .data("doc", doc)
+                .data("secao", secao)
+                // Contado do arquivo, nao declarado: numero escrito a mao envelhece
+                // calado quando o texto cresce.
+                .data("minutos", catalogo.minutosDe(slug))
                 .data("html", marcacao.paraHtml(markdown))
                 .data("secoes", DocumentacaoCatalogo.SECOES)
                 .data("catalogo", catalogo)

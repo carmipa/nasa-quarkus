@@ -6,42 +6,61 @@
 {/estilos}
 
 {#corpo}
-<!--
-  INDICE DA DOCUMENTACAO.
+{!
+  INDICE DA DOCUMENTACAO — menu lateral + cartoes por secao.
 
-  A ordem e DECLARADA no catalogo, em codigo — nao deduzida da pasta. Varredura
+  A ordem e DECLARADA no catalogo, em codigo, nao deduzida da pasta. Varredura
   de diretorio muda de resultado entre a IDE e o jar, e um documento novo
   apareceria sem secao, no fim da lista, sem ninguem perceber.
 
-  E PUBLICA, junto com a home, o contato e a equipe: documentacao atras de login
-  nao serve a uma vitrine, e nao ha nada aqui que exija segredo — descreve-se o
-  que o codigo-fonte ja mostra.
--->
+  E PUBLICA junto com a home e o contato: documentacao atras de login nao serve
+  a uma vitrine, e nao ha nada aqui que exija segredo — descreve-se o que o
+  codigo-fonte ja mostra.
+
+  O TEMPO DE LEITURA e contado do arquivo na hora. Zero significa que o arquivo
+  nao foi lido, e nesse caso o rotulo SOME em vez de mostrar "0 min" — que
+  pareceria um documento vazio em vez de um erro de leitura.
+!}
 <section class="secao">
   <h1 class="secao-titulo com-icone">{#icone 'documentacao' /}Documentação</h1>
   <p class="secao-texto">
     <strong>{quantos} documentos</strong> sobre como este sistema funciona e por que ele é
-    assim. Escritos em Markdown, versionados junto com o código, e renderizados no
-    servidor — cada um também está disponível em texto cru, no fim da própria página.
+    assim. Escritos em Markdown, versionados junto com o código e renderizados no servidor —
+    cada um também está disponível em texto cru, no fim da própria página.
   </p>
 
-  <div class="doc-secoes">
-    {#for s in secoes}
-    <section class="doc-secao">
-      <h2 class="doc-secao-titulo">{s.titulo}</h2>
-      <p class="doc-secao-resumo">{s.resumo}</p>
-      <ul class="doc-lista">
-        {#for d in catalogo.daSecao(s.slug)}
-        <li class="doc-item">
-          <a class="doc-link" href="/documentacao/{d.slug}">
-            <span class="doc-item-titulo">{d.titulo}</span>
-            <span class="doc-item-descricao">{d.descricao}</span>
+  <div class="doc-moldura">
+    {#menudoc '' /}
+
+    <div class="doc-coluna">
+      {#for s in secoes}
+      <section class="doc-bloco" style="--matiz: {s.matiz}">
+        <div class="doc-bloco-cabeca">
+          <span class="doc-bloco-icone">{#icone s.icone /}</span>
+          <h2 class="doc-bloco-titulo">{s.titulo}</h2>
+          <span class="doc-bloco-linha"></span>
+          <span class="doc-bloco-conta">{catalogo.daSecao(s.slug).size} doc</span>
+        </div>
+        <p class="doc-bloco-resumo">{s.resumo}</p>
+
+        <div class="doc-cartoes">
+          {#for d in catalogo.daSecao(s.slug)}
+          <a class="doc-cartao" href="/documentacao/{d.slug}">
+            <span class="doc-cartao-topo">
+              <span class="doc-cartao-icone">{#icone d.icone /}</span>
+              {#let min=catalogo.minutosDe(d.slug)}
+              {#if min > 0}<span class="doc-cartao-min">{min} min</span>{/if}
+              {/let}
+            </span>
+            <span class="doc-cartao-titulo">{d.titulo}</span>
+            <span class="doc-cartao-descricao">{d.descricao}</span>
+            <span class="doc-cartao-acao">ler {#icone 'ver' /}</span>
           </a>
-        </li>
-        {/for}
-      </ul>
-    </section>
-    {/for}
+          {/for}
+        </div>
+      </section>
+      {/for}
+    </div>
   </div>
 </section>
 {/corpo}

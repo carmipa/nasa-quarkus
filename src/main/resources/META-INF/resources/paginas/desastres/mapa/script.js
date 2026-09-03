@@ -259,7 +259,7 @@
 
 
 /*
- * A LISTA ABAIXO DO MAPA — filtro por tipo e paginação de 50.
+ * A LISTA ABAIXO DO MAPA — filtro por tipo e paginação de 20.
  *
  * PROPÓSITO: com 500 eventos desenhados, a lista tinha 500 cartões e metros de
  * rolagem. Ninguém percorre 500 cartões procurando um. O filtro escolhe o tipo
@@ -274,7 +274,7 @@
  *      cada item para plantar os marcadores;
  *   2. é a versão legível do mapa para quem está sem JavaScript.
  *
- * Paginar no servidor mandaria 50 itens — e o mapa passaria a desenhar 50
+ * Paginar no servidor mandaria 20 itens — e o mapa passaria a desenhar 20
  * pinos em vez de 500, EM SILÊNCIO. O mapa é o produto da tela; encolhê-lo
  * para arrumar a lista seria consertar o menor problema quebrando o maior.
  * Há teste que reprova essa troca, calibrado com o defeito reintroduzido.
@@ -301,7 +301,11 @@
 (function () {
   'use strict';
 
-  var POR_PAGINA = 50;
+  // 20 e nao 50. Cinquenta cartoes ainda eram tres telas de rolagem — a
+  // paginacao existia e a pessoa continuava rolando para achar o fim da pagina.
+  // Vinte cabe de uma vez na altura util de um monitor comum, que e a medida
+  // que importa: pagina que nao cabe na tela nao paginou, so numerou a rolagem.
+  var POR_PAGINA = 20;
 
   var lista = document.querySelector('[data-mapa-eventos]');
   if (!lista) {

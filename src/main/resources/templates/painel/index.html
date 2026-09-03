@@ -26,6 +26,24 @@
   se vê. Com `fetchpriority="high"`, porque é ela.
 -->
 <section class="secao inicio-capa">
+  <!--
+    A IMAGEM VEM PRIMEIRO NO HTML, e fica à ESQUERDA na tela.
+
+    A ordem do HTML é a ordem de leitura: leitor de tela e navegação por Tab
+    seguem o documento, não o CSS. Pôr a imagem depois do texto e movê-la com
+    `order` faria o visual e a leitura discordarem — e a discordância só
+    aparece para quem não vê a tela.
+
+    `width` e `height` reservam o espaço antes de a imagem chegar: sem eles a
+    página SALTA quando ela carrega, empurrando o que a pessoa está lendo. Sem
+    `loading="lazy"`, porque adiar o que já está visível atrasa a primeira
+    coisa que se vê.
+  -->
+  <img class="inicio-banner"
+       src="/estatico/img/banner/banner.jpg?v={versaoAssets}"
+       width="1600" height="900" fetchpriority="high"
+       alt="Vista da Terra a partir do espaço, com o planeta parcialmente iluminado">
+
   <div class="inicio-chamada">
     <h1 class="secao-titulo com-icone">{#icone 'globo' /}Alerta de desastres naturais</h1>
     <p class="secao-texto">
@@ -41,11 +59,6 @@
       {#icone 'alertas' /}Ver se tem desastre perto de mim
     </a>
   </div>
-
-  <img class="inicio-banner"
-       src="/estatico/img/banner/banner.jpg?v={versaoAssets}"
-       width="1600" height="900" fetchpriority="high"
-       alt="Vista da Terra a partir do espaço, com o planeta parcialmente iluminado">
 </section>
 
 <section class="secao">

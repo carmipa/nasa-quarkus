@@ -62,7 +62,14 @@ body {
   gap: 1rem 2%;
 }
 
-.cabecalho-marca { display: flex; flex-direction: column; }
+/* A marca (icone + texto) esta declarada UMA vez, na secao "A MARCA" mais
+   abaixo. Havia aqui um `.cabecalho-marca { flex-direction: column }` que
+   empilhava o icone SOBRE o texto: o bloco de baixo redeclarava `display` e nao
+   `flex-direction`, e no CSS a regra posterior sobrepoe SO o que repete — a
+   coluna sobrevivia 670 linhas depois, calada. Medido em 03/09/2026 com
+   `getComputedStyle`: `flex-direction=column`, imagem.right=399 e
+   texto.left=247, ou seja o texto comecava ANTES do fim da imagem.
+   NAO reintroduzir um segundo bloco para este seletor. */
 
 .marca-titulo {
   font-size: 1.25rem;
@@ -741,11 +748,19 @@ body {
 
 .marca-icone {
   /* Tamanho em `rem`: ele acompanha a fonte, e no telefone encolhe junto com o
-     título em vez de ficar um bloco desproporcional ao lado de texto pequeno. */
+     título em vez de ficar um bloco desproporcional ao lado de texto pequeno.
+
+     `object-fit: cover` e a borda vem do binmapper: sem o recorte, um PNG que
+     não seja exatamente quadrado entra esticado; sem a borda, um ícone de fundo
+     claro se dissolve no cabeçalho escuro e deixa de parecer uma marca. */
   width: 2.6rem;
   height: 2.6rem;
-  border-radius: 0.5rem;
-  flex: none;
+  border-radius: 0.55rem;
+  flex: 0 0 2.6rem;
+  object-fit: cover;
+  display: block;
+  border: 1px solid var(--cor-borda);
+  background: var(--cor-fundo-painel);
 }
 
 .marca-texto { display: flex; flex-direction: column; }

@@ -9,15 +9,57 @@ registra um aviso para cada pessoa em risco.
 
 ## O caminho de um alerta, do começo ao fim
 
-1. **Sincronizar.** O sistema busca eventos na EONET v3 da NASA e grava na base local.
-   A operação é segura de repetir: o mesmo evento não entra duas vezes, e a posição dele é
-   atualizada a cada sincronização.
-2. **Localizar.** Cada cliente tem endereços; cada endereço tem, quando possível, uma
-   coordenada — obtida do CEP ou por geocodificação.
-3. **Comparar.** Para cada par (endereço, evento ativo), calcula-se a distância real sobre
-   a esfera. O que estiver dentro do raio vira candidato a aviso.
-4. **Registrar.** O aviso é gravado como `PENDENTE` **antes** de qualquer envio.
-5. **Despachar.** Os avisos pendentes são enviados e marcados como `ENVIADO` ou `FALHOU`.
+São **dois caminhos independentes** que se encontram numa tabela. O de cima roda sozinho, no
+relógio; o de baixo roda quando alguém pergunta.
+
+```mermaid
+graph LR
+    subgraph SINC["1 · SINCRONIZAR — roda sozinho, no relógio"]
+        direction LR
+        NASA(["EONET v3 da NASA"])
+        UPSERT["UPSERT por eonet_id"]
+        BASE[("evento_natural")]
+        NASA --> UPSERT --> BASE
+    end
+
+    subgraph CONSULTA["2 · CONSULTAR — roda quando alguém pergunta"]
+        direction LR
+        CEP(["CEP digitado"])
+        COORD["BrasilAPI · ViaCEP · Nominatim"]
+        CAIXA["caixa SQL reduz"]
+        GEO["geodésia decide"]
+        MSG["mensagem na tela"]
+        CEP --> COORD --> CAIXA --> GEO --> MSG
+    end
+
+    BASE --> CAIXA
+
+    classDef fora fill:#2a1d24,stroke:#e8608d,stroke-width:2px,color:#f9cfdd
+    classDef passo fill:#16242a,stroke:#2fd4c2,stroke-width:2px,color:#c8f5ef
+    classDef dado fill:#241d16,stroke:#e8a33d,stroke-width:2px,color:#f7dfb8
+    classDef saida fill:#1a2332,stroke:#7c5cff,stroke-width:2px,color:#d9d2ff
+    class NASA,CEP,COORD fora
+    class UPSERT,CAIXA,GEO passo
+    class BASE dado
+    class MSG saida
+```
+
+1. **Sincronizar.** O sistema busca eventos na EONET v3 da NASA e grava na base local. A
+   operação é **segura de repetir**: o mesmo evento não entra duas vezes, e a posição dele é
+   atualizada a cada sincronização. É a única coisa que este sistema escreve no banco.
+2. **Localizar.** A pessoa informa um CEP, que vira coordenada por uma cadeia de provedores:
+   BrasilAPI, ViaCEP e, quando nenhum dos dois traz posição, Nominatim sobre o endereço
+   textual. **CEP que não resolve é 404 com a explicação** — nunca uma lista vazia, que
+   afirmaria "não há desastre perto" quando o que houve foi não saber onde é.
+3. **Comparar, em dois estágios.** Um `WHERE` retangular reduz os candidatos usando o índice;
+   a distância geodésica sobre a esfera decide quem entra. Os dois são necessários, e o
+   porquê está no diagrama de [Alerta](/documentacao/fatia-alerta).
+4. **Mostrar.** A mensagem é montada e exibida. **Nada é gravado** — nem o e-mail, nem o CEP,
+   nem a consulta.
+
+Não há passo 5. Havia: uma fila em padrão outbox, com estados `PENDENTE`, `ENVIADO` e
+`FALHOU`, e uma tela de auditoria de despacho. Saiu inteira, e o motivo está em
+[Sem cadastro](/documentacao/sem-cadastro).
 
 ## O que este sistema garante
 
