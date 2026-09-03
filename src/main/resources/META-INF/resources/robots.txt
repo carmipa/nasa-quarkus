@@ -16,13 +16,13 @@ User-agent: *
 # Fora do indice
 # ---------------------------------------------------------------------
 # API de dados: devolve JSON. Em resultado de busca nao serve a ninguem,
-# e rastrear cada `/api/clientes/{id}` gastaria a VPS — que divide maquina
+# e rastrear cada `/api/eventos?...` gastaria a VPS — que divide maquina
 # com outros nove servicos. Quem de fato barra o acesso e o login.
 Disallow: /api/
 
-# Painel operacional: exige sessao. Rastreador so encontraria a tela de
-# login, repetida em dezenas de URLs.
-Disallow: /painel/
+# Telemetria: mede o funcionamento interno e nao e conteudo de busca. E a
+# unica tela que sera restrita — o resto da vitrine e publico de proposito.
+Disallow: /telemetria
 
 # ---------------------------------------------------------------------
 # Explicitamente LIVRES — e de proposito
@@ -39,6 +39,15 @@ Allow: /estatico/
 # compartilhada.
 Crawl-delay: 5
 
-# Sitemap: entra quando o dominio definitivo existir. URL inventada aqui
-# vale menos que linha nenhuma — manda o rastreador a um 404 e queima
-# confianca do dominio.
+# ---------------------------------------------------------------------
+# Sitemap
+# ---------------------------------------------------------------------
+# O dominio definitivo passou a existir em 03/09/2026 (registro A para
+# 187.77.249.75, sem proxy). Antes disso a linha estava AUSENTE de proposito:
+# URL inventada aqui vale menos que linha nenhuma, porque manda o rastreador
+# a um 404 e queima confianca do dominio.
+#
+# `/sitemap.xml` respondia 404 e passou a existir junto com esta linha. As
+# duas coisas andam juntas: apontar para um sitemap que nao existe e o mesmo
+# defeito que a linha inventada.
+Sitemap: https://desastres.carminati.dev.br/sitemap.xml
