@@ -868,3 +868,39 @@ body {
 /* O foco de teclado precisa ser VISÍVEL: sem ele, quem navega por Tab não sabe
    em qual dos oito cartões está. O `realce` do base.css já move; isto marca. */
 .funcao:focus-visible { box-shadow: 0 0 0 2px var(--cor-funcao, var(--cor-destaque)); }
+
+/* =============================================================================
+   SESSÃO — o controle de entrar/sair no cabeçalho.
+
+   Medidas em `rem`, nunca em `px`: é a regra que a guarda-css-porcentagem impõe,
+   e ela existe porque `px` de layout ignora o tamanho de fonte escolhido por
+   quem enxerga mal — a pessoa aumenta a fonte e o botão continua do mesmo
+   tamanho, espremendo o texto para fora.
+   ============================================================================= */
+.sessao { display: flex; align-items: center; gap: 0.6rem; }
+
+.sessao-quem {
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  font-size: 0.85rem;
+  color: var(--cor-texto-fraco);
+}
+
+.sessao-botao {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 0.3rem;
+  font-size: 0.85rem;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.sessao-botao:hover,
+.sessao-botao:focus-visible { border-color: var(--cor-destaque); }
+
+/* O contraste do botão de entrar é maior que o de sair de propósito: entrar é a
+   ação que o visitante procura; sair é a que ele já sabe onde está. */
+.sessao-botao-github { background: var(--cor-fundo-painel); font-weight: 600; }

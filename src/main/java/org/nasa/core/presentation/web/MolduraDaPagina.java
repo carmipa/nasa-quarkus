@@ -1,7 +1,10 @@
 package org.nasa.core.presentation.web;
 
 import io.quarkus.qute.TemplateInstance;
+import io.quarkus.oidc.UserInfo;
+import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import org.nasa.core.tempo.Relogio;
 
@@ -59,6 +62,18 @@ public class MolduraDaPagina {
     /** Formato do relógio do servidor: sem ambiguidade de fuso, por construção. */
     private static final DateTimeFormatter FORMATO_UTC =
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneOffset.UTC);
+
+    @Inject
+    SecurityIdentity identidade;
+
+    /**
+     * O perfil vindo do GitHub — {@code Instance} porque este bean <b>não existe</b> em
+     * dev e teste, onde a extensão OIDC sai do build ({@code %dev.quarkus.oidc.enabled
+     * =false}). Injetado direto, o modo dev não subiria: a moldura é usada por toda
+     * página, então a falha apareceria em todas de uma vez.
+     */
+    @Inject
+    Instance<UserInfo> perfilDoGitHub;
 
     @Inject
     Relogio relogio;
@@ -119,6 +134,36 @@ public class MolduraDaPagina {
                 .data("secaoAtiva", secaoAtiva)
                 // Fornecida SEMPRE, nos dois caminhos: o Qute e estrito, e chave ausente
                 // e 500 — nao campo vazio. Ja aconteceu tres vezes neste projeto.
-                .data("temMapa", temMapa);
+                .data("temMapa", temMapa)
+                // Quem esta olhando, ou `null`. A chave vai SEMPRE, nos dois casos, pela
+                // mesma razao que `temMapa`: o Qute e estrito e chave ausente e 500.
+                .data("usuario", quemEsta());
     }
+
+    /**
+     * O login do GitHub de quem está autenticado, ou {@code null} para visitante.
+     *
+     * <p><b>POR QUE O {@code login}, E NÃO O NOME.</b> O nome de exibição do GitHub é
+     * livre, opcional e repetido — duas pessoas podem se chamar "Paulo". O {@code login}
+     * é único na plataforma e é o que aparece na URL do perfil, então é por ele que se
+     * reconhece quem agiu.</p>
+     *
+     * <p><b>COMPORTAMENTO EM CASO DE FALHA.</b> Sem sessão, sem extensão OIDC no build,
+     * ou com o perfil sem {@code login}, devolve {@code null} — a página cai no botão de
+     * entrar. Cabeçalho não é lugar de exceção: derrubar a home porque o GitHub mudou um
+     * campo do perfil seria trocar a vitrine inteira por um detalhe do cabeçalho.</p>
+     */
+    private String quemEsta() {
+        if (identidade == null || identidade.isAnonymous()) {
+            return null;
+        }
+        if (perfilDoGitHub.isResolvable()) {
+            String login = perfilDoGitHub.get().getString("login");
+            if (login != null && !login.isBlank()) {
+                return login;
+            }
+        }
+        return identidade.getPrincipal().getName();
+    }
+
 }

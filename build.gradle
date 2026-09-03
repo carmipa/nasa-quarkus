@@ -31,6 +31,14 @@ dependencies {
     // cada chamada — telemetria e apoio, e apoio nao pode cobrar pedagio da
     // funcao que ele observa.
     implementation 'io.quarkus:quarkus-scheduler'
+
+    // --- Login com GitHub -----------------------------------------------------
+    // OAuth2 do GitHub, nao OIDC: o GitHub NAO emite id_token nem tem documento de
+    // descoberta. O `quarkus.oidc.provider=github` existe exatamente para isso —
+    // ele desliga a descoberta e a exigencia de id_token, e passa a identificar a
+    // pessoa pelo /user da API. Montar isso a mao seria reescrever o mesmo preset
+    // com mais chance de errar um caminho.
+    implementation 'io.quarkus:quarkus-oidc'
     // SQLite NAO e extensao oficial do Quarkus — o driver entra puro, sob o Agroal,
     // com `db-kind=other`. Versao FIXA e a MESMA que este projeto ja rodou antes da
     // passagem por PostgreSQL: trocar motor e versao de driver ao mesmo tempo tornaria

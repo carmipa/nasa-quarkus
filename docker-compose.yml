@@ -1,0 +1,52 @@
+services:
+  nasa-desastres:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: nasa-quarkus:latest
+    container_name: nasa-desastres
+    restart: unless-stopped
+    # Porta publicada SÓ no loopback: quem expõe para a internet é o Nginx Proxy
+    # Manager, que fala com este contêiner pelo nome, na rede compartilhada.
+    # 18083 por estar livre (18080 framework-net, 18081 pride, 18082 christiano).
+    ports:
+      - "127.0.0.1:${APP_PORT:-18083}:8080"
+    environment:
+      QUARKUS_PROFILE: prod
+      # Sem padrão no application.properties, e é deliberado: banco de produção
+      # apontado por adivinhação é pior que arranque recusado.
+      NASA_DB_PATH: /dados/nasa.db
+      NASA_LOG_PASTA: /dados/logs/execucoes
+      # O domínio definitivo, que faltava desde 02/09: é ele que monta a URL
+      # ABSOLUTA das prévias de link (WhatsApp, LinkedIn). Sem isto a prévia
+      # apontaria para localhost:8080 no cartão compartilhado.
+      NASA_ENDERECO_PUBLICO: ${NASA_ENDERECO_PUBLICO:-https://desastres.carminati.dev.br}
+      # Login com GitHub. O `:?` faz o DEPLOY falhar aqui, com a variável dita
+      # pelo nome, em vez de subir e descobrir depois — a área de operação
+      # escreve no banco e chama a NASA, e aberta é pior que fora do ar.
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:?defina no .env (OAuth App do GitHub)}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:?defina no .env (OAuth App do GitHub)}
+    # O banco e os logs sobrevivem a deploy, restart e recriação do contêiner.
+    # `dados/` já está no .gitignore do projeto — não entra em commit por acidente.
+    volumes:
+      - ./dados:/dados
+    mem_limit: ${MEM_LIMIT:-512m}
+    memswap_limit: ${MEM_LIMIT:-512m}
+    cpus: 1.0
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/ >/dev/null || exit 1"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - nginx-proxy-network
+
+networks:
+  nginx-proxy-network:
+    external: true
