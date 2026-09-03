@@ -24,8 +24,12 @@ services:
       # Login com GitHub. O `:?` faz o DEPLOY falhar aqui, com a variável dita
       # pelo nome, em vez de subir e descobrir depois — a área de operação
       # escreve no banco e chama a NASA, e aberta é pior que fora do ar.
-      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:?defina no .env (OAuth App do GitHub)}
-      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:?defina no .env (OAuth App do GitHub)}
+      # O `:?` aqui fazia o `docker compose up` RECUSAR a subir sem a credencial
+      # — o site inteiro refem de uma chave que protege uma tela so. Agora o
+      # padrao e vazio e o login nasce desligado (`OIDC_LIGADO`).
+      OIDC_LIGADO: ${OIDC_LIGADO:-false}
+      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID:-}
+      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET:-}
     # O banco e os logs sobrevivem a deploy, restart e recriação do contêiner.
     # `dados/` já está no .gitignore do projeto — não entra em commit por acidente.
     volumes:
