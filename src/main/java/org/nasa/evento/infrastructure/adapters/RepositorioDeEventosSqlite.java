@@ -490,10 +490,16 @@ public class RepositorioDeEventosSqlite implements RepositorioDeEventosPort {
 
     private static EventoNatural daLinha(ResultSet rs) throws SQLException {
         // Coordenada e INDIVISIVEL: le-se latitude e, so se ela existir, longitude.
-        // `getDouble` devolve 0.0 para NULL — ler sem checar `wasNull` poria o evento no
-        // null island, no Golfo da Guine, sem erro nenhum.
-        Double latitude = rs.getObject("latitude", Double.class);
-        Double longitude = rs.getObject("longitude", Double.class);
+        //
+        // `getDouble` devolveria 0.0 para NULL — e 0,0 e uma coordenada VALIDA, no Golfo
+        // da Guine. Um evento sem posicao viraria um evento no meio do Atlantico.
+        //
+        // E NAO se usa `getObject(nome, Double.class)`, que e a forma TIPADA: o driver do
+        // PostgreSQL a suporta e o do SQLite NAO — ele lanca "Bad value for type Double".
+        // Foi um defeito real da conversao entre os dois motores, medido em 03/09/2026: a
+        // API respondia 500 enquanto o mapa funcionava, porque o mapa ja usava o molde.
+        Double latitude = (Double) rs.getObject("latitude");
+        Double longitude = (Double) rs.getObject("longitude");
         Coordenada coordenada = Coordenada.talvez(latitude, longitude).orElse(null);
 
         Instant encerrado = InstanteEmTexto.para(rs.getString("encerrado_em"));

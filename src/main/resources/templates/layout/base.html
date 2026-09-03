@@ -100,10 +100,29 @@
 <body>
 
 <header class="cabecalho">
-  <div class="cabecalho-marca">
-    <span class="marca-titulo">Alerta de Desastres Naturais</span>
-    <span class="marca-fonte" translate="no">NASA EONET</span>
-  </div>
+  <!--
+    A MARCA: ícone à esquerda, texto ao lado.
+
+    O ícone é o MESMO arquivo do favicon, no tamanho de 192px — não o de 512.
+    Mandar 512 para desenhar 40 é baixar quase seis vezes mais do que se vê, e
+    o navegador reduz de qualquer jeito.
+
+    `width` e `height` no HTML reservam o espaço antes de a imagem chegar: sem
+    eles o título SALTA para o lado quando ela carrega, e o cabeçalho é a
+    primeira coisa que a pessoa está lendo.
+
+    `alt` VAZIO de propósito: o texto ao lado já diz o que o ícone diz, e um
+    leitor de tela que lê os dois anuncia a mesma coisa duas vezes.
+  -->
+  <a class="cabecalho-marca" href="/" aria-label="Início">
+    <img class="marca-icone"
+         src="/estatico/img/icone/logo-96.png?v={versaoAssets}"
+         width="96" height="96" alt="">
+    <span class="marca-texto">
+      <span class="marca-titulo">Alerta de Desastres Naturais</span>
+      <span class="marca-fonte" translate="no">NASA EONET</span>
+    </span>
+  </a>
 
   <!--
     RELÓGIO DA PÁGINA. Duas horas, sempre rotuladas: a do SERVIDOR (UTC, que é a hora
@@ -175,8 +194,6 @@
 <nav class="menu" aria-label="Seções">
   <a class="menu-item com-icone{#if secaoAtiva == 'inicio'} menu-item-ativo{/if}" href="/"
      data-dica="Painel de abertura: desastres em tempo real, notícias e o que o sistema está vigiando agora">{#icone 'casa' /}Início</a>
-  <a class="menu-item com-icone{#if secaoAtiva == 'inscricao'} menu-item-ativo{/if}" href="/inscricao"
-     data-dica="Peça para ser avisado: nome, e-mail e o CEP de onde você está. O alerta dispara quando um desastre entra no seu raio.">{#icone 'alertas' /}Inscrever-se</a>
   <a class="menu-item com-icone{#if secaoAtiva == 'desastres'} menu-item-ativo{/if}" href="/desastres"
      data-dica="O que a NASA publica: eventos em tempo real, mapa, estatísticas e o arquivo histórico ano a ano">{#icone 'desastres' /}Desastres</a>
   <a class="menu-item com-icone{#if secaoAtiva == 'alertas'} menu-item-ativo{/if}" href="/alertas"
@@ -203,20 +220,31 @@
   atribuição justamente onde ela é obrigatória.
 -->
 <footer class="rodape">
+  <!--
+    DUAS LINHAS, no máximo. Primeira: quem fez. Segunda: com o quê, e onde
+    está o código.
+
+    A versão anterior punha o nome e a pilha na MESMA linha e o link embaixo, e
+    em tela estreita aquilo quebrava em três ou quatro — um rodapé mais alto que
+    a informação que ele carrega.
+  -->
   <span class="rodape-autoria">
-    Desenvolvido por <strong>Paulo André Carminati</strong> em
-    <span translate="no">Java 25 / Quarkus</span>
-    <!--
-      `rel="noopener"` e obrigatorio em link que abre em aba nova: sem ele a
-      pagina de destino recebe `window.opener` e pode redirecionar esta aqui.
-      `noreferrer` nao manda a URL de origem junto.
-    -->
-    <a class="rodape-repositorio com-icone" translate="no"
-       href="https://github.com/carmipa/nasa-quarkus"
-       target="_blank" rel="noopener noreferrer"
-       data-dica="O código-fonte deste projeto, aberto no GitHub">
-      {#icone 'link-externo' /}github.com/carmipa/nasa-quarkus
-    </a>
+    <span class="rodape-linha">
+      Desenvolvido por <strong>Paulo André Carminati</strong>
+    </span>
+    <span class="rodape-linha rodape-linha-fraca">
+      <span translate="no">Java 25 / Quarkus</span>
+      <span class="rodape-separador" aria-hidden="true">·</span>
+      <!--
+        `rel="noopener"` é obrigatório em link que abre em aba nova: sem ele a
+        página de destino recebe `window.opener` e pode redirecionar esta.
+        `noreferrer` não manda a URL de origem junto.
+      -->
+      <a class="rodape-repositorio" translate="no"
+         href="https://github.com/carmipa/nasa-quarkus"
+         target="_blank" rel="noopener noreferrer"
+         data-dica="O código-fonte deste projeto, aberto no GitHub">github.com/carmipa/nasa-quarkus</a>
+    </span>
   </span>
   {#if temMapa}
   <span class="rodape-atribuicao" translate="no">© OpenStreetMap contributors (ODbL)</span>

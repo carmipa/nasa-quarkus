@@ -1,0 +1,64 @@
+{#include layout/base}
+{#titulo}{status} — {titulo}{/titulo}
+
+{#estilos}
+<link rel="stylesheet" href="/paginas/erro/estilo.css?v={versaoAssets}">
+{/estilos}
+
+{#corpo}
+<!--
+  A PÁGINA DE ERRO.
+
+  O que havia antes era a página padrão do Quarkus: em desenvolvimento ela
+  LISTA TODOS OS ENDPOINTS DA API — a superfície inteira do sistema entregue a
+  quem digitou um endereço errado; em produção, uma folha branca com o número.
+
+  TRÊS COISAS QUE ESTA PÁGINA FAZ E AQUELA NÃO FAZIA:
+
+  1. diz o que aconteceu em português, sem número de status como manchete;
+  2. diz O QUE FAZER — "não encontrado" sem caminho de volta é um beco, e quem
+     chega num beco fecha a aba;
+  3. oferece os endereços que EXISTEM, porque a causa mais comum de um 404
+     aqui é link antigo: este sistema mudou de forma várias vezes, e telas de
+     cadastro que existiam foram removidas de propósito.
+
+  NADA de rastro de pilha, nome de classe, caminho de arquivo ou SQL. Isso é
+  informação de infraestrutura para quem não deveria vê-la, e é o mapa que um
+  atacante usa. O detalhe completo vai para o log, que tem dono.
+-->
+<section class="secao erro-secao">
+  <div class="erro-cartao">
+    <span class="erro-status" aria-hidden="true" translate="no">{status}</span>
+
+    <h1 class="erro-titulo com-icone">
+      {#if status >= 500}{#icone 'erro' /}{#else}{#icone 'aviso' /}{/if}
+      {titulo}
+    </h1>
+
+    <p class="erro-explicacao">{explicacao}</p>
+    <p class="erro-fazer com-icone">{#icone 'info' /}<span>{oQueFazer}</span></p>
+
+    {#if mostrarAtalhos}
+    <!--
+      OS CAMINHOS QUE EXISTEM. A causa mais comum de 404 aqui é link antigo, e
+      listar as telas reais é a única coisa que transforma o beco em bifurcação.
+    -->
+    <div class="erro-atalhos">
+      <a class="botao botao-principal com-icone" href="/">
+        {#icone 'casa' /}Página inicial
+      </a>
+      <a class="botao botao-discreto com-icone" href="/alertas">
+        {#icone 'alertas' /}Ver desastre perto de mim
+      </a>
+      <a class="botao botao-discreto com-icone" href="/desastres/mapa">
+        {#icone 'mapa' /}Mapa
+      </a>
+      <a class="botao botao-discreto com-icone" href="/documentacao">
+        {#icone 'documentacao' /}Documentação
+      </a>
+    </div>
+    {/if}
+  </div>
+</section>
+{/corpo}
+{/include}

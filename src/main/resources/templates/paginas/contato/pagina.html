@@ -13,9 +13,10 @@
     1. A equipe tinha três integrantes com RM. Agora é só o Paulo, e sem RM:
        ele já é formado, e este projeto é vitrine, não entrega de turma.
     2. O formulário "fale conosco" do legado montava um `mailto:` e abria o
-       programa de e-mail do visitante. Aqui o endereço está À VISTA, clicável.
-       É a mesma coisa com um passo a menos — e funciona para quem não tem
-       cliente de e-mail configurado, que é a maioria em navegador moderno.
+       programa de e-mail do visitante. O contato agora é pelo LinkedIn, e o
+       e-mail SAIU da página: endereço de e-mail exposto em página pública é
+       colhido por robô em horas, e é a mesma disciplina que o resto do sistema
+       segue — ele não guarda e-mail de ninguém, inclusive do dono.
     3. A lista de APIs virou tabela HONESTA: diz o que cada uma faz, se exige
        chave, e o que MUDOU em relação ao original. Duas das cinco do legado não
        estão mais aqui, e a página diz por quê em vez de omitir.
@@ -30,23 +31,55 @@
     Quarkus, <span translate="no">Qute</span> e <span translate="no">HTMX</span>.
   </p>
 
+  <!--
+    A FOTO tem `width` e `height` no HTML, e não só no CSS: sem eles o
+    navegador não sabe a proporção antes de baixar, e o cartão SALTA quando a
+    imagem chega — empurrando o que a pessoa estava lendo.
+
+    `alt` DESCREVE, e não repete o nome: quem usa leitor de tela já vai ouvir
+    "Paulo André Carminati" no título ao lado, e ouvir duas vezes não informa.
+  -->
   <div class="cartao-pessoa">
+    <img class="pessoa-foto"
+         src="/estatico/img/paulo.jpg?v={versaoAssets}"
+         width="400" height="400" loading="lazy"
+         alt="Retrato do desenvolvedor">
+
     <div class="pessoa-identidade">
-      <h2 class="pessoa-nome">Paulo Carminati</h2>
+      <h2 class="pessoa-nome">Paulo André Carminati</h2>
       <p class="pessoa-papel">Desenvolvimento e arquitetura</p>
+      <p class="pessoa-pilha" translate="no">Java 25 · Quarkus · Qute · HTMX</p>
+
+      <ul class="pessoa-links">
+        <li>
+          <!--
+            `rel="noopener"` é obrigatório em link que abre em aba nova: sem ele
+            a página de destino recebe `window.opener` e pode redirecionar esta.
+            `noreferrer` não manda a URL de origem junto.
+          -->
+          <a class="pessoa-link com-icone"
+             href="https://www.linkedin.com/in/paulo-andr%C3%A9-carminati-47712340/"
+             target="_blank" rel="noopener noreferrer"
+             data-dica="Perfil profissional — é por aqui que se fala comigo">
+            {#icone 'pessoa' /}<span translate="no">LinkedIn</span>
+          </a>
+        </li>
+        <li>
+          <a class="pessoa-link com-icone" href="https://github.com/carmipa"
+             target="_blank" rel="noopener noreferrer"
+             data-dica="Todos os repositórios, inclusive o deste projeto">
+            {#icone 'link-externo' /}<span translate="no">github.com/carmipa</span>
+          </a>
+        </li>
+        <li>
+          <a class="pessoa-link com-icone" href="https://github.com/carmipa/nasa-quarkus"
+             target="_blank" rel="noopener noreferrer"
+             data-dica="O código-fonte deste sistema">
+            {#icone 'documentacao' /}<span translate="no">nasa-quarkus</span>
+          </a>
+        </li>
+      </ul>
     </div>
-    <ul class="pessoa-links">
-      <li>
-        <a href="https://github.com/carmipa" target="_blank" rel="noopener noreferrer">
-          <span translate="no">GitHub</span> — carmipa
-        </a>
-      </li>
-      <li>
-        <a href="mailto:pabcarminati@gmail.com">
-          <span translate="no">pabcarminati@gmail.com</span>
-        </a>
-      </li>
-    </ul>
   </div>
 </section>
 

@@ -2,26 +2,6 @@
  * ESTILO DA PÁGINA DE CONTATO — e só dela.
  */
 
-.cartao-pessoa {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 1.5rem;
-  width: 100%;
-  padding: 1.5rem;
-  border: 1px solid var(--cor-borda);
-  border-left: 4px solid var(--cor-destaque);
-  border-radius: 0.5rem;
-  background: var(--cor-superficie);
-}
-
-.pessoa-identidade { flex: 1 1 16rem; min-width: 0; }
-.pessoa-nome { margin: 0 0 0.25rem; font-size: 1.4rem; }
-.pessoa-papel { margin: 0; color: var(--cor-texto-fraco); }
-
-.pessoa-links { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.4rem; }
-.pessoa-links a { color: var(--cor-destaque); text-decoration: none; font-weight: 600; }
-.pessoa-links a:hover { text-decoration: underline; }
 
 /* ----------------------------------------------------------- tabela de fontes */
 
@@ -69,3 +49,74 @@
 
 .fontes-notas { margin: 0.6rem 0 0; padding-left: 1.1rem; display: grid; gap: 0.5rem; }
 .fontes-notas li { font-size: 0.9rem; }
+
+/* =============================================== o cartão com a foto */
+
+/*
+ * FOTO À ESQUERDA, identidade ao lado. `auto` na primeira coluna: a foto tem
+ * tamanho próprio e não deve esticar; o texto fica com o que sobra.
+ */
+.cartao-pessoa {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 1.5rem;
+  width: 100%;
+  margin-top: 1.2rem;
+  padding: 1.4rem 1.5%;
+  border: 1px solid var(--cor-borda);
+  border-left: 4px solid var(--cor-destaque);
+  border-radius: 0.5rem;
+  background: var(--cor-superficie);
+}
+
+.pessoa-foto {
+  /* Em `rem`: acompanha a fonte, e no telefone encolhe junto com o texto em vez
+     de virar um bloco desproporcional. */
+  width: 7.5rem;
+  height: 7.5rem;
+  border-radius: 50%;
+  border: 2px solid var(--cor-destaque);
+  object-fit: cover;
+  flex: none;
+}
+
+.pessoa-identidade { display: flex; flex-direction: column; gap: 0.25rem; }
+.pessoa-nome { margin: 0; font-size: 1.3rem; }
+.pessoa-papel { margin: 0; color: var(--cor-texto-fraco); }
+.pessoa-pilha {
+  margin: 0;
+  color: var(--cor-destaque);
+  font-size: 0.82rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.pessoa-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.2rem;
+  margin: 0.7rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pessoa-link {
+  color: var(--cor-texto);
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+.pessoa-link:hover, .pessoa-link:focus-visible {
+  color: var(--cor-destaque);
+  border-bottom-color: var(--cor-destaque);
+  outline: none;
+}
+
+/* Em tela estreita a foto vai para cima do texto: lado a lado, sobra uma
+   coluna de texto de três centímetros. */
+@media (max-width: 640px) {
+  .cartao-pessoa { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+  .pessoa-identidade { align-items: center; }
+  .pessoa-links { justify-content: center; }
+}

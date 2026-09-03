@@ -35,7 +35,30 @@
 (function () {
   'use strict';
 
-  var carrossel = document.querySelector('[data-carrossel]');
+  /*
+   * O CARROSSEL CHEGA DEPOIS DA PÁGINA, e este bloco precisa esperar por ele.
+   *
+   * REGRESSÃO MEDIDA em 03/09/2026. O noticiário passou a ser carregado por
+   * HTMX depois da página — porque, dentro da requisição, ele fazia a home
+   * levar 1340 ms em média e 4015 ms no pior caso. A troca consertou a home e
+   * QUEBROU o carrossel: este script rodava no carregamento, não encontrava
+   * `[data-carrossel]` (que ainda não existia) e desistia em silêncio.
+   *
+   * O sintoma era exatamente o que dá para ver: as notícias apareciam, e o
+   * carrossel simplesmente não andava. Nenhum erro no console — o script tinha
+   * feito o que estava escrito.
+   *
+   * A correção é ouvir o HTMX: `htmx:afterSwap` dispara quando o pedaço entra
+   * no documento. E o `iniciar()` continua sendo chamado no carregamento
+   * também, porque a mesma função serve para o carrossel que já vem no HTML —
+   * o dia em que alguém voltar a renderizá-lo direto, isto continua valendo.
+   *
+   * `data-carrossel-ativo` é a trava contra iniciar duas vezes: dois
+   * temporizadores no mesmo trilho o fariam pular duas notícias por vez.
+   */
+  function iniciar() {
+
+  var carrossel = document.querySelector('[data-carrossel]:not([data-carrossel-ativo])');
   if (!carrossel) {
     return;
   }
@@ -151,4 +174,20 @@
   carrossel.setAttribute('data-carrossel-ativo', '');
   atualizarSetas();
   comecar();
+  }
+
+  // O carrossel que já vem no HTML — hoje não vem, e o dia em que voltar a vir
+  // isto continua valendo.
+  iniciar();
+
+  // E o que chega por HTMX. `afterSwap` dispara quando o pedaço entra no
+  // documento; `afterSettle` seria tarde demais para a primeira medição de
+  // largura, que o cálculo do passo precisa.
+  document.body.addEventListener('htmx:afterSwap', function (evento) {
+    if (evento.target && evento.target.querySelector
+        && (evento.target.matches('[data-carrossel]')
+            || evento.target.querySelector('[data-carrossel]'))) {
+      iniciar();
+    }
+  });
 })();

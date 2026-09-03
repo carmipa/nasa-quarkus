@@ -694,15 +694,162 @@ body {
  */
 .filtros .rotulo-caixa { align-self: flex-end; padding-bottom: 0.55rem; }
 
-/* A autoria e o repositório, no rodapé. O link vai numa LINHA PRÓPRIA: colado
-   no nome, o endereço do GitHub se lê como parte da frase. */
-.rodape-autoria { display: flex; flex-direction: column; gap: 0.2rem; }
-
-.rodape-repositorio {
-  color: var(--cor-destaque);
-  font-size: 0.85em;
-  text-decoration: none;
+/*
+ * A AUTORIA — duas linhas, e não mais que isso.
+ *
+ * Primeira: quem fez. Segunda: com o quê, e onde está o código. A versão
+ * anterior punha nome e pilha na mesma linha e o link embaixo, e em tela
+ * estreita aquilo quebrava em quatro — um rodapé mais alto que a informação.
+ */
+.rodape-autoria {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  align-items: center;
 }
+
+.rodape-linha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  justify-content: center;
+}
+
+.rodape-linha-fraca { color: var(--cor-texto-fraco); font-size: 0.9em; }
+
+/* O separador é `aria-hidden`: leitor de tela lendo "ponto" entre a pilha e o
+   endereço não acrescenta nada e interrompe a leitura. */
+.rodape-separador { opacity: 0.5; }
+
+.rodape-repositorio { color: var(--cor-destaque); text-decoration: none; }
 .rodape-repositorio:hover, .rodape-repositorio:focus-visible {
   text-decoration: underline;
 }
+
+/* ==========================================================================
+ * A MARCA — ícone à esquerda, texto ao lado
+ * ========================================================================== */
+
+.cabecalho-marca {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  color: inherit;
+  text-decoration: none;
+}
+
+.marca-icone {
+  /* Tamanho em `rem`: ele acompanha a fonte, e no telefone encolhe junto com o
+     título em vez de ficar um bloco desproporcional ao lado de texto pequeno. */
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 0.5rem;
+  flex: none;
+}
+
+.marca-texto { display: flex; flex-direction: column; }
+
+/* O nome inteiro é um link para a home. O realce no hover é sutil de propósito:
+   ele é a marca, não um botão. */
+.cabecalho-marca:hover .marca-titulo,
+.cabecalho-marca:focus-visible .marca-titulo { color: var(--cor-destaque); }
+
+/* ==========================================================================
+ * MENU E RODAPÉ CENTRALIZADOS
+ *
+ * ATENÇÃO À REGRA DO PROJETO: `max-width` + `margin: 0 auto` continua PROIBIDO,
+ * e não é isso que está acontecendo aqui. A barra segue com `width: 100%` e
+ * padding lateral em `%`; o que se centraliza é o CONTEÚDO dentro dela, com
+ * `justify-content`.
+ *
+ * A diferença é grande: a coluna estreita centralizada deixa metade da tela em
+ * branco (o defeito do binmapper); conteúdo centralizado numa barra de largura
+ * cheia usa a tela toda e só equilibra o que está dentro.
+ * ========================================================================== */
+
+.menu { justify-content: center; }
+
+.rodape { justify-content: center; text-align: center; }
+
+/* Em tela estreita o menu volta a alinhar à esquerda: centralizado, com os
+   itens quebrando em três linhas, cada linha fica com um recuo diferente e a
+   lista deixa de ser varrível de cima a baixo. */
+@media (max-width: 720px) {
+  .menu { justify-content: flex-start; }
+  .rodape { justify-content: flex-start; text-align: left; }
+  .rodape-autoria, .rodape-linha { align-items: flex-start; justify-content: flex-start; }
+}
+
+/* ==========================================================================
+ * CARTÕES DE FUNÇÃO — o que dá para fazer no sistema
+ *
+ * Cada um é um LINK, e por isso é um `<a>`: assim ele já é alcançável por Tab,
+ * abre com Enter, aceita clique do meio para nova aba e é anunciado como link
+ * por leitor de tela. Um `<div>` com `onclick` perde as quatro coisas.
+ * ========================================================================== */
+
+.funcoes {
+  display: grid;
+  /* `auto-fit`, nunca `auto-fill`: com `auto-fill` sobram colunas vazias à
+     direita e os cartões ficam colados na esquerda. */
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  gap: 1rem;
+  width: 100%;
+  margin-top: 1.2rem;
+}
+
+.funcao {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 1.1rem 1.2rem;
+  border: 1px solid var(--cor-borda);
+  /* A cor da função entra pela BORDA SUPERIOR, e não no fundo: fundo colorido
+     em oito cartões diferentes vira um mosaico que compete com o texto. */
+  border-top: 3px solid var(--cor-funcao, var(--cor-destaque));
+  border-radius: 0.5rem;
+  background: var(--cor-superficie);
+  color: inherit;
+  text-decoration: none;
+}
+
+.funcao-icone {
+  /* O ícone herda a cor da função por `currentColor` — é a mesma mecânica do
+     catálogo de ícones, e por isso não há CSS por ícone aqui. */
+  color: var(--cor-funcao, var(--cor-destaque));
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.funcao-titulo { font-weight: 700; font-size: 1.02rem; }
+
+.funcao-texto {
+  color: var(--cor-texto-fraco);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+/* A "marca" é a frase curta que dá a razão de clicar. Ela acende no hover
+   junto com a borda: o cartão inteiro responde como uma coisa só. */
+.funcao-marca {
+  margin-top: auto;
+  padding-top: 0.5rem;
+  color: var(--cor-texto-fraco);
+  font-size: 0.75rem;
+  font-style: italic;
+}
+
+.funcao:hover, .funcao:focus-visible {
+  border-color: var(--cor-funcao, var(--cor-destaque));
+  background: color-mix(in srgb, var(--cor-funcao, var(--cor-destaque)) 8%, var(--cor-superficie));
+  outline: none;
+}
+.funcao:hover .funcao-titulo,
+.funcao:focus-visible .funcao-titulo { color: var(--cor-funcao, var(--cor-destaque)); }
+.funcao:hover .funcao-marca,
+.funcao:focus-visible .funcao-marca { color: var(--cor-funcao, var(--cor-destaque)); }
+
+/* O foco de teclado precisa ser VISÍVEL: sem ele, quem navega por Tab não sabe
+   em qual dos oito cartões está. O `realce` do base.css já move; isto marca. */
+.funcao:focus-visible { box-shadow: 0 0 0 2px var(--cor-funcao, var(--cor-destaque)); }

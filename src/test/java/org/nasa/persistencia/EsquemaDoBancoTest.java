@@ -24,14 +24,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * <p><b>PROPÓSITO.</b> Regra que vive só no Java é convenção: ela vale enquanto todo caminho
  * de gravação lembrar dela, e um caminho novo não lembra. Regra no esquema é mecanismo — o
- * banco recusa, e não há como esquecer. Este teste prova que as regras estão <b>no banco</b>,
- * e cada caso é um {@code INSERT} que precisa <b>falhar</b>.</p>
+ * banco recusa, e não há como esquecer. Cada caso aqui é um {@code INSERT} que precisa
+ * <b>falhar</b>, e ao lado dele um que precisa <b>passar</b>.</p>
  *
- * <p><b>O QUE MUDOU COM O SQLITE, e por que este teste ficou mais importante.</b> No
- * PostgreSQL a disciplina de UTC morava no TIPO da coluna ({@code TIMESTAMPTZ}), e tipo não
- * se esquece. O SQLite não tem tipo de data: ele aceita qualquer coisa em qualquer coluna.
- * O mecanismo passou a ser {@code CHECK (coluna LIKE '%Z')}, e <b>este teste é a prova de
- * que ele funciona</b> — sem ele, a garantia teria virado a convenção que o projeto recusou.</p>
+ * <p><b>POR QUE ESTE TESTE FICOU MAIS IMPORTANTE COM O SQLITE.</b> No PostgreSQL a disciplina
+ * de UTC morava no TIPO da coluna ({@code TIMESTAMPTZ}), e tipo não se esquece. O SQLite não
+ * tem tipo de data: aceita qualquer coisa em qualquer coluna. O mecanismo passou a ser
+ * {@code CHECK (coluna LIKE '%Z')}, e <b>este teste é a prova de que ele funciona</b> — sem
+ * ele, a garantia teria virado a convenção que o projeto recusou.</p>
+ *
+ * <p><b>TRÊS TABELAS, e a ausência das outras é testada.</b> O sistema deixou de guardar
+ * gente: não há cadastro nem fila de alertas. {@link #naoGuardaGente()} trava isso no
+ * esquema — sem ele, alguém reintroduz uma tabela de inscritos numa migração futura e o
+ * projeto volta a guardar e-mail em silêncio.</p>
  */
 @QuarkusTest
 @DisplayName("esquema do banco — as invariantes recusadas pelo proprio SQLite")
@@ -75,33 +80,43 @@ class EsquemaDoBancoTest {
     // =================================================== a migração aconteceu
 
     @Test
-    @DisplayName("a migracao rodou no arranque e registrou a versao com instante UTC")
-    void aMigracaoRodou() throws Exception {
-        assertEquals(1, consultar("SELECT count(*) FROM esquema_migracao WHERE versao = 1"),
-                "a V001 nao esta registrada — a migracao nao rodou");
-        try (Connection c = dataSource.getConnection();
-             Statement st = c.createStatement();
-             var rs = st.executeQuery("SELECT aplicada_em FROM esquema_migracao WHERE versao = 1")) {
-            assertTrue(rs.next());
-            String quando = rs.getString(1);
-            assertTrue(quando.endsWith("Z"),
-                    "o instante da migracao nao esta em UTC: " + quando);
-        }
+    @DisplayName("as DUAS migracoes rodaram, com instante em UTC")
+    void asMigracoesRodaram() throws Exception {
+        assertEquals(2, consultar("SELECT count(*) FROM esquema_migracao"),
+                "esperava as duas migracoes registradas");
+        assertEquals(0, consultar(
+                "SELECT count(*) FROM esquema_migracao WHERE aplicada_em NOT LIKE '%Z'"),
+                "alguma migracao registrou o instante fora de UTC");
     }
 
     @Test
-    @DisplayName("CONTROLE POSITIVO: as QUATRO tabelas do dominio existem")
+    @DisplayName("CONTROLE POSITIVO: as tabelas do dominio existem")
     void asTabelasExistem() throws Exception {
         // O DEFEITO QUE ESTE TESTE TRAVA, medido em 03/09/2026: o driver do SQLite executa
         // o PRIMEIRO comando de um script e ignora o resto, sem erro. A migracao registrou
         // "aplicada" tendo criado 1 tabela de 9 — e ficou marcada como aplicada, entao o
         // segundo arranque nao a repetiria. O banco ficaria pela metade para sempre.
         var existentes = tabelas();
-        for (String esperada : new String[] { "inscrito", "evento_natural", "alerta_enviado",
-                "telemetria_operacao" }) {
+        for (String esperada : new String[] { "evento_natural", "telemetria_operacao",
+                "esquema_migracao" }) {
             assertTrue(existentes.contains(esperada),
                     "a tabela `" + esperada + "` nao existe. As que existem: " + existentes
                             + " — a migracao rodou pela metade?");
+        }
+    }
+
+    @Test
+    @DisplayName("CONTROLE POSITIVO: o banco NAO tem tabela de cadastro nem de fila")
+    void naoGuardaGente() throws Exception {
+        // A DECISAO QUE DEFINE O SISTEMA, travada no esquema. Sem esta guarda, alguem
+        // reintroduz uma tabela de inscritos numa migracao futura e o projeto volta a
+        // guardar e-mail — em silencio, porque nada mais reclamaria.
+        var existentes = tabelas();
+        for (String proibida : new String[] { "inscrito", "alerta_enviado", "cliente",
+                "contato", "endereco" }) {
+            assertFalse(existentes.contains(proibida),
+                    "a tabela `" + proibida + "` voltou a existir: o sistema guarda dado "
+                            + "pessoal de novo, e ninguem foi avisado");
         }
     }
 
@@ -110,16 +125,15 @@ class EsquemaDoBancoTest {
     @Test
     @DisplayName("CONTROLE POSITIVO: o banco RECUSA instante em hora LOCAL")
     void instanteEmHoraLocalEhRecusado() {
-        // ESTA E A GUARDA QUE SUBSTITUIU O `TIMESTAMPTZ`.
-        //
-        // No PostgreSQL o tipo da coluna resolvia isto sozinho. O SQLite nao tem tipo de
-        // data e aceita qualquer texto — entao a garantia passou a ser um CHECK exigindo
-        // o `Z`. Sem este teste, a garantia seria a convencao que este projeto recusou, e
-        // o defeito do log em -03:00 poderia voltar por outro caminho.
+        // ESTA E A GUARDA QUE SUBSTITUIU O `TIMESTAMPTZ`. Sem ela, a garantia de UTC seria
+        // a convencao que este projeto recusou — e o defeito do log em -03:00 poderia
+        // voltar por outro caminho.
         String m = marca();
         var erro = assertThrows(SQLException.class, () -> executar("""
-                INSERT INTO inscrito (nome, email, cep, criado_em)
-                VALUES ('Local', 'local%s@exemplo.test', '01310100', '2026-09-03T10:00:00-03:00')
+                INSERT INTO evento_natural (eonet_id, titulo, ocorrido_em, criado_em,
+                                            sincronizado_em)
+                VALUES ('EONET_LOCAL_%s', 'Hora local', '2026-09-03T10:00:00-03:00',
+                        '2026-09-03T13:00:00Z', '2026-09-03T13:00:00Z')
                 """.formatted(m)));
         assertTrue(erro.getMessage().toUpperCase().contains("CONSTRAINT")
                         || erro.getMessage().toUpperCase().contains("CHECK"),
@@ -132,12 +146,14 @@ class EsquemaDoBancoTest {
         // Sem este caso, um CHECK que recusasse TUDO passaria no teste acima e tornaria o
         // sistema inutilizavel — e o teste acima diria que a guarda funciona.
         String m = marca();
+        String agora = InstanteEmTexto.de(Instant.now());
         executar("""
-                INSERT INTO inscrito (nome, email, cep, criado_em)
-                VALUES ('Utc', 'utc%s@exemplo.test', '01310100', '%s')
-                """.formatted(m, InstanteEmTexto.de(Instant.now())));
+                INSERT INTO evento_natural (eonet_id, titulo, ocorrido_em, criado_em,
+                                            sincronizado_em)
+                VALUES ('EONET_UTC_%s', 'Hora UTC', '%s', '%s', '%s')
+                """.formatted(m, agora, agora, agora));
         assertEquals(1, consultar(
-                "SELECT count(*) FROM inscrito WHERE email = 'utc" + m + "@exemplo.test'"));
+                "SELECT count(*) FROM evento_natural WHERE eonet_id = 'EONET_UTC_" + m + "'"));
     }
 
     @Test
@@ -178,29 +194,16 @@ class EsquemaDoBancoTest {
     // ================================================ as invariantes de negócio
 
     @Test
-    @DisplayName("INV-INSCRITO-001: o banco RECUSA o mesmo e-mail duas vezes")
-    void emailDuplicadoEhRecusado() throws Exception {
-        // O clique duplo no formulario. Sem esta restricao, as duas gravacoes passam e a
-        // pessoa recebe cada alerta em dobro — sem nada acusando.
-        String m = marca();
-        String agora = InstanteEmTexto.de(Instant.now());
-        String sql = """
-                INSERT INTO inscrito (nome, email, cep, criado_em)
-                VALUES ('Dup', 'dup%s@exemplo.test', '01310100', '%s')
-                """.formatted(m, agora);
-        executar(sql);
-        assertThrows(SQLException.class, () -> executar(sql),
-                "o banco aceitou o mesmo e-mail duas vezes: o clique duplo cria duas "
-                        + "inscricoes e a pessoa recebe tudo em dobro");
-    }
-
-    @Test
     @DisplayName("INV-EONET-001: o banco RECUSA o mesmo eonet_id duas vezes")
     void eonetIdDuplicadoEhRecusado() throws Exception {
+        // No legado esta garantia morava so no Java (`findByEonetId().orElse(new)`), e
+        // duas sincronizacoes simultaneas liam "nao existe" e inseriam as duas — evento
+        // duplicado inflando estatistica e mapa, sem nenhum erro.
         String m = marca();
         String agora = InstanteEmTexto.de(Instant.now());
         String sql = """
-                INSERT INTO evento_natural (eonet_id, titulo, ocorrido_em, criado_em, sincronizado_em)
+                INSERT INTO evento_natural (eonet_id, titulo, ocorrido_em, criado_em,
+                                            sincronizado_em)
                 VALUES ('EONET_DUP_%s', 'Duplo', '%s', '%s', '%s')
                 """.formatted(m, agora, agora, agora);
         executar(sql);
@@ -214,74 +217,59 @@ class EsquemaDoBancoTest {
         // Metade de uma posicao nao e posicao. Sem esta regra, uma latitude sem longitude
         // seria lida como (lat, 0) — a longitude do meridiano de Greenwich.
         String m = marca();
+        String agora = InstanteEmTexto.de(Instant.now());
         assertThrows(SQLException.class, () -> executar("""
-                INSERT INTO inscrito (nome, email, cep, latitude, criado_em)
-                VALUES ('Meia', 'meia%s@exemplo.test', '01310100', -23.5, '%s')
-                """.formatted(m, InstanteEmTexto.de(Instant.now()))));
+                INSERT INTO evento_natural (eonet_id, titulo, ocorrido_em, latitude,
+                                            criado_em, sincronizado_em)
+                VALUES ('EONET_MEIA_%s', 'Meia posicao', '%s', -23.5, '%s', '%s')
+                """.formatted(m, agora, agora, agora)));
     }
 
     @Test
     @DisplayName("coordenada FORA da Terra e recusada")
     void coordenadaForaDaTerraEhRecusada() {
         String m = marca();
+        String agora = InstanteEmTexto.de(Instant.now());
         assertThrows(SQLException.class, () -> executar("""
-                INSERT INTO inscrito (nome, email, cep, latitude, longitude, criado_em)
-                VALUES ('Fora', 'fora%s@exemplo.test', '01310100', 91.0, 0.0, '%s')
-                """.formatted(m, InstanteEmTexto.de(Instant.now()))));
+                INSERT INTO evento_natural (eonet_id, titulo, ocorrido_em, latitude,
+                                            longitude, criado_em, sincronizado_em)
+                VALUES ('EONET_FORA_%s', 'Fora da Terra', '%s', 91.0, 0.0, '%s', '%s')
+                """.formatted(m, agora, agora, agora)));
     }
 
     @Test
-    @DisplayName("CONTROLE DO CONTROLE: inscricao SEM coordenada e ACEITA")
-    void inscricaoSemCoordenadaEhAceita() throws Exception {
-        // Coordenada nula e ESTADO LEGITIMO: o provedor de CEP pode estar fora, e recusar
-        // a inscricao por isso seria punir a pessoa por uma falha nossa. Sem este caso, um
-        // CHECK exigindo coordenada passaria nos dois testes acima.
-        String m = marca();
-        executar("""
-                INSERT INTO inscrito (nome, email, cep, criado_em)
-                VALUES ('Sem posicao', 'sem%s@exemplo.test', '01310100', '%s')
-                """.formatted(m, InstanteEmTexto.de(Instant.now())));
-        assertEquals(1, consultar(
-                "SELECT count(*) FROM inscrito WHERE email = 'sem" + m + "@exemplo.test'"));
-    }
-
-    @Test
-    @DisplayName("raio fora de 1 a 20000 km e recusado")
-    void raioInutilEhRecusado() {
-        // 20.000 km e metade da circunferencia da Terra: acima disso o raio cobre o
-        // planeta e "proximidade" deixa de significar coisa alguma.
-        for (double raio : new double[] { 0.0, -5.0, 20001.0 }) {
-            String m = marca();
-            assertThrows(SQLException.class, () -> executar("""
-                    INSERT INTO inscrito (nome, email, cep, raio_km, criado_em)
-                    VALUES ('Raio', 'raio%s@exemplo.test', '01310100', %s, '%s')
-                    """.formatted(m, raio, InstanteEmTexto.de(Instant.now()))),
-                    "o banco aceitou raio de " + raio + " km");
-        }
-    }
-
-    @Test
-    @DisplayName("alerta TERMINAL exige instante de conclusao")
-    void alertaTerminalExigeInstante() throws Exception {
-        // Sem isto um alerta fica "ENVIADO" sem que ninguem saiba quando, e a auditoria
-        // nao fecha.
+    @DisplayName("CONTROLE DO CONTROLE: evento SEM coordenada e ACEITO")
+    void eventoSemCoordenadaEhAceito() throws Exception {
+        // Coordenada nula e ESTADO LEGITIMO: a NASA nem sempre publica posicao, e recusar
+        // o evento por isso apagaria dado que existe. Sem este caso, um CHECK exigindo
+        // coordenada passaria nos dois testes acima.
         String m = marca();
         String agora = InstanteEmTexto.de(Instant.now());
         executar("""
-                INSERT INTO inscrito (nome, email, cep, criado_em)
-                VALUES ('Alvo', 'alvo%s@exemplo.test', '01310100', '%s')
-                """.formatted(m, agora));
-        executar("""
-                INSERT INTO evento_natural (eonet_id, titulo, ocorrido_em, criado_em, sincronizado_em)
-                VALUES ('EONET_TERM_%s', 'Terminal', '%s', '%s', '%s')
+                INSERT INTO evento_natural (eonet_id, titulo, ocorrido_em, criado_em,
+                                            sincronizado_em)
+                VALUES ('EONET_SEMPOS_%s', 'Sem posicao', '%s', '%s', '%s')
                 """.formatted(m, agora, agora, agora));
+        assertEquals(1, consultar(
+                "SELECT count(*) FROM evento_natural WHERE eonet_id = 'EONET_SEMPOS_" + m + "'"));
+    }
 
-        assertThrows(SQLException.class, () -> executar("""
-                INSERT INTO alerta_enviado (inscrito_id, evento_id, destino, situacao, criado_em)
-                SELECT i.id, e.id, 'alvo%s@exemplo.test', 'ENVIADO', '%s'
-                  FROM inscrito i, evento_natural e
-                 WHERE i.email = 'alvo%s@exemplo.test' AND e.eonet_id = 'EONET_TERM_%s'
-                """.formatted(m, agora, m, m)),
-                "o banco aceitou um alerta ENVIADO sem instante de conclusao");
+    @Test
+    @DisplayName("a telemetria e UNICA por (operacao, hora)")
+    void telemetriaUnicaPorOperacaoEHora() throws Exception {
+        // E ela que torna a descarga idempotente: o processo acumula em memoria e
+        // descarrega periodicamente, e duas descargas na mesma hora precisam SOMAR na
+        // linha existente. Sem isto, um reinicio no meio da hora produziria duas linhas e
+        // todo grafico contaria em dobro.
+        String m = marca();
+        String hora = InstanteEmTexto.de(Instant.now().truncatedTo(
+                java.time.temporal.ChronoUnit.HOURS));
+        String sql = """
+                INSERT INTO telemetria_operacao (operacao, hora, chamadas, atualizado_em)
+                VALUES ('teste-unico-%s', '%s', 1, '%s')
+                """.formatted(m, hora, InstanteEmTexto.de(Instant.now()));
+        executar(sql);
+        assertThrows(SQLException.class, () -> executar(sql),
+                "duas linhas para a mesma (operacao, hora) fariam todo grafico contar em dobro");
     }
 }

@@ -1,0 +1,70 @@
+/*
+ * A PÁGINA DE ERRO — e só dela.
+ *
+ * INVARIANTES herdadas do base.css: largura em `%`, `width:100%`. `px` só em
+ * borda fina, sombra e breakpoint de `@media`.
+ */
+
+.erro-secao {
+  display: flex;
+  /* Centralizado na ALTURA, não numa coluna estreita: a regra do projeto
+     proíbe `max-width` + `margin:0 auto`, e não é isso que acontece aqui — o
+     cartão ocupa a largura e é o conteúdo dele que se alinha. */
+  align-items: center;
+  min-height: 50vh;
+  width: 100%;
+}
+
+.erro-cartao {
+  width: 100%;
+  padding: 2.5rem 3%;
+  border: 1px solid var(--cor-borda);
+  border-left: 4px solid var(--cor-alerta);
+  border-radius: 0.6rem;
+  background: var(--cor-superficie);
+}
+
+/*
+ * O NÚMERO É DECORAÇÃO, e por isso é `aria-hidden` no HTML e discreto aqui.
+ * Página de erro que grita "404" em corpo 96 informa o número e esconde a
+ * única coisa útil: o que fazer agora. Quem entende o número não precisa dele
+ * grande; quem não entende não é ajudado por vê-lo maior.
+ */
+.erro-status {
+  display: block;
+  color: var(--cor-texto-fraco);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85rem;
+  letter-spacing: 0.1em;
+}
+
+.erro-titulo { margin: 0.4rem 0 1rem; font-size: 1.6rem; font-weight: 700; }
+
+.erro-explicacao {
+  margin: 0 0 1rem;
+  /* `ch` mede uma LINHA DE TEXTO, que é o que esta caixa contém. Linha longa
+     demais faz o olho perder o começo da seguinte — e é a única exceção de
+     largura do projeto, declarada também no CSS da documentação. */
+  max-width: 68ch;
+  line-height: 1.7;
+}
+
+.erro-fazer {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6em;
+  max-width: 68ch;
+  margin: 0 0 1.6rem;
+  padding: 0.8rem 1.2%;
+  border-left: 3px solid var(--cor-destaque);
+  border-radius: 0 0.4rem 0.4rem 0;
+  background: rgba(45, 212, 191, .07);
+  color: var(--cor-texto-fraco);
+  font-size: 0.92rem;
+}
+
+.erro-atalhos { display: flex; flex-wrap: wrap; gap: 0.7rem; }
+
+/* Erro do servidor tem a borda VERMELHA: a cor diz de quem é a culpa antes de
+   a pessoa ler. 5xx é nosso; 4xx é o pedido. */
+.erro-cartao:has(.erro-titulo .icone) { border-left-color: var(--cor-alerta); }

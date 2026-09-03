@@ -7,29 +7,25 @@
 
 {#corpo}
 <!--
-  O BANNER.
+  A CAPA: imagem AO LADO do texto, não atrás dele.
+
+  A primeira versão punha o banner na largura toda com o texto sobreposto — e
+  ficava grande demais: a imagem tomava a tela e empurrava para baixo tudo o
+  que importa, inclusive o botão. Texto sobre imagem também depende da foto:
+  muda a foto, muda a legibilidade.
+
+  Lado a lado resolve os dois: a imagem tem tamanho fixo em proporção da
+  coluna, o texto tem contraste próprio, e o botão fica na primeira tela.
 
   `width` e `height` no HTML, e não só no CSS: sem eles o navegador não sabe a
-  proporção antes de baixar a imagem, e a página SALTA quando ela chega —
-  empurrando para baixo o que a pessoa estava lendo. É o defeito de layout mais
-  comum que existe, e o mais fácil de evitar.
+  proporção antes de baixar, e a página SALTA quando a imagem chega —
+  empurrando o que a pessoa estava lendo. É o defeito de layout mais comum que
+  existe, e o mais fácil de evitar.
 
-  `fetchpriority="high"` porque ele é o que aparece primeiro; sem isso o
-  navegador o trata como qualquer imagem e pode buscá-lo depois do que está
-  fora da tela.
-
-  NÃO tem `loading="lazy"`: adiar o carregamento do que já está visível atrasa
-  justamente a primeira coisa que se vê.
-
-  O arquivo original tinha 2,1 MB em PNG. PNG guarda foto sem compressão útil —
-  virou JPEG de 184 KB a 1600px, que é 91% menor e indistinguível na tela.
+  Sem `loading="lazy"`: adiar o que já está visível atrasa a primeira coisa que
+  se vê. Com `fetchpriority="high"`, porque é ela.
 -->
 <section class="secao inicio-capa">
-  <img class="inicio-banner"
-       src="/estatico/img/banner/banner.jpg?v={versaoAssets}"
-       width="1600" height="900" fetchpriority="high"
-       alt="Vista da Terra a partir do espaço, com o planeta parcialmente iluminado">
-
   <div class="inicio-chamada">
     <h1 class="secao-titulo com-icone">{#icone 'globo' /}Alerta de desastres naturais</h1>
     <p class="secao-texto">
@@ -45,6 +41,11 @@
       {#icone 'alertas' /}Ver se tem desastre perto de mim
     </a>
   </div>
+
+  <img class="inicio-banner"
+       src="/estatico/img/banner/banner.jpg?v={versaoAssets}"
+       width="1600" height="900" fetchpriority="high"
+       alt="Vista da Terra a partir do espaço, com o planeta parcialmente iluminado">
 </section>
 
 <section class="secao">
@@ -58,38 +59,104 @@
   </p>
 </section>
 
+<!--
+  AS FUNÇÕES DO PROJETO, e cada cartão é um LINK.
+
+  Antes esta seção listava fatos técnicos — "banco em arquivo", "fronteira
+  congelada". Interessante para quem já está lendo o código, e inútil para quem
+  acabou de abrir a página: ela não dizia o que dá para FAZER aqui.
+
+  Agora cada cartão é uma função e leva à tela dela. Isso resolve duas coisas ao
+  mesmo tempo: quem chega descobre o sistema, e a home passa a ser navegação de
+  verdade em vez de um texto sobre si mesma.
+
+  COR E ÍCONE JUNTOS, nunca só cor. Cerca de 8% dos homens não distinguem verde
+  de vermelho; o ícone informa quem a cor não alcança, e o título resolve os
+  dois casos em que os outros dois falham.
+-->
 <section class="secao">
-  <h2 class="secao-titulo com-icone">{#icone 'ok' /}O que já está de pé</h2>
-  <div class="cartoes">
-    <article class="cartao">
-      <h3 class="cartao-titulo">Banco em arquivo</h3>
-      <p class="cartao-texto">
-        <span translate="no">SQLite</span> com integridade referencial ligada por conexão
-        e escrita serializada. Sem servidor de banco e sem credencial.
-      </p>
-    </article>
-    <article class="cartao">
-      <h3 class="cartao-titulo">Fronteira congelada</h3>
-      <p class="cartao-texto">
-        Fatias verticais com as arestas travadas por teste: dependência nova entre
-        módulos reprova a compilação, nomeando a linha exata.
-      </p>
-    </article>
-    <article class="cartao">
-      <h3 class="cartao-titulo">Falha com nome e número</h3>
-      <p class="cartao-texto">
-        Cada erro tem exceção própria, causa-raiz e uma linha de registro — e um contador
-        do que aconteceu <em>e</em> do que deixou de acontecer.
-      </p>
-    </article>
-    <article class="cartao">
-      <h3 class="cartao-titulo">Endereço vira ponto no mapa</h3>
-      <p class="cartao-texto">
-        Consulta de <span translate="no">CEP</span> e coordenada por serviços abertos.
-        Quando a coordenada não vem, o endereço é salvo <strong>dizendo</strong> que está
-        sem coordenada — nunca com um ponto inventado.
-      </p>
-    </article>
+  <h2 class="secao-titulo com-icone">{#icone 'atividade' /}O que dá para fazer aqui</h2>
+
+  <div class="funcoes">
+    <a class="funcao realce" href="/alertas" style="--cor-funcao: #4ade80">
+      <span class="funcao-icone">{#icone 'alertas' /}</span>
+      <span class="funcao-titulo">Ver se tem desastre perto de mim</span>
+      <span class="funcao-texto">
+        Informe o <span translate="no">CEP</span> e veja na hora o alerta que você
+        receberia. <strong>Nada é guardado</strong> — nem o e-mail.
+      </span>
+      <span class="funcao-marca">é por aqui que se começa</span>
+    </a>
+
+    <a class="funcao realce" href="/desastres/mapa" style="--cor-funcao: #42a5f5">
+      <span class="funcao-icone">{#icone 'mapa' /}</span>
+      <span class="funcao-titulo">Mapa dos desastres</span>
+      <span class="funcao-texto">
+        Os 13 tipos da <span translate="no">NASA</span>, cada um com sua cor e ícone.
+        Filtre por tipo, troque entre ruas e satélite.
+      </span>
+      <span class="funcao-marca">com zoom pela roda do mouse</span>
+    </a>
+
+    <a class="funcao realce" href="/desastres/historico" style="--cor-funcao: #a78bfa">
+      <span class="funcao-icone">{#icone 'historico' /}</span>
+      <span class="funcao-titulo">Histórico por ano</span>
+      <span class="funcao-texto">
+        O arquivo da <span translate="no">EONET</span> desde 2015, ano a ano. Ano
+        não sincronizado aparece diferente de ano sem desastre.
+      </span>
+      <span class="funcao-marca">mais de 21 mil eventos</span>
+    </a>
+
+    <a class="funcao realce" href="/desastres/estatisticas" style="--cor-funcao: #26a69a">
+      <span class="funcao-icone">{#icone 'grafico' /}</span>
+      <span class="funcao-titulo">Estatísticas</span>
+      <span class="funcao-texto">
+        Contagem por tipo e por dia. Sem biblioteca de gráfico: barra é um
+        retângulo, e o <span translate="no">CSS</span> desenha.
+      </span>
+      <span class="funcao-marca">legível sem JavaScript</span>
+    </a>
+
+    <a class="funcao realce" href="/desastres" style="--cor-funcao: #ff7043">
+      <span class="funcao-icone">{#icone 'desastres' /}</span>
+      <span class="funcao-titulo">Todos os eventos</span>
+      <span class="funcao-texto">
+        A base inteira, paginada e com filtro pelos 13 tipos. É daqui que se
+        sincroniza com a <span translate="no">NASA</span>.
+      </span>
+      <span class="funcao-marca">direto da EONET v3</span>
+    </a>
+
+    <a class="funcao realce" href="/telemetria" style="--cor-funcao: #f06292">
+      <span class="funcao-icone">{#icone 'atividade' /}</span>
+      <span class="funcao-titulo">Telemetria</span>
+      <span class="funcao-texto">
+        O sistema medindo a si mesmo: quantas vezes cada operação rodou, qual
+        está lenta, o que falhou.
+      </span>
+      <span class="funcao-marca">já achou a home de 4 segundos</span>
+    </a>
+
+    <a class="funcao realce" href="/documentacao" style="--cor-funcao: #c9a227">
+      <span class="funcao-icone">{#icone 'documentacao' /}</span>
+      <span class="funcao-titulo">Documentação</span>
+      <span class="funcao-texto">
+        Como o sistema é feito por dentro: arquitetura, guardas executáveis, e
+        cada defeito medido com o número que o torna real.
+      </span>
+      <span class="funcao-marca">inclusive os enganos</span>
+    </a>
+
+    <a class="funcao realce" href="/contato" style="--cor-funcao: #4dd0e1">
+      <span class="funcao-icone">{#icone 'envelope' /}</span>
+      <span class="funcao-titulo">Quem fez</span>
+      <span class="funcao-texto">
+        Paulo André Carminati, em <span translate="no">Java 25 / Quarkus</span>,
+        sem uma linha de <span translate="no">Node</span>.
+      </span>
+      <span class="funcao-marca">e como falar comigo</span>
+    </a>
   </div>
 </section>
 

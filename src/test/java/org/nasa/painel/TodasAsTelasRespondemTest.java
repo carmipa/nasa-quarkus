@@ -121,15 +121,25 @@ class TodasAsTelasRespondemTest {
 
 
     @Test
-    @DisplayName("as telas de ALERTA renderizam, com e sem filtro de situacao")
-    void telasDeAlerta() {
+    @DisplayName("a tela de ALERTA responde, e o CEP torto vira aviso — nao erro")
+    void telaDeAlerta() {
         deveResponder("/alertas");
-        deveResponder("/alertas/fragmento/lista");
-        // Os tres ramos da lista por situacao — cada um com seu texto proprio.
-        deveResponder("/alertas/fragmento/lista?situacao=PENDENTE");
-        deveResponder("/alertas/fragmento/lista?situacao=ENVIADO");
-        deveResponder("/alertas/fragmento/lista?situacao=FALHOU");
-        deveResponder("/alertas/fragmento/lista?situacao=ENVIADO&pagina=1");
+
+        // O QUE MUDOU: antes esta tela listava alertas gravados numa fila, com filtro por
+        // situacao. Agora ela MONTA a mensagem na hora e nao guarda nada — nao ha fila,
+        // nao ha situacao, e nao ha o que filtrar.
+        //
+        // CEP TORTO responde 200 com aviso na tela, nao 400 nem 500: quem chegou aqui
+        // quer saber se ha desastre perto, e uma tela de erro nao responde isso nem
+        // depois de recarregar.
+        for (String cepTorto : new String[] { "123", "abcdefgh", "" }) {
+            int status = given().contentType(ContentType.URLENC)
+                    .formParam("email", "teste@exemplo.test")
+                    .formParam("cep", cepTorto)
+                    .when().post("/alertas").statusCode();
+            assertEquals(200, status,
+                    "o CEP '" + cepTorto + "' respondeu " + status + " em vez de 200 com aviso");
+        }
     }
 
 

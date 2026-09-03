@@ -18,11 +18,9 @@
  * ├── persistencia/  PEER — esquema do banco e as migrações
  * ├── telemetria/   PEER — o que o sistema mediu, persistido e lido
  * │
- * ├── inscrito/     FATIA — quem pediu para ser avisado: nome, e-mail, CEP e raio.
- * │                        Substituiu `cliente`, `contato` e `endereco` (5.645
- * │                        linhas, 5 tabelas). Aquilo modelava gestão de
- * │                        clientes; este sistema não gerencia clientes, ele
- * │                        AVISA GENTE SOBRE DESASTRE.
+ * │  (não há fatia de cadastro: `cliente`, `contato`, `endereco` e depois
+ * │   `inscrito` foram removidas. O sistema NÃO GUARDA GENTE — a pessoa informa
+ * │   o CEP e vê o alerta na hora, e nada é gravado.)
  * ├── evento/       FATIA — o que a NASA publica, e o que dispara o alerta
  * ├── alerta/       FATIA — a saida do sistema: o aviso de que o desastre esta perto
  * └── painel/      FATIA — as telas, em Qute + HTMX
