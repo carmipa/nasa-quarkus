@@ -15,13 +15,21 @@ User-agent: *
 # ---------------------------------------------------------------------
 # Fora do indice
 # ---------------------------------------------------------------------
-# API de dados: devolve JSON. Em resultado de busca nao serve a ninguem,
-# e rastrear cada `/api/eventos?...` gastaria a VPS — que divide maquina
-# com outros nove servicos. Quem de fato barra o acesso e o login.
+# API de dados: devolve JSON. Em resultado de busca nao serve a ninguem, e
+# rastrear cada `/api/eventos?...` gastaria a VPS — que divide maquina com
+# outros nove servicos.
+#
+# SAIR DO INDICE NAO E O MESMO QUE SER PROTEGIDA, e aqui nao ha o que
+# proteger: sao duas rotas, `/api/eventos` devolve o que a NASA ja publica e
+# `/api/alertas` monta a mensagem sem gravar nada. Elas ficam fora do indice
+# por serem inuteis numa busca, nao por serem secretas.
 Disallow: /api/
 
 # Telemetria: mede o funcionamento interno e nao e conteudo de busca. E a
 # unica tela que sera restrita — o resto da vitrine e publico de proposito.
+#
+# ENQUANTO O LOGIN NAO EXISTE, quem barra e o proxy, com 404. Este arquivo
+# nunca barrou nada: a primeira linha dele explica por que.
 Disallow: /telemetria
 
 # ---------------------------------------------------------------------
