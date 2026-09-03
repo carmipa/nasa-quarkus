@@ -9,7 +9,7 @@
   <div class="vazio">
     {#if termo.isEmpty() && tipo.isEmpty()}
       <p>Nenhum contato cadastrado ainda.</p>
-      <a class="botao botao-principal" href="/contatos/cadastrar">Cadastrar o primeiro</a>
+      <a class="botao botao-principal com-icone" href="/contatos/cadastrar">{#icone 'adicionar' /}Cadastrar o primeiro</a>
     {#else if !tipo.isEmpty()}
       <p>Nenhum contato do tipo <strong translate="no">{tipo}</strong>.</p>
       {#if tipo == 'EMERGENCIA'}
@@ -52,8 +52,8 @@
         </dl>
       </div>
       <div class="lista-item-acoes">
-        <a class="botao botao-discreto" href="/contatos/{c.id}/alterar">Alterar</a>
-        <a class="botao botao-perigo" href="/contatos/{c.id}/excluir">Excluir</a>
+        <a class="botao botao-discreto com-icone" href="/contatos/{c.id}/alterar">{#icone 'editar' /}Alterar</a>
+        <a class="botao botao-perigo com-icone" href="/contatos/{c.id}/excluir">{#icone 'excluir' /}Excluir</a>
       </div>
     </li>
     {/for}

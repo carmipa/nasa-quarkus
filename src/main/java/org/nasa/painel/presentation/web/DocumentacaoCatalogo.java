@@ -133,7 +133,10 @@ public class DocumentacaoCatalogo {
                     "Fontes de dados",
                     "NASA, BrasilAPI, ViaCEP, Nominatim e GDACS — todas abertas"),
             new Doc("rodar", "42-como-rodar", "referencia",
-                    "Como rodar", "Desenvolvimento, testes e produção"));
+                    "Como rodar", "Desenvolvimento, testes e produção"),
+            new Doc("interface", "43-interface", "referencia",
+                    "Interface",
+                    "Ícones, dicas de campo e a regra da porcentagem — e o que a tela recusa fazer"));
 
     /** Os documentos de uma seção, na ordem declarada. */
     public List<Doc> daSecao(String slugDaSecao) {

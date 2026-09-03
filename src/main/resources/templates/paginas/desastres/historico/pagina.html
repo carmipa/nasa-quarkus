@@ -1,0 +1,130 @@
+{#include layout/base}
+{#titulo}Desastres — histórico por ano{/titulo}
+
+{#estilos}
+<link rel="stylesheet" href="/paginas/desastres/historico/estilo.css?v={versaoAssets}">
+{/estilos}
+
+{#corpo}
+<!--
+  O ARQUIVO HISTÓRICO, ANO A ANO.
+
+  A DECISÃO QUE DEFINE ESTA TELA: um ano sem eventos e um ano nunca
+    sincronizado têm a MESMA aparência — coluna vazia — e significados opostos.
+    Um diz "o planeta esteve calmo"; o outro diz "não perguntamos à NASA ainda".
+    Aqui eles são pintados diferente, a legenda diz qual é qual, e a coluna não
+    sincronizada é a única clicável para sincronizar. Desenhá-los igual seria
+    mentir com um gráfico — a pior forma de mentir, porque parece medição.
+
+  POR QUE UM ANO POR VEZ, e não um botão "trazer tudo". Medido em 02/09/2026:
+    2015 tem 342 eventos, 2025 tem 4612, e 2026 passou de 5000. Doze anos numa
+    requisição só seria uma espera de minutos que o navegador desiste no meio,
+    deixando parte gravada sem ninguém saber quanto. Um ano por vez é retomável.
+
+  POR QUE A EONET PRECISA DE RECORTE DE DATA. Medido: sem `start`/`end` ela
+    devolve os mais recentes primeiro — `limit=2000` traz 2000 eventos, todos
+    de 2026, e nenhum de 2015. Pedir "os últimos 4000 dias" não alcança o
+    arquivo; só o recorte alcança.
+-->
+<section class="secao">
+  <div class="hist-topo">
+    <h1 class="secao-titulo com-icone">
+      {#icone 'historico' /}
+      Histórico por ano
+    </h1>
+    <div class="desastres-atalhos">
+      <a class="botao botao-discreto com-icone" href="/desastres"
+         data-dica="Sincronizar a janela recente, listar e buscar por proximidade">
+        {#icone 'desastres' /} Painel
+      </a>
+      <a class="botao botao-discreto com-icone" href="/desastres/mapa"
+         data-dica="Os mesmos eventos desenhados sobre o mapa-múndi">
+        {#icone 'mapa' /} Mapa
+      </a>
+      <a class="botao botao-discreto com-icone" href="/desastres/estatisticas"
+         data-dica="Contagem por categoria e por dia, na janela recente">
+        {#icone 'grafico' /} Estatísticas
+      </a>
+    </div>
+  </div>
+
+  <p class="secao-texto">
+    Os registros da <span translate="no">EONET</span> começam em
+    <strong translate="no">{primeiroAno}</strong>. Cada ano é buscado separadamente —
+    <span class="dica" tabindex="0"
+          data-dica="Sem recorte de data a NASA devolve sempre os eventos mais recentes: medido em 02/09/2026, um pedido de 2000 eventos trouxe 2000 de 2026 e nenhum de 2015. Só o recorte por ano alcança o arquivo.">a
+    API não devolve o arquivo inteiro de uma vez</span>.
+  </p>
+
+  <div class="hist-numeros">
+    <span class="numero com-icone dica" tabindex="0"
+          data-dica="Total de eventos gravados na base local, somando todos os anos já sincronizados">
+      {#icone 'banco' /} <strong translate="no">{totalArquivo}</strong> no arquivo
+    </span>
+    <span class="numero com-icone dica" tabindex="0"
+          data-dica="Quantos anos já foram buscados na NASA. Um ano não sincronizado aparece vazio no gráfico, e vazio não quer dizer que não houve desastres.">
+      {#icone 'calendario' /}
+      <strong translate="no">{anosSincronizados}</strong> de {anosTotais} anos
+    </span>
+    <span class="numero com-icone dica" tabindex="0"
+          data-dica="O maior número de eventos num único ano. É ele que define a escala das colunas — todas as outras são proporcionais a esta.">
+      {#icone 'atividade' /} pico <strong translate="no">{pico}</strong>
+    </span>
+  </div>
+
+  {#if faltamAnos}
+  <div class="aviso aviso-atencao com-icone">
+    {#icone 'aviso' /}
+    <div>
+      <strong>Nem todos os anos foram sincronizados.</strong>
+      As colunas listradas são anos que <em>ainda não foram perguntados à NASA</em> —
+      não anos sem desastres. Clique numa delas para trazer o ano.
+    </div>
+  </div>
+  {/if}
+
+  <!--
+    O GRÁFICO. Sem biblioteca, pela mesma razão da tela de estatísticas: uma
+    coluna é um retângulo com altura proporcional, o CSS faz isso numa linha, e
+    o resultado é legível sem JavaScript, imprimível e navegável por teclado —
+    o que um <canvas> não é.
+  -->
+  <div class="hist-grafico" role="group"
+       aria-label="Eventos por ano desde {primeiroAno}, pico de {pico}">
+    {#for c in colunas}
+    <form class="hist-coluna{#if !c.sincronizado} hist-coluna-ausente{/if}"
+          method="post" action="/desastres/historico/sincronizar/{c.ano}"
+          hx-post="/desastres/historico/sincronizar/{c.ano}"
+          hx-target="#detalhe-do-ano" hx-swap="innerHTML"
+          hx-indicator="#girando-{c.ano}">
+      <button class="hist-botao dica" type="submit"
+              data-dica="{#if c.sincronizado}{c.ano}: {c.quantos} evento(s) em {c.categorias} categoria(s). Clique para atualizar este ano com a NASA.{#else}{c.ano} ainda não foi sincronizado. A coluna está vazia porque não perguntamos à NASA — não porque não houve desastres. Clique para trazer o ano.{/if}">
+        <span class="hist-valor" translate="no">{#if c.sincronizado}{c.quantos}{#else}—{/if}</span>
+        <span class="hist-barra" style="height: {c.altura}%"></span>
+        <span class="hist-ano" translate="no">{c.ano}</span>
+        <span class="htmx-indicator hist-girando" id="girando-{c.ano}">
+          {#icone 'sincronizar' /}
+        </span>
+      </button>
+    </form>
+    {/for}
+  </div>
+
+  <div class="hist-legenda">
+    <span class="com-icone">
+      <span class="hist-amostra hist-amostra-cheia"></span>
+      ano sincronizado
+    </span>
+    <span class="com-icone">
+      <span class="hist-amostra hist-amostra-ausente"></span>
+      <span class="dica" tabindex="0"
+            data-dica="Listrado significa AUSÊNCIA DE DADO, nunca ausência de desastre. Enquanto o ano não for buscado na NASA, o sistema não sabe o que houve nele.">não
+      sincronizado — não é o mesmo que sem desastres</span>
+    </span>
+  </div>
+
+  <!-- Onde cai o resultado da sincronização e o detalhe do ano clicado. -->
+  <div id="detalhe-do-ano" class="hist-detalhe"></div>
+</section>
+{/corpo}
+{/include}

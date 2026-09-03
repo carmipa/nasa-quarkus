@@ -102,14 +102,32 @@
   cada página informa: destacar no servidor evita o pisca-pisca de quem só descobre a
   seção ativa depois que o JavaScript roda.
 -->
+<!--
+  O MENU. Cada item leva ícone E texto — nunca só ícone. Ícone sozinho é
+  adivinhação para quem enxerga e silêncio para quem usa leitor de tela; o
+  desenho acelera o reconhecimento de quem já conhece a tela, e a palavra
+  ensina quem chegou agora.
+
+  A dica diz o que a seção FAZ, não repete o nome dela. "Clientes: clientes"
+  não informa nada; "quem recebe o alerta" informa.
+-->
 <nav class="menu" aria-label="Seções">
-  <a class="menu-item{#if secaoAtiva == 'inicio'} menu-item-ativo{/if}" href="/">Início</a>
-  <a class="menu-item{#if secaoAtiva == 'clientes'} menu-item-ativo{/if}" href="/clientes/listar">Clientes</a>
-  <a class="menu-item{#if secaoAtiva == 'contatos'} menu-item-ativo{/if}" href="/contatos/listar">Contatos</a>
-  <a class="menu-item{#if secaoAtiva == 'enderecos'} menu-item-ativo{/if}" href="/enderecos/listar">Endereços</a>
-  <a class="menu-item{#if secaoAtiva == 'desastres'} menu-item-ativo{/if}" href="/desastres">Desastres</a>
-  <a class="menu-item{#if secaoAtiva == 'documentacao'} menu-item-ativo{/if}" href="/documentacao">Documentação</a>
-  <a class="menu-item{#if secaoAtiva == 'contato'} menu-item-ativo{/if}" href="/contato">Contato</a>
+  <a class="menu-item com-icone{#if secaoAtiva == 'inicio'} menu-item-ativo{/if}" href="/"
+     data-dica="Painel de abertura: desastres em tempo real, notícias e o que o sistema está vigiando agora">{#icone 'casa' /}Início</a>
+  <a class="menu-item com-icone{#if secaoAtiva == 'clientes'} menu-item-ativo{/if}" href="/clientes/listar"
+     data-dica="Quem recebe o alerta — cadastro, busca e os endereços de cada pessoa">{#icone 'clientes' /}Clientes</a>
+  <a class="menu-item com-icone{#if secaoAtiva == 'contatos'} menu-item-ativo{/if}" href="/contatos/listar"
+     data-dica="Por onde a pessoa é avisada: telefone, e-mail e canal de emergência">{#icone 'contatos' /}Contatos</a>
+  <a class="menu-item com-icone{#if secaoAtiva == 'enderecos'} menu-item-ativo{/if}" href="/enderecos/listar"
+     data-dica="Onde a pessoa está. É a coordenada daqui que decide se um desastre está perto dela.">{#icone 'enderecos' /}Endereços</a>
+  <a class="menu-item com-icone{#if secaoAtiva == 'desastres'} menu-item-ativo{/if}" href="/desastres"
+     data-dica="O que a NASA publica: eventos em tempo real, mapa, estatísticas e o arquivo histórico ano a ano">{#icone 'desastres' /}Desastres</a>
+  <a class="menu-item com-icone{#if secaoAtiva == 'alertas'} menu-item-ativo{/if}" href="/alertas"
+     data-dica="A saída do sistema: quem foi avisado, de quê, e o que ainda está na fila para envio">{#icone 'alertas' /}Alertas</a>
+  <a class="menu-item com-icone{#if secaoAtiva == 'documentacao'} menu-item-ativo{/if}" href="/documentacao"
+     data-dica="Como o sistema é feito por dentro: arquitetura, fatias, guardas e os defeitos medidos">{#icone 'documentacao' /}Documentação</a>
+  <a class="menu-item com-icone{#if secaoAtiva == 'contato'} menu-item-ativo{/if}" href="/contato"
+     data-dica="Quem fez este projeto e como falar comigo">{#icone 'envelope' /}Contato</a>
 </nav>
 
 <main class="conteudo">

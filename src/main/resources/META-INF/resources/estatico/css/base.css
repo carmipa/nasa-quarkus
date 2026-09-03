@@ -424,3 +424,214 @@ body {
 .desastres-atalhos { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-left: auto; }
 
 .aviso-nota { margin: 0.6rem 0 0; font-size: 0.9rem; color: var(--cor-texto-fraco); }
+
+/* ==========================================================================
+ * ÍCONES
+ *
+ * O SVG vem do catálogo `Icones.java`, com `stroke: currentColor` e `1em` de
+ * lado. As duas escolhas são a razão de não haver CSS por ícone aqui: ele
+ * herda a COR do texto ao redor e o TAMANHO da fonte ao redor. Um ícone dentro
+ * de um botão de perigo fica vermelho sozinho; um dentro de um título fica
+ * grande sozinho.
+ *
+ * `1em` também é o que atende à regra de porcentagem — `em` escala com a
+ * fonte, `px` trava.
+ * ========================================================================== */
+
+.icone {
+  display: inline-block;
+  vertical-align: -0.125em;   /* alinha o traço com a linha de base do texto */
+  flex: none;                 /* dentro de flex, ícone não estica nem encolhe */
+}
+
+/* Ícone colado no texto ao lado dele. O gap fica no PAI para o espaço não
+   aparecer quando o ícone estiver sozinho. */
+.com-icone {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+}
+
+.icone-grande { font-size: 1.4em; }
+.icone-fraco  { color: var(--cor-texto-fraco); }
+
+/* ==========================================================================
+ * DICA AO PASSAR O MOUSE  (`data-dica="o que este campo faz"`)
+ *
+ * PROPÓSITO: explicar o que cada campo faz, sem gastar a tela com um parágrafo
+ * ao lado de cada rótulo. Quem já sabe não lê; quem não sabe descobre.
+ *
+ * POR QUE NÃO O ATRIBUTO `title` NATIVO. Ele parece resolver, e não resolve:
+ *   1. leva ~1,5s para aparecer, e some sozinho depois de alguns segundos;
+ *   2. não aparece NUNCA no teclado — quem navega por Tab jamais o vê;
+ *   3. não aparece em toque nenhum no celular;
+ *   4. não se pode estilizar, e fica ilegível sobre tema escuro.
+ * Nenhum desses é opinião de estética: 2 e 3 são gente que simplesmente não
+ * recebe a informação.
+ *
+ * POR QUE `:focus-visible` ESTÁ AQUI JUNTO DE `:hover`, E NÃO É OPCIONAL.
+ * Uma dica que só responde ao mouse existe só para quem usa mouse. O elemento
+ * que a carrega precisa ser focável — `<button>`, `<a>`, `<input>` já são; um
+ * `<span>` precisa de `tabindex="0"`, e é por isso que o marcador `[data-dica]` é
+ * quase sempre posto num `<abbr tabindex="0">` ou num rótulo de campo.
+ *
+ * FALHA: `data-dica` ausente ⇒ o `content` fica vazio e NADA é desenhado —
+ * sem caixa preta flutuando com nada dentro.
+ * ========================================================================== */
+
+/*
+ * O SELETOR É O ATRIBUTO, NÃO UMA CLASSE — e é decisão, não estilo.
+ *
+ * A primeira versão exigia `class="dica"` JUNTO de `data-dica="..."`. Eu mesmo
+ * esqueci a classe no primeiro arquivo em que usei o componente (o menu do
+ * layout, 02/09/2026): o atributo estava lá, a explicação estava escrita, e
+ * nada aparecia na tela. Sem erro, sem aviso — só uma dica que não existe.
+ *
+ * Se quem acabou de escrever o componente esquece a metade, todo mundo esquece.
+ * Com `[data-dica]`, escrever a explicação É ligá-la: não sobra segunda metade
+ * para esquecer.
+ */
+[data-dica] {
+  position: relative;
+  cursor: help;
+}
+
+/*
+ * O TRACEJADO ANUNCIA que há explicação. Sem ele a dica existe e ninguém
+ * descobre — passar o mouse por acaso é sorte, não descoberta.
+ *
+ * É classe SEPARADA porque nem todo portador de dica pode receber sublinhado:
+ * um item de menu já tem borda inferior própria marcando a seção ativa, e um
+ * risco tracejado por baixo viraria enfeite confuso. Em texto corrido, ao
+ * contrário, o tracejado é a única pista de que ali há algo a descobrir.
+ */
+.dica { border-bottom: 1px dashed var(--cor-borda); }
+
+[data-dica]::after {
+  content: attr(data-dica);
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  margin-bottom: 0.5em;
+  z-index: 50;
+
+  /* Largura em `ch`: a medida de UMA LINHA DE TEXTO, que é o que a caixa
+     contém. Em `%` ela seria relativa ao elemento — e um rótulo de 3 letras
+     daria uma caixa de 3 letras de largura com vinte linhas de altura. */
+  width: max-content;
+  max-width: 32ch;
+
+  padding: 0.5em 0.7em;
+  border: 1px solid var(--cor-borda);
+  border-radius: 0.4em;
+  background: #0b0e14;
+  color: var(--cor-texto);
+  font-size: 0.8rem;
+  font-weight: 400;
+  line-height: 1.45;
+  text-align: left;
+  text-transform: none;   /* o pai pode ser um cabeçalho em maiúsculas */
+  letter-spacing: normal;
+  white-space: normal;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .5);
+
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(0.25em);
+  transition: opacity .14s ease, transform .14s ease, visibility .14s;
+}
+
+/* A setinha, que liga a caixa ao elemento. Sem ela, com dois campos vizinhos
+   não se sabe de qual dos dois a explicação está falando. */
+[data-dica]::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 1em;
+  z-index: 51;
+  border: 0.4em solid transparent;
+  border-top-color: var(--cor-borda);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .14s ease, visibility .14s;
+}
+
+[data-dica]:hover::after,  [data-dica]:focus-visible::after,
+[data-dica]:hover::before, [data-dica]:focus-visible::before {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+/* Perto da borda direita a caixa sairia da tela. `.dica-esquerda` ancora pela
+   direita — é o mesmo componente, virado. */
+[data-dica].dica-esquerda::after { left: auto; right: 0; }
+[data-dica].dica-esquerda::before { left: auto; right: 1em; }
+
+/* Numa tabela, a dica no cabeçalho abriria para fora do topo da tela quando a
+   tabela está no alto. `.dica-abaixo` abre para baixo. */
+[data-dica].dica-abaixo::after {
+  bottom: auto;
+  top: 100%;
+  margin-bottom: 0;
+  margin-top: 0.5em;
+}
+[data-dica].dica-abaixo::before {
+  bottom: auto;
+  top: 100%;
+  border-top-color: transparent;
+  border-bottom-color: var(--cor-borda);
+}
+
+/* Um `?` discreto para pendurar a dica onde não há texto sublinhável. */
+.dica-marca {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.15em;
+  height: 1.15em;
+  border: 1px solid var(--cor-borda);
+  border-radius: 50%;
+  color: var(--cor-texto-fraco);
+  font-size: 0.75em;
+  font-weight: 700;
+  line-height: 1;
+  border-bottom-style: solid;   /* sem o tracejado do `[data-dica]`; o círculo já anuncia */
+}
+.dica-marca:hover, .dica-marca:focus-visible {
+  border-color: var(--cor-destaque);
+  color: var(--cor-destaque);
+  outline: none;
+}
+
+/* Quem prefere menos movimento na tela não recebe a transição. É configuração
+   de sistema operacional, e ignorá-la causa enjoo de verdade em quem a liga. */
+@media (prefers-reduced-motion: reduce) {
+  [data-dica]::after, [data-dica]::before { transition: none; }
+}
+
+/* ==========================================================================
+ * EFEITOS AO PASSAR O MOUSE
+ *
+ * Todos combinam com `:focus-visible` pela mesma razão da dica: um realce que
+ * só responde ao mouse deixa quem navega por teclado sem saber onde está.
+ * ========================================================================== */
+
+/* Cartão que sobe de leve e acende a borda. */
+.realce {
+  transition: border-color .16s ease, transform .16s ease, background .16s ease;
+}
+.realce:hover, .realce:focus-within {
+  border-color: var(--cor-destaque);
+  transform: translateY(-2px);
+}
+
+/* Linha de tabela e item de lista: só o fundo muda. Mover uma linha de tabela
+   no hover desalinha a coluna vizinha e atrapalha a leitura. */
+.realce-linha { transition: background .14s ease; }
+.realce-linha:hover, .realce-linha:focus-within { background: var(--cor-fundo); }
+
+@media (prefers-reduced-motion: reduce) {
+  .realce, .realce-linha { transition: none; }
+  .realce:hover, .realce:focus-within { transform: none; }
+}

@@ -82,6 +82,39 @@ public interface RepositorioDeEventosPort {
     record ContagemPorDia(java.time.LocalDate dia, long quantos) {
     }
 
+    /**
+     * Quantos eventos por ANO — o arquivo histórico inteiro, sem janela.
+     *
+     * <p><b>Por que não reusar {@link #contarPorDia(Instant)} com uma janela de dez anos.</b>
+     * Aquela devolve uma linha por dia; dez anos são ~3650 linhas para desenhar doze
+     * colunas. Pior: ela existe para mostrar <b>dias vazios</b>, e o caso de uso os
+     * completa um a um — trabalho inútil quando a pergunta é por ano.</p>
+     *
+     * <p><b>Ano sem evento NÃO aparece</b>, pela mesma razão do dia: o banco só devolve o
+     * que existe. Aqui, porém, quem completa a lacuna é esta camada de cima <b>de outro
+     * jeito</b> — um ano vazio no meio da série significa "não sincronizado ainda", não
+     * "não houve desastre no planeta em 2019". Confundir os dois é o defeito que esta
+     * página existe para não ter.</p>
+     */
+    List<ContagemPorAno> contarPorAno();
+
+    /**
+     * Um ano e o que houve nele.
+     *
+     * @param ano        o ano civil em UTC
+     * @param quantos    quantos eventos
+     * @param categorias quantas categorias distintas — um ano com 400 eventos de uma só
+     *                   categoria conta uma história diferente de um com 400 de doze
+     */
+    record ContagemPorAno(int ano, long quantos, long categorias) {
+    }
+
+    /** Contagem por categoria DENTRO de um ano — o detalhe de uma coluna do histórico. */
+    List<ContagemPorCategoria> contarPorCategoriaNoAno(int ano);
+
+    /** Quantos eventos naquele ano — usado para saber se já foi sincronizado. */
+    long contarDoAno(int ano);
+
     long contar();
 
     long contarAtivos();

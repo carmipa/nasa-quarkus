@@ -66,6 +66,50 @@ public class SincronizarEventosUseCase {
     public record Resultado(int trazidos, int novos, int atualizados, Duration duracao) {
     }
 
+    /**
+     * Traz o ANO inteiro — o arquivo histórico.
+     *
+     * <p><b>PROPÓSITO.</b> O sistema original mostrava desastres desde o começo dos
+     * registros da EONET, divididos por ano. Isto é o que enche essa série.</p>
+     *
+     * <p><b>Por que um método próprio, e não {@code executar} com `dias` grande.</b>
+     * Medido em 02/09/2026: sem recorte de data, a EONET devolve os mais recentes
+     * primeiro — {@code limit=2000} traz 2000 eventos <b>todos de 2026</b> e nenhum de
+     * 2015. Pedir "os últimos 4000 dias" não alcança o arquivo; só o recorte alcança.</p>
+     *
+     * <p><b>Zero aqui NÃO é o mesmo alerta que zero na janela recente.</b> Um ano antigo
+     * pode legitimamente ter poucos eventos, e a EONET publicava menos em 2015 (342) do
+     * que em 2025 (4612). O aviso existe, mas diz "ano vazio", que é uma pergunta — não
+     * "sincronização quebrada", que seria uma afirmação sem prova.</p>
+     *
+     * @param ano    o ano civil, em UTC
+     * @param limite teto por ano; 6000 cobre o maior ano medido com folga
+     */
+    public Resultado executarAno(int ano, int limite) {
+        var inicio = relogio.agora();
+        List<EventoNatural> daNasa = fonte.buscarDoAno(ano, limite);
+
+        if (daNasa.isEmpty()) {
+            LOG.warn(Registro.recusa(OPERACAO, String.valueOf(ano), "ANO_SEM_EVENTOS"));
+        }
+
+        int novos = 0;
+        int atualizados = 0;
+        for (EventoNatural evento : daNasa) {
+            var r = repositorio.gravarOuAtualizar(evento);
+            if (r.inserido()) {
+                novos++;
+            } else {
+                atualizados++;
+            }
+        }
+
+        var duracao = Duration.between(inicio, relogio.agora());
+        LOG.info(Registro.de(OPERACAO, String.valueOf(ano), "trazidos=" + daNasa.size()
+                + " novos=" + novos + " atualizados=" + atualizados, duracao));
+        return new Resultado(daNasa.size(), novos, atualizados, duracao);
+    }
+
     public Resultado executar(int limite, Integer dias, boolean apenasAtivos) {
         var inicio = relogio.agora();
         List<EventoNatural> daNasa = fonte.buscar(limite, dias, apenasAtivos, Optional.empty());

@@ -29,12 +29,12 @@
       {/if}
     </div>
     <div class="excluir-acoes">
-      <a class="botao botao-principal" href="/contatos/listar">Voltar à lista</a>
-      <a class="botao" href="/contatos/cadastrar">Cadastrar outro</a>
+      <a class="botao botao-principal com-icone" href="/contatos/listar">{#icone 'voltar' /}Voltar à lista</a>
+      <a class="botao com-icone" href="/contatos/cadastrar">{#icone 'adicionar' /}Cadastrar outro</a>
     </div>
   {#else}
     <nav class="volta"><a href="/contatos/listar">&larr; Contatos</a></nav>
-    <h1 class="secao-titulo">Excluir contato</h1>
+    <h1 class="secao-titulo com-icone">{#icone 'excluir' /}Excluir contato</h1>
 
     {#if contato.recebeAlerta}
     <div class="aviso aviso-erro" role="alert">
@@ -66,8 +66,8 @@
     </article>
 
     <form class="excluir-acoes" method="post" action="/contatos/{contato.id}/excluir">
-      <a class="botao botao-principal" href="/contatos/listar">Cancelar</a>
-      <button class="botao botao-perigo" type="submit">Excluir definitivamente</button>
+      <a class="botao botao-principal com-icone" href="/contatos/listar">{#icone 'voltar' /}Cancelar</a>
+      <button class="botao botao-perigo com-icone" type="submit">{#icone 'excluir' /}Excluir definitivamente</button>
     </form>
   {/if}
 </section>

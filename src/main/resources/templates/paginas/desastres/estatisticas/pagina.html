@@ -27,16 +27,17 @@
 -->
 <section class="secao">
   <div class="est-topo">
-    <h1 class="secao-titulo">Estatísticas</h1>
+    <h1 class="secao-titulo com-icone">{#icone 'grafico' /}Estatísticas</h1>
     <div class="desastres-atalhos">
-      <a class="botao botao-discreto" href="/desastres">Painel</a>
-      <a class="botao botao-discreto" href="/desastres/mapa">Mapa</a>
+      <a class="botao botao-discreto com-icone" href="/desastres/historico" data-dica="O arquivo completo da NASA, ano a ano desde 2015 — 21 mil eventos que a janela de dias nao alcanca">{#icone 'historico' /}Histórico</a>
+      <a class="botao botao-discreto com-icone" href="/desastres">{#icone 'desastres' /}Painel</a>
+      <a class="botao botao-discreto com-icone" href="/desastres/mapa">{#icone 'mapa' /}Mapa</a>
     </div>
   </div>
 
   <form class="filtros" method="get" action="/desastres/estatisticas">
     <div class="filtro">
-      <label class="formulario-rotulo" for="dias">Janela (dias)</label>
+      <label class="formulario-rotulo dica" for="dias" data-dica="A janela conta para trás a partir de agora, em UTC. Aumentar mostra mais história; diminuir foca no que é recente.">Janela (dias)</label>
       <input class="campo-formulario" id="dias" name="dias" type="number"
              value="{dias}" min="1" max="3650">
       <span class="formulario-dica">
@@ -44,7 +45,7 @@
       </span>
     </div>
     <div class="filtros-acoes">
-      <button class="botao botao-principal" type="submit">Recalcular</button>
+      <button class="botao botao-principal com-icone" type="submit">{#icone 'grafico' /}Recalcular</button>
     </div>
   </form>
 
@@ -54,7 +55,7 @@
       <p class="vazio-dica">
         Ou a janela é curta demais, ou a base ainda não foi sincronizada.
       </p>
-      <a class="botao botao-principal" href="/desastres">Sincronizar com a NASA</a>
+      <a class="botao botao-principal com-icone" href="/desastres">{#icone 'sincronizar' /}Sincronizar com a NASA</a>
     </div>
   {#else}
     <p class="secao-texto" translate="no">

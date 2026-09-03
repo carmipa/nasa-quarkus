@@ -137,6 +137,35 @@ class EonetApiAdapterTest {
     }
 
     @Test
+    @DisplayName("o lote diz quantos a API MANDOU, nao quantos sobraram — teto de truncamento")
+    void oLoteContaOsRecebidosEntreOsTortos() {
+        // O DEFEITO QUE ESTE TESTE TRAVA, medido em 02/09/2026 contra a API real.
+        //
+        // A guarda de truncamento comparava `lidos.size() >= limite`. Como o evento torto
+        // e PULADO, a lista sai menor que o corpo — e com teto 6000 e 3 tortos, a API
+        // devolveu 6000 (truncando 900 eventos de 2026) enquanto a lista trazia 5997.
+        // O aviso nao disparou, e o ano ficou 13% incompleto SEM NENHUM SINAL.
+        //
+        // O aviso falhava exatamente quando mais precisava funcionar: quanto mais dado a
+        // API tem, mais provavel que algum venha torto, e mais provavel que a guarda de
+        // truncamento se cale.
+        String comUmTorto = CORPO_REAL.replace("\"events\": [",
+                "\"events\": [ { \"id\": \"EONET_TORTO\", \"title\": \"sem geometria\","
+                        + " \"categories\": [], \"geometry\": [] },");
+
+        var lote = adaptador().interpretarLote(comUmTorto);
+
+        assertEquals(1, lote.lidos().size(), "so o evento bom deveria virar evento");
+        assertEquals(2, lote.recebidos(),
+                "`recebidos` tem de contar o TORTO tambem — e ele que se compara ao teto");
+
+        // CONTROLE POSITIVO da diferenca: se os dois numeros fossem iguais, este teste
+        // passaria sem provar nada, e a guarda de truncamento voltaria a ser cega.
+        assertTrue(lote.recebidos() > lote.lidos().size(),
+                "sem diferenca entre recebidos e lidos, este teste nao julga nada");
+    }
+
+    @Test
     @DisplayName("CONTROLE POSITIVO: corpo que nao e da EONET vira excecao PROPRIA")
     void corpoIlegivelViraExcecaoPropria() {
         // Sem exceção própria, uma mudança de contrato viraria "provedor indisponível" —

@@ -10,6 +10,7 @@ import java.util.Map;
 
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -98,6 +99,11 @@ class TodasAsTelasRespondemTest {
         rotas.put("mapa", "/desastres/mapa");
         rotas.put("estatisticas", "/desastres/estatisticas");
         rotas.put("estatisticas com janela", "/desastres/estatisticas?dias=365");
+        rotas.put("historico por ano", "/desastres/historico");
+        rotas.put("detalhe de um ano", "/desastres/historico/2026");
+        // Ano SEM eventos gravados: o ramo em que `barras` vem null, e o template
+        // precisa sobreviver a isso. E o mesmo defeito de `criado` e `salvo`.
+        rotas.put("ano sem eventos", "/desastres/historico/2015");
         rotas.put("lista", "/desastres/fragmento/lista");
         rotas.put("lista com categoria", "/desastres/fragmento/lista?categoria=wildfires");
         rotas.put("lista pagina 1", "/desastres/fragmento/lista?categoria=&pagina=1");
@@ -178,6 +184,91 @@ class TodasAsTelasRespondemTest {
                     "rastro de pilha visivel em " + rota);
         }
     }
+
+    // ================================================== EXPRESSAO CRUA NA TELA
+
+    /**
+     * Nenhuma tela mostra uma expressão de template <b>como texto</b>.
+     *
+     * <p><b>O DEFEITO QUE ORIGINOU ESTE TESTE, medido em 02/09/2026.</b> O ícone foi
+     * escrito como {@code {'historico'.icone.raw}}, apostando numa
+     * {@code @TemplateExtension}. O Qute <b>não reconhece expressão que começa por
+     * aspas</b> — e em vez de falhar, ele imprimiu {@code {'historico'.icone.raw}} como
+     * texto literal na página. Status <b>200</b>, sem erro em log nenhum, com o
+     * código-fonte do template à mostra para o visitante.</p>
+     *
+     * <p><b>Por que os testes existentes não pegariam.</b> Todos eles conferem
+     * {@code statusCode == 200}, e o 200 estava lá. É a lição de novo: <b>200 não prova
+     * que a página está certa</b>. Este teste olha o CONTEÚDO.</p>
+     */
+    @Test
+    @DisplayName("CONTROLE POSITIVO: nenhuma tela imprime expressao de template como texto")
+    void nenhumaTelaVazaExpressaoDeTemplate() {
+        for (String rota : ROTAS_COM_MOLDURA) {
+            String corpo = corpoDe(rota);
+            for (String vazamento : new String[] { "{#icone", "{cdi:", ".raw}", "{#if ", "{#for " }) {
+                assertFalse(corpo.contains(vazamento),
+                        "a rota " + rota + " imprimiu '" + vazamento + "' como TEXTO — o Qute"
+                                + " nao interpretou a expressao e ela vazou para a pagina");
+            }
+        }
+    }
+
+    @Test
+    @DisplayName("os icones sao DESENHADOS, nao escapados nem vazios")
+    void osIconesSaoDesenhados() {
+        // Tres estados diferentes, e so o primeiro esta certo:
+        //   <svg class='icone'   -> desenhou
+        //   &lt;svg              -> escapou, e a pagina mostra o codigo do desenho
+        //   nada                 -> sumiu em silencio, indistinguivel de layout correto
+        for (String rota : new String[] { "/", "/desastres", "/desastres/historico",
+                "/clientes/listar", "/documentacao" }) {
+            String corpo = corpoDe(rota);
+            assertFalse(corpo.contains("&lt;svg"),
+                    "o SVG foi ESCAPADO em " + rota + " — falta o `.raw`");
+            assertTrue(corpo.contains("<svg class='icone'"),
+                    "nenhum icone desenhado em " + rota);
+        }
+    }
+
+    @Test
+    @DisplayName("CONTROLE POSITIVO: icone desconhecido APARECE, nao some")
+    void iconeDesconhecidoNaoSomeEmSilencio() {
+        // Um nome com erro de digitacao que renderiza nada e indistinguivel de um
+        // layout correto — ninguem conta os icones de uma tela. Ele tem de VIRAR ALGO.
+        String svg = org.nasa.core.presentation.web.Icones.svg("nome-que-nao-existe");
+        assertTrue(svg.contains("<svg"), "icone desconhecido sumiu: " + svg);
+        assertTrue(svg.length() > 100, "icone desconhecido veio vazio por dentro: " + svg);
+        assertFalse(org.nasa.core.presentation.web.Icones.existe("nome-que-nao-existe"));
+        // E o controle do controle: um nome REAL tem de existir, senao o teste acima
+        // passaria num catalogo vazio.
+        assertTrue(org.nasa.core.presentation.web.Icones.existe("casa"));
+        assertTrue(org.nasa.core.presentation.web.Icones.nomes().size() >= 20,
+                "o catalogo tem " + org.nasa.core.presentation.web.Icones.nomes().size()
+                        + " icones: os testes acima estao julgando quase nada");
+    }
+
+    @Test
+    @DisplayName("as telas trazem DICAS explicando os campos")
+    void asTelasTrazemDicas() {
+        // A dica explica o que cada campo faz. Sem ela a tela funciona e ninguem
+        // entende — que e o estado em que o sistema parece simples e nao e.
+        for (String rota : new String[] { "/desastres", "/desastres/historico",
+                "/desastres/estatisticas", "/clientes/buscar", "/alertas" }) {
+            String corpo = corpoDe(rota);
+            assertTrue(corpo.contains("data-dica="),
+                    "nenhuma dica de campo em " + rota);
+        }
+    }
+
+    /** As telas com moldura — as que um visitante abre pela URL. */
+    private static final String[] ROTAS_COM_MOLDURA = {
+            "/", "/contato", "/documentacao",
+            "/desastres", "/desastres/mapa", "/desastres/estatisticas", "/desastres/historico",
+            "/clientes/listar", "/clientes/cadastrar", "/clientes/buscar",
+            "/contatos/listar", "/contatos/cadastrar",
+            "/enderecos/listar", "/enderecos/cadastrar",
+            "/alertas" };
 
     // ------------------------------------------------------------------ apoio
 

@@ -13,7 +13,7 @@
   {#if termo.isEmpty()}
     <div class="lista-vazia">
       <p>Nenhum cliente cadastrado ainda.</p>
-      <a class="botao botao-principal" href="/clientes/cadastrar">Cadastrar o primeiro</a>
+      <a class="botao botao-principal com-icone" href="/clientes/cadastrar">{#icone 'adicionar' /}Cadastrar o primeiro</a>
     </div>
   {#else}
     <div class="lista-vazia">
@@ -48,9 +48,9 @@
         </dl>
       </div>
       <div class="lista-item-acoes">
-        <a class="botao botao-discreto" href="/clientes/{c.id}">Ver</a>
-        <a class="botao botao-discreto" href="/clientes/{c.id}/alterar">Alterar</a>
-        <a class="botao botao-perigo" href="/clientes/{c.id}/excluir">Excluir</a>
+        <a class="botao botao-discreto com-icone" href="/clientes/{c.id}">{#icone 'ver' /}Ver</a>
+        <a class="botao botao-discreto com-icone" href="/clientes/{c.id}/alterar">{#icone 'editar' /}Alterar</a>
+        <a class="botao botao-perigo com-icone" href="/clientes/{c.id}/excluir">{#icone 'excluir' /}Excluir</a>
       </div>
     </li>
     {/for}

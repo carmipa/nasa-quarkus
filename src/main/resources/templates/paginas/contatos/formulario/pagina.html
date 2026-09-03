@@ -27,7 +27,7 @@
 <section class="secao">
   <nav class="volta"><a href="/contatos/listar">&larr; Contatos</a></nav>
 
-  <h1 class="secao-titulo">{#if edicao}Alterar contato{#else}Novo contato{/if}</h1>
+  <h1 class="secao-titulo com-icone">{#if edicao}{#icone 'editar' /}Alterar contato{#else}{#icone 'adicionar' /}Novo contato{/if}</h1>
 
   {#if criado}
   <div class="aviso aviso-sucesso" role="status">
@@ -61,7 +61,7 @@
         action="{#if edicao}/contatos/{contato.id}/alterar{#else}/contatos/cadastrar{/if}">
 
     <div class="formulario-campo formulario-linha-cheia">
-      <label class="formulario-rotulo" for="email">E-mail</label>
+      <label class="formulario-rotulo dica" for="email" data-dica="Endereço de e-mail para onde o alerta é enviado.">E-mail</label>
       <input class="campo-formulario{#if campo == 'email'} campo-formulario-erro{/if}"
              id="email" name="email" type="email" value="{email}" required autofocus>
       <span class="formulario-dica">
@@ -72,7 +72,7 @@
     </div>
 
     <div class="formulario-campo">
-      <label class="formulario-rotulo" for="ddd">DDD</label>
+      <label class="formulario-rotulo dica" for="ddd" data-dica="Código de área, dois dígitos. Vale para os três números abaixo.">DDD</label>
       <input class="campo-formulario{#if campo == 'ddd'} campo-formulario-erro{/if}"
              id="ddd" name="ddd" type="text" value="{ddd}" inputmode="numeric"
              maxlength="4" placeholder="11">
@@ -81,7 +81,7 @@
     </div>
 
     <div class="formulario-campo">
-      <label class="formulario-rotulo" for="telefone">Telefone fixo</label>
+      <label class="formulario-rotulo dica" for="telefone" data-dica="Telefone fixo. Não recebe mensagem de texto — serve para contato humano.">Telefone fixo</label>
       <input class="campo-formulario{#if campo == 'telefone'} campo-formulario-erro{/if}"
              id="telefone" name="telefone" type="text" value="{telefone}"
              inputmode="numeric" placeholder="3456-7890">
@@ -90,7 +90,7 @@
     </div>
 
     <div class="formulario-campo">
-      <label class="formulario-rotulo" for="celular">Celular</label>
+      <label class="formulario-rotulo dica" for="celular" data-dica="Celular para chamada e mensagem de texto.">Celular</label>
       <input class="campo-formulario{#if campo == 'celular'} campo-formulario-erro{/if}"
              id="celular" name="celular" type="text" value="{celular}"
              inputmode="numeric" placeholder="98765-4321">
@@ -98,7 +98,7 @@
     </div>
 
     <div class="formulario-campo">
-      <label class="formulario-rotulo" for="whatsapp">WhatsApp</label>
+      <label class="formulario-rotulo dica" for="whatsapp" data-dica="Número de WhatsApp, se for diferente do celular. Em geral é o mesmo.">WhatsApp</label>
       <input class="campo-formulario{#if campo == 'whatsapp'} campo-formulario-erro{/if}"
              id="whatsapp" name="whatsapp" type="text" value="{whatsapp}"
              inputmode="numeric" placeholder="98765-4321">
@@ -110,7 +110,7 @@
       salvar — descobrir depois do desastre é tarde.
     -->
     <div class="formulario-campo formulario-linha-cheia">
-      <label class="formulario-rotulo" for="tipoContato">Tipo de contato</label>
+      <label class="formulario-rotulo dica" for="tipoContato" data-dica="EMERGENCIA é acionado primeiro quando há desastre perto. Os demais tipos recebem avisos comuns.">Tipo de contato</label>
       <select class="campo-formulario{#if campo == 'tipoContato'} campo-formulario-erro{/if}"
               id="tipoContato" name="tipoContato" required>
         {#for t in tipos}
@@ -129,7 +129,7 @@
 
     {#if !edicao}
     <div class="formulario-campo formulario-linha-cheia">
-      <label class="formulario-rotulo" for="clienteId">Ligar ao cliente (opcional)</label>
+      <label class="formulario-rotulo dica" for="clienteId" data-dica="A qual pessoa este contato pertence. Deixando em branco, o contato fica solto e não recebe alerta de nenhum endereço.">Ligar ao cliente (opcional)</label>
       <input class="campo-formulario{#if campo == 'clienteId'} campo-formulario-erro{/if}"
              id="clienteId" name="clienteId" type="text" value="{clienteId}"
              inputmode="numeric" placeholder="número do cliente">
@@ -147,7 +147,7 @@
       <button class="botao botao-principal" type="submit">
         {#if edicao}Salvar alterações{#else}Cadastrar{/if}
       </button>
-      <a class="botao" href="/contatos/listar">Cancelar</a>
+      <a class="botao com-icone" href="/contatos/listar">{#icone 'voltar' /}Cancelar</a>
     </div>
   </form>
 </section>

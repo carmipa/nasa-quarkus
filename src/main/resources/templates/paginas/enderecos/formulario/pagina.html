@@ -29,7 +29,7 @@
     {/if}
   </nav>
 
-  <h1 class="secao-titulo">Novo endereço</h1>
+  <h1 class="secao-titulo com-icone">{#icone 'enderecos' /}Novo endereço</h1>
 
   {#if criado}
   <div class="aviso {#if criado.participaDoAlertaDeProximidade}aviso-sucesso{#else}aviso-erro{/if}"
@@ -64,7 +64,7 @@
     <input type="hidden" name="clienteId" value="{clienteId}">
 
     <div class="formulario-campo">
-      <label class="formulario-rotulo" for="cep">CEP</label>
+      <label class="formulario-rotulo dica" for="cep" data-dica="Digite o CEP e o resto do endereço é preenchido sozinho. É ele que vira a coordenada usada para medir a distância até o desastre.">CEP</label>
       <!--
         A consulta dispara ao SAIR do campo e ao terminar de digitar. `changed`
         evita consultar de novo quando a pessoa so passa pelo campo sem mexer.
@@ -86,7 +86,7 @@
     </div>
 
     <div class="formulario-campo">
-      <label class="formulario-rotulo" for="numero">Número</label>
+      <label class="formulario-rotulo dica" for="numero" data-dica="Número da casa. Não altera a coordenada do alerta, que vem do CEP.">Número</label>
       <input class="campo-formulario{#if campo == 'numero'} campo-formulario-erro{/if}"
              id="numero" name="numero" type="text" value="{numero}" inputmode="numeric">
       <span class="formulario-dica">O CEP não sabe o número — só você.</span>
@@ -97,30 +97,30 @@
     </div>
 
     <div class="formulario-campo formulario-linha-cheia">
-      <label class="formulario-rotulo" for="logradouro">Logradouro</label>
+      <label class="formulario-rotulo dica" for="logradouro" data-dica="Preenchido pelo CEP. Pode corrigir se vier errado.">Logradouro</label>
       <input class="campo-formulario" id="logradouro" name="logradouro"
              type="text" value="{logradouro}">
     </div>
 
     <div class="formulario-campo">
-      <label class="formulario-rotulo" for="bairro">Bairro</label>
+      <label class="formulario-rotulo dica" for="bairro" data-dica="Preenchido pelo CEP. Pode corrigir se vier errado.">Bairro</label>
       <input class="campo-formulario" id="bairro" name="bairro" type="text" value="{bairro}">
     </div>
 
     <div class="formulario-campo">
-      <label class="formulario-rotulo" for="localidade">Cidade</label>
+      <label class="formulario-rotulo dica" for="localidade" data-dica="Preenchida pelo CEP. É ela que vira coordenada quando o CEP não tem posição exata.">Cidade</label>
       <input class="campo-formulario" id="localidade" name="localidade"
              type="text" value="{localidade}">
     </div>
 
     <div class="formulario-campo">
-      <label class="formulario-rotulo" for="uf">UF</label>
+      <label class="formulario-rotulo dica" for="uf" data-dica="Duas letras. Preenchida pelo CEP.">UF</label>
       <input class="campo-formulario" id="uf" name="uf" type="text" value="{uf}"
              maxlength="2" placeholder="SP">
     </div>
 
     <div class="formulario-campo formulario-linha-cheia">
-      <label class="formulario-rotulo" for="complemento">Complemento</label>
+      <label class="formulario-rotulo dica" for="complemento" data-dica="Apartamento, bloco, referência. Não afeta o alerta.">Complemento</label>
       <input class="campo-formulario" id="complemento" name="complemento"
              type="text" value="{complemento}" placeholder="apto, bloco, sala…">
       <span class="formulario-dica">
@@ -129,8 +129,8 @@
     </div>
 
     <div class="formulario-acoes">
-      <button class="botao botao-principal" type="submit">Cadastrar endereço</button>
-      <a class="botao" href="/enderecos/listar">Cancelar</a>
+      <button class="botao botao-principal com-icone" type="submit">{#icone 'adicionar' /}Cadastrar endereço</button>
+      <a class="botao com-icone" href="/enderecos/listar">{#icone 'voltar' /}Cancelar</a>
     </div>
   </form>
 </section>

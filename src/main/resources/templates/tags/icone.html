@@ -1,0 +1,9 @@
+{!
+  TAG DE ÍCONE — `{#icone 'mapa' /}` em qualquer template.
+
+  O `it` é o parâmetro sem nome da tag. O `.raw` é OBRIGATÓRIO: o retorno é
+  SVG, e sem ele o Qute escaparia as tags e a página mostraria o código-fonte
+  do desenho em vez do desenho. É seguro porque o SVG vem só de constantes de
+  `Icones.java` — o nome recebido é chave de mapa, nunca é interpolado.
+!}
+{cdi:icones.de(it).raw}

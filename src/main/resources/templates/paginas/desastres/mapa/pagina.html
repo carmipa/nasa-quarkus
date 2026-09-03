@@ -27,21 +27,22 @@
 -->
 <section class="secao">
   <div class="mapa-topo">
-    <h1 class="secao-titulo">Mapa dos desastres</h1>
+    <h1 class="secao-titulo com-icone">{#icone 'mapa' /}Mapa dos desastres</h1>
     <div class="desastres-numeros" translate="no">
-      <span class="numero"><strong>{total}</strong> na base</span>
-      <span class="numero numero-ativo"><strong>{ativos}</strong> ativos</span>
+      <span class="numero com-icone dica" tabindex="0" data-dica="Eventos gravados na base local, de todas as sincronizações já feitas. Não depende de a NASA estar no ar agora.">{#icone 'banco' /}<strong>{total}</strong> na base</span>
+      <span class="numero numero-ativo com-icone dica" tabindex="0" data-dica="Eventos que a NASA ainda não deu por encerrados — são os que podem gerar alerta agora. Um incêndio apagado sai desta conta e continua na de cima.">{#icone 'atividade' /}<strong>{ativos}</strong> ativos</span>
     </div>
     <div class="desastres-atalhos">
-      <a class="botao botao-discreto" href="/desastres">Painel</a>
-      <a class="botao botao-discreto" href="/desastres/estatisticas">Estatísticas</a>
+      <a class="botao botao-discreto com-icone" href="/desastres">{#icone 'desastres' /}Painel</a>
+      <a class="botao botao-discreto com-icone" href="/desastres/estatisticas">{#icone 'grafico' /}Estatísticas</a>
+      <a class="botao botao-discreto com-icone" href="/desastres/historico" data-dica="O arquivo completo da NASA, ano a ano desde 2015 — 21 mil eventos que a janela de dias nao alcanca">{#icone 'historico' /}Histórico</a>
     </div>
   </div>
 
   {#if eventos.isEmpty()}
     <div class="vazio">
       <p>Nenhum evento na base para desenhar.</p>
-      <a class="botao botao-principal" href="/desastres">Sincronizar com a NASA</a>
+      <a class="botao botao-principal com-icone" href="/desastres">{#icone 'sincronizar' /}Sincronizar com a NASA</a>
     </div>
   {#else}
     <div class="mapa-caixa">

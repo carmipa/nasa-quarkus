@@ -16,10 +16,11 @@
 -->
 <section class="secao">
   <div class="alertas-topo">
-    <h1 class="secao-titulo">Alertas</h1>
+    <h1 class="secao-titulo com-icone">{#icone 'alertas' /}Alertas</h1>
     <div class="desastres-atalhos">
-      <a class="botao botao-discreto" href="/desastres">Desastres</a>
-      <a class="botao botao-discreto" href="/desastres/mapa">Mapa</a>
+      <a class="botao botao-discreto com-icone" href="/desastres/historico" data-dica="O arquivo completo da NASA, ano a ano desde 2015 — 21 mil eventos que a janela de dias nao alcanca">{#icone 'historico' /}Histórico</a>
+      <a class="botao botao-discreto com-icone" href="/desastres">{#icone 'desastres' /}Desastres</a>
+      <a class="botao botao-discreto com-icone" href="/desastres/mapa">{#icone 'mapa' /}Mapa</a>
     </div>
   </div>
 
@@ -60,17 +61,17 @@
   <form class="filtros" hx-post="/alertas/varrer" hx-target="#resultado-operacao"
         hx-indicator="#operando">
     <div class="filtro">
-      <label class="formulario-rotulo" for="raioKm">Raio do alerta (km)</label>
+      <label class="formulario-rotulo dica" for="raioKm" data-dica="Distância máxima entre o endereço da pessoa e o desastre para que ela seja alertada. A conta é geodésica, sobre a curvatura da Terra — não é uma caixa no mapa.">Raio do alerta (km)</label>
       <input class="campo-formulario" id="raioKm" name="raioKm" type="number"
              step="any" value="100" min="0.1" max="20000">
     </div>
     <div class="filtro">
-      <label class="formulario-rotulo" for="dias">Janela (dias)</label>
+      <label class="formulario-rotulo dica" for="dias" data-dica="Só desastres ocorridos dentro desta janela geram alerta. Evita avisar hoje sobre um evento de meses atrás.">Janela (dias)</label>
       <input class="campo-formulario" id="dias" name="dias" type="number"
              value="30" min="1" max="365">
     </div>
     <div class="filtros-acoes">
-      <button class="botao botao-principal" type="submit">Varrer e registrar</button>
+      <button class="botao botao-principal com-icone" type="submit">{#icone 'buscar' /}Varrer e registrar</button>
       <button class="botao" type="button"
               hx-post="/alertas/despachar?limite=50"
               hx-target="#resultado-operacao"
@@ -87,7 +88,7 @@
   <form class="filtros" hx-get="/alertas/fragmento/lista" hx-target="#lista-alertas"
         hx-trigger="change from:#situacao">
     <div class="filtro">
-      <label class="formulario-rotulo" for="situacao">Situação</label>
+      <label class="formulario-rotulo dica" for="situacao" data-dica="PENDENTE ainda não saiu; ENVIADO já foi entregue; FALHOU tentou e não conseguiu — e continua na fila para nova tentativa.">Situação</label>
       <select class="campo-formulario" id="situacao" name="situacao">
         <option value="">Todas</option>
         <option value="PENDENTE">Pendentes</option>

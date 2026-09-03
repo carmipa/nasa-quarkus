@@ -16,9 +16,9 @@
 -->
 <section class="secao">
   <div class="lista-topo">
-    <h1 class="secao-titulo">Contatos</h1>
+    <h1 class="secao-titulo com-icone">{#icone 'contatos' /}Contatos</h1>
     <span class="lista-total" translate="no">{total} cadastrado{#if total != 1}s{/if}</span>
-    <a class="botao botao-principal" href="/contatos/cadastrar">Novo contato</a>
+    <a class="botao botao-principal com-icone" href="/contatos/cadastrar">{#icone 'adicionar' /}Novo contato</a>
   </div>
 
   <form class="filtros"
@@ -27,12 +27,12 @@
         hx-trigger="submit, keyup changed delay:300ms from:#termo, change from:#tipo"
         hx-indicator="#buscando">
     <div class="filtro">
-      <label class="formulario-rotulo" for="termo">Buscar por e-mail ou telefone</label>
+      <label class="formulario-rotulo dica" for="termo" data-dica="Procura dentro do e-mail e dos telefones. Parte do texto já encontra.">Buscar por e-mail ou telefone</label>
       <input class="campo-formulario" id="termo" name="termo" type="search"
              autocomplete="off" placeholder="Digite para filtrar…">
     </div>
     <div class="filtro">
-      <label class="formulario-rotulo" for="tipo">Tipo</label>
+      <label class="formulario-rotulo dica" for="tipo" data-dica="Mostra só os contatos de um tipo. Em branco, mostra todos.">Tipo</label>
       <select class="campo-formulario" id="tipo" name="tipo">
         <option value="">Todos</option>
         <option value="EMERGENCIA">Emergência (recebe alerta)</option>
@@ -42,7 +42,7 @@
       </select>
     </div>
     <div class="filtros-acoes">
-      <button class="botao" type="submit">Filtrar</button>
+      <button class="botao com-icone" type="submit">{#icone 'filtrar' /}Filtrar</button>
       <span class="htmx-indicator carregando" id="buscando" translate="no">buscando…</span>
     </div>
   </form>

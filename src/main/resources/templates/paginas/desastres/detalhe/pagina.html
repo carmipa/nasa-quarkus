@@ -25,7 +25,7 @@
     {#if evento.categoria}<span class="evento-categoria" translate="no">{evento.categoria}</span>{/if}
   </div>
 
-  <h1 class="secao-titulo">{evento.titulo}</h1>
+  <h1 class="secao-titulo com-icone">{#icone 'desastres' /}{evento.titulo}</h1>
 
   {#if evento.participaDoAlertaDeProximidade}
   <div class="aviso aviso-sucesso" role="status">

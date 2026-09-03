@@ -63,6 +63,16 @@ public class DesastrePaginasResource {
 
     private static final int TAMANHO_PAGINA = 20;
 
+    /**
+     * Teto de eventos por ano na sincronização histórica.
+     *
+     * <p>Medido em 02/09/2026: o maior ano é 2026, com <b>6900</b> eventos; 2024 tem 5789 e
+     * 2015 tem 342. O teto anterior, de 6000, <b>truncou 900 eventos de 2026 em silêncio</b>
+     * — e o aviso de truncamento não disparou porque comparava a lista já filtrada. Os dois
+     * defeitos foram corrigidos; este número é a folga, e o aviso é a rede.</p>
+     */
+    private static final int LIMITE_POR_ANO = 20_000;
+
     @Inject
     MolduraDaPagina moldura;
 
@@ -102,6 +112,14 @@ public class DesastrePaginasResource {
     @Inject
     @Location("paginas/desastres/detalhe/pagina.html")
     Template telaDetalhe;
+
+    @Inject
+    @Location("paginas/desastres/historico/pagina.html")
+    Template telaHistorico;
+
+    @Inject
+    @Location("paginas/desastres/historico/fragmento-ano.html")
+    Template fragmentoAno;
 
     // ------------------------------------------------------------------ painel
 
@@ -280,6 +298,136 @@ public class DesastrePaginasResource {
      * @param altura   0 a 100, relativa ao pico da janela
      */
     public record Coluna(String dia, String rotulo, long quantos, long altura) {
+    }
+
+    // --------------------------------------------------------------- historico
+
+    /**
+     * O arquivo histórico, ano a ano, desde o começo dos registros da EONET.
+     *
+     * <p><b>PROPÓSITO DE NEGÓCIO.</b> É a visão que o sistema original tinha e que a janela
+     * de 30 dias não alcança: o que aconteceu no planeta em cada ano desde 2015.</p>
+     *
+     * <p><b>A DECISÃO QUE DEFINE ESTA TELA.</b> Um ano sem eventos no banco e um ano nunca
+     * sincronizado têm a MESMA aparência — coluna vazia — e significados opostos. A tela
+     * os pinta diferente, e a legenda diz qual é qual. Desenhá-los igual seria mentir com
+     * um gráfico, que é a pior forma de mentir porque parece medição.</p>
+     */
+    @GET
+    @Path("/historico")
+    public TemplateInstance historico() {
+        var anos = consultar.historicoPorAno();
+
+        // O PICO decide a escala, e ele e calculado so sobre anos SINCRONIZADOS: incluir
+        // os nao sincronizados (que valem 0) nao mudaria o maximo, mas deixa claro no
+        // codigo que a escala fala de dado medido, nao de ausencia de dado.
+        long pico = anos.stream().filter(a -> a.sincronizado())
+                .mapToLong(a -> a.quantos()).max().orElse(1L);
+
+        List<ColunaDoAno> colunas = anos.stream()
+                .map(a -> new ColunaDoAno(a.ano(), a.quantos(), a.categorias(), a.sincronizado(),
+                        // Ano sincronizado com ZERO eventos ainda ganha altura minima de 1%,
+                        // para se distinguir do NAO sincronizado, que fica em 0. Sao os dois
+                        // estados que esta tela existe para separar.
+                        !a.sincronizado() ? 0
+                                : (a.quantos() == 0 ? 1
+                                        : Math.max(2, a.quantos() * 100 / pico))))
+                .toList();
+
+        long totalArquivo = anos.stream().mapToLong(a -> a.quantos()).sum();
+        long anosSincronizados = anos.stream().filter(a -> a.sincronizado()).count();
+
+        return moldura.vestir(telaHistorico
+                .data("colunas", colunas)
+                .data("pico", pico)
+                .data("totalArquivo", totalArquivo)
+                .data("anosSincronizados", anosSincronizados)
+                .data("anosTotais", anos.size())
+                .data("primeiroAno", ConsultarEventosUseCase.PRIMEIRO_ANO_EONET)
+                .data("faltamAnos", anosSincronizados < anos.size()), "desastres");
+    }
+
+    /**
+     * Uma coluna do gráfico anual.
+     *
+     * @param ano          o ano civil, em UTC
+     * @param quantos      eventos gravados
+     * @param categorias   categorias distintas naquele ano
+     * @param sincronizado se o ano já foi buscado na NASA. <b>Sem este campo a tela não
+     *                     conseguiria distinguir "ano calmo" de "ano não perguntado".</b>
+     * @param altura       0 a 100. Zero significa NÃO SINCRONIZADO; um ano sincronizado e
+     *                     vazio vale 1, para que os dois estados nunca desenhem igual
+     */
+    public record ColunaDoAno(int ano, long quantos, long categorias, boolean sincronizado,
+                              long altura) {
+    }
+
+    /**
+     * Sincroniza UM ano com a NASA. POST porque ESCREVE.
+     *
+     * <p>Um ano por vez, e não todos de uma vez, por uma razão medida: 2025 tem 4612
+     * eventos e 2026 passou de 5000. Puxar doze anos numa requisição seria uma requisição
+     * de vários minutos que o navegador desiste no meio — e o que já entrou ficaria
+     * gravado sem ninguém saber quanto. Um ano por vez é retomável: se o quinto falhar,
+     * os quatro anteriores continuam valendo, e a tela mostra exatamente onde parou.</p>
+     */
+    @POST
+    @Path("/historico/sincronizar/{ano}")
+    public TemplateInstance sincronizarAno(@PathParam("ano") int ano) {
+        // Pelo RELOGIO INJETADO, nunca por `Year.now()`: a catraca de UTC reprova
+        // leitura estatica de relogio em todo o `org.nasa..`, e reprovou esta linha.
+        int anoAtual = consultar.anoAtual();
+        if (ano < ConsultarEventosUseCase.PRIMEIRO_ANO_EONET || ano > anoAtual) {
+            // Ano fora do arquivo NAO vira requisicao a NASA: seria uma chamada externa
+            // garantidamente inutil, disparada por um numero digitado na URL.
+            return fragmentoAno.data("ano", ano).data("resultado", null)
+                    .data("erro", "ano fora do arquivo da EONET ("
+                            + ConsultarEventosUseCase.PRIMEIRO_ANO_EONET + " a " + anoAtual + ")")
+                    .data("quantos", 0L).data("barras", null);
+        }
+        try {
+            // 20000, e nao 6000. Medido em 02/09/2026: 2026 tem 6900 eventos, e o teto
+            // anterior de 6000 truncou 900 deles. A folga precisa acompanhar o crescimento
+            // da publicacao da NASA — 2015 teve 342 eventos, 2024 teve 5789.
+            var r = sincronizar.executarAno(ano, LIMITE_POR_ANO);
+            return fragmentoAno.data("ano", ano).data("resultado", r).data("erro", null)
+                    .data("quantos", consultar.contarDoAno(ano))
+                    // Depois de sincronizar, o detalhe por categoria do ano recem-trazido:
+                    // e a prova visivel de que o ano entrou, no mesmo lugar da tela.
+                    .data("barras", barrasDoAno(ano));
+        } catch (ErroDePipeline falha) {
+            return fragmentoAno.data("ano", ano).data("resultado", null)
+                    .data("erro", falha.getMessage())
+                    .data("quantos", consultar.contarDoAno(ano)).data("barras", null);
+        }
+    }
+
+    /** O detalhe de um ano: quantos eventos de cada categoria. */
+    @GET
+    @Path("/historico/{ano}")
+    public TemplateInstance detalheDoAno(@PathParam("ano") int ano) {
+        return fragmentoAno.data("ano", ano).data("resultado", null).data("erro", null)
+                .data("quantos", consultar.contarDoAno(ano))
+                .data("barras", barrasDoAno(ano));
+    }
+
+    /**
+     * As barras por categoria de um ano.
+     *
+     * <p>Devolve {@code null} quando o ano não tem nada — e o template testa a chave. Uma
+     * lista vazia desenharia um cabeçalho "por categoria" com nada embaixo, que parece
+     * defeito de renderização em vez de ano sem dados.</p>
+     */
+    private List<Barra> barrasDoAno(int ano) {
+        var categorias = consultar.categoriasDoAno(ano);
+        if (categorias.isEmpty()) {
+            return null;
+        }
+        long maior = categorias.stream().mapToLong(c -> c.quantos()).max().orElse(1L);
+        return categorias.stream()
+                .map(c -> new Barra(c.categoria(), c.quantos(),
+                        maior == 0 ? 0 : Math.max(1, c.quantos() * 100 / maior)))
+                .toList();
     }
 
     // ----------------------------------------------------------------- detalhe

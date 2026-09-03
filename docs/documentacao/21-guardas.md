@@ -69,3 +69,25 @@ Calibração: o defeito foi reintroduzido de propósito, e a guarda **reprovou**
 Cada execução escreve o próprio arquivo, carimbado. A faxina apaga por idade (30 dias) e
 por teto de contagem, **recusa pasta não exclusiva**, nunca apaga o arquivo da execução
 corrente, e conta arquivos com data no futuro como relógio suspeito.
+
+## Guarda de CSS em porcentagem
+
+A regra do projeto é largura em `%`, conteúdo preenchendo a tela, `px` só em borda fina,
+sombra e breakpoint de `@media`. O comentário no topo do `base.css` enuncia isso — e
+comentário é intenção: ninguém o executa, e a próxima folha nasce sem ele.
+
+A guarda impõe três invariantes: nenhum `px` em largura/altura/espaçamento/posição, nenhum
+`auto-fill` em grid, e nenhum `max-width` + `margin: 0 auto` centralizando container.
+
+**A primeira versão acusou três violações que eram o texto da regra dentro de comentários.**
+Um instrumento que lê comentário não está medindo código — ele teria mandado "corrigir" a
+documentação da própria regra. A varredura passou a remover comentários antes de medir.
+
+Depois de calibrada, a contagem real do projeto foi **3 ocorrências**, todas fios de cabelo
+de `2px` no gráfico, convertidas para `rem` — que escala com a fonte do leitor. As demais 73
+ocorrências de `px` são a exceção declarada, e continuam onde estão.
+
+A guarda se calibra em toda execução, nos dois sentidos: precisa **reprovar** os três
+defeitos num CSS sintético doente, e **não acusar nada** num CSS são que contém borda,
+sombra, breakpoint e o texto da regra em comentário. Sem as duas metades, o `0` dela é
+indistinguível de uma expressão regular quebrada.

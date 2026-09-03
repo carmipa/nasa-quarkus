@@ -113,6 +113,87 @@ public class ConsultarEventosUseCase {
     public record PontoDaSerie(java.time.LocalDate dia, long quantos) {
     }
 
+    /**
+     * O ANO EM QUE OS REGISTROS DA EONET COMEÇAM.
+     *
+     * <p>Medido em 02/09/2026 consultando a própria API: 2015 devolve eventos, e é o
+     * primeiro ano com arquivo consistente. <b>Está aqui como constante, e não deduzido do
+     * banco</b>, de propósito: deduzir do menor ano gravado faria a série começar em 2024
+     * numa base recém-criada, e a página diria que a EONET começou em 2024.</p>
+     */
+    public static final int PRIMEIRO_ANO_EONET = 2015;
+
+    /**
+     * O histórico ano a ano, do começo dos registros da EONET até hoje.
+     *
+     * <p><b>PROPÓSITO DE NEGÓCIO.</b> Responde "o que aconteceu no planeta em cada ano" —
+     * a visão que o sistema original tinha e que a janela de 30 dias não alcança.</p>
+     *
+     * <p><b>A DECISÃO QUE DEFINE ESTA TELA: ano sem linha no banco NÃO é ano sem
+     * desastre.</b> É ano que ainda não foi sincronizado. São dois estados com a mesma
+     * aparência — coluna vazia — e significados opostos: um diz "o planeta esteve calmo",
+     * o outro diz "não perguntamos à NASA ainda". Uma tela que os desenhasse igual estaria
+     * <b>mentindo com um gráfico</b>, que é a pior forma de mentir porque parece medição.
+     * Por isso {@link AnoDoHistorico#sincronizado()} existe e a tela os pinta diferente.</p>
+     *
+     * <p>É o mesmo raciocínio do dia vazio na série de 30 dias, com a conclusão invertida:
+     * lá, o zero é informação e o gráfico o mostra; aqui, o zero é <b>ausência de
+     * informação</b> e o gráfico precisa dizer isso.</p>
+     */
+    public List<AnoDoHistorico> historicoPorAno() {
+        Map<Integer, RepositorioDeEventosPort.ContagemPorAno> porAno = new HashMap<>();
+        for (var c : repositorio.contarPorAno()) {
+            porAno.put(c.ano(), c);
+        }
+
+        int anoAtual = relogio.agora().atZone(java.time.ZoneOffset.UTC).getYear();
+        List<AnoDoHistorico> historico = new ArrayList<>();
+        for (int ano = PRIMEIRO_ANO_EONET; ano <= anoAtual; ano++) {
+            var c = porAno.get(ano);
+            historico.add(c == null
+                    // NAO sincronizado: quantos=0 e sincronizado=false. A tela precisa dos
+                    // dois campos para nao pintar "sem dado" como "sem desastre".
+                    ? new AnoDoHistorico(ano, 0, 0, false)
+                    : new AnoDoHistorico(ano, c.quantos(), c.categorias(), true));
+        }
+        return historico;
+    }
+
+    /**
+     * Um ano do histórico.
+     *
+     * @param ano          o ano civil, em UTC
+     * @param quantos      eventos gravados daquele ano
+     * @param categorias   categorias distintas — 400 eventos de uma categoria e 400 de
+     *                     doze são anos diferentes, e só este campo os separa
+     * @param sincronizado se o ano já foi buscado na NASA. <b>Sem este campo, um ano nunca
+     *                     sincronizado seria indistinguível de um ano sem desastres.</b>
+     */
+    public record AnoDoHistorico(int ano, long quantos, long categorias, boolean sincronizado) {
+    }
+
+    /**
+     * O ano corrente, em UTC, pelo <b>relógio injetado</b>.
+     *
+     * <p>Existe para que a camada web não precise chamar {@code Year.now()} — que é leitura
+     * estática de relógio e adota o fuso do host. A catraca de UTC reprova esse chamado em
+     * qualquer lugar de {@code org.nasa..}, e reprovou este em 02/09/2026, mesmo com o fuso
+     * passado explicitamente: o problema não é só o fuso, é o relógio não ser injetável —
+     * um teste não consegue fixar a data, e a virada do ano vira um caso que ninguém testa.</p>
+     */
+    public int anoAtual() {
+        return relogio.agora().atZone(java.time.ZoneOffset.UTC).getYear();
+    }
+
+    /** O detalhe de um ano: quantos eventos de cada categoria. */
+    public List<RepositorioDeEventosPort.ContagemPorCategoria> categoriasDoAno(int ano) {
+        return repositorio.contarPorCategoriaNoAno(ano);
+    }
+
+    public long contarDoAno(int ano) {
+        return repositorio.contarDoAno(ano);
+    }
+
     public long contar() {
         return repositorio.contar();
     }

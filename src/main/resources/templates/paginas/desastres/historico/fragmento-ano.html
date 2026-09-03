@@ -1,0 +1,84 @@
+{!
+  RESULTADO DE UM ANO — depois de sincronizar, ou ao abrir o detalhe.
+
+  O template lê `resultado`, `erro`, `barras` e `quantos`. Todas as quatro
+  chaves são fornecidas em TODOS os caminhos do resource, mesmo quando valem
+  null: o Qute é estrito e uma chave ausente vira erro 500, não campo vazio.
+  Foi medido duas vezes neste projeto, com `criado` e com `salvo`.
+!}
+<div class="ano-resultado">
+
+  {#if erro}
+  <div class="aviso aviso-erro com-icone">
+    {#icone 'erro' /}
+    <div>
+      <strong>{ano} não pôde ser sincronizado.</strong>
+      <span class="ano-erro-texto">{erro}</span>
+      <p class="ano-nota">
+        Nada foi apagado — o que já estava na base continua valendo, e os outros
+        anos não foram afetados.
+      </p>
+    </div>
+  </div>
+  {#else}
+
+    {#if resultado}
+    <div class="aviso aviso-ok com-icone">
+      {#icone 'ok' /}
+      <div>
+        <strong translate="no">{ano}</strong> sincronizado em
+        <span translate="no">{resultado.duracao.toMillis()} ms</span>.
+        <ul class="ano-numeros">
+          <li class="dica" tabindex="0"
+              data-dica="Quantos eventos a NASA devolveu para este ano">
+            {#icone 'nuvem' /} <strong translate="no">{resultado.trazidos}</strong> trazidos
+          </li>
+          <li class="dica" tabindex="0"
+              data-dica="Eventos que ainda não existiam na base local — o que esta sincronização acrescentou de fato">
+            {#icone 'adicionar' /} <strong translate="no">{resultado.novos}</strong> novos
+          </li>
+          <li class="dica" tabindex="0"
+              data-dica="Eventos que já existiam e tiveram a posição atualizada. Rodar de novo não duplica nada: a garantia é a chave única no banco.">
+            {#icone 'sincronizar' /}
+            <strong translate="no">{resultado.atualizados}</strong> atualizados
+          </li>
+        </ul>
+        {#if resultado.trazidos == 0}
+        <p class="ano-nota">
+          A NASA não devolveu nenhum evento para {ano}. Anos antigos publicavam
+          menos — 2015 tem 342 eventos contra 4612 em 2025 —, mas zero é
+          incomum e vale conferir.
+        </p>
+        {/if}
+      </div>
+    </div>
+    <p class="ano-recarregar">
+      <a class="botao botao-discreto com-icone" href="/desastres/historico">
+        {#icone 'sincronizar' /} Atualizar o gráfico
+      </a>
+    </p>
+    {/if}
+
+    {#if barras}
+    <h2 class="secao-titulo com-icone">
+      {#icone 'grafico' /}
+      <span translate="no">{ano}</span> — por categoria
+    </h2>
+    <p class="secao-texto" translate="no">
+      <strong>{quantos}</strong> evento(s) gravados neste ano.
+    </p>
+    <dl class="grafico">
+      {#for c in barras}
+      <div class="barra-linha realce-linha">
+        <dt class="barra-rotulo" translate="no">{c.categoria}</dt>
+        <dd class="barra-valor">
+          <span class="barra" style="width: {c.porcentagem}%"></span>
+          <span class="barra-numero">{c.quantos}</span>
+        </dd>
+      </div>
+      {/for}
+    </dl>
+    {/if}
+
+  {/if}
+</div>

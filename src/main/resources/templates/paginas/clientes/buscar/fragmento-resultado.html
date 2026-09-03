@@ -31,13 +31,13 @@
       </div>
     </dl>
     <div class="busca-achado-acoes">
-      <a class="botao botao-principal" href="/clientes/{cliente.id}">Ver cadastro</a>
-      <a class="botao" href="/clientes/{cliente.id}/alterar">Alterar</a>
+      <a class="botao botao-principal com-icone" href="/clientes/{cliente.id}">{#icone 'ver' /}Ver cadastro</a>
+      <a class="botao com-icone" href="/clientes/{cliente.id}/alterar">{#icone 'editar' /}Alterar</a>
     </div>
   </article>
 {#else}
   <div class="busca-sem-resultado">
     <p>Nenhum cliente com este documento.</p>
-    <a class="botao botao-principal" href="/clientes/cadastrar">Cadastrar</a>
+    <a class="botao botao-principal com-icone" href="/clientes/cadastrar">{#icone 'adicionar' /}Cadastrar</a>
   </div>
 {/if}

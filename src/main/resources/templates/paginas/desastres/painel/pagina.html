@@ -27,15 +27,16 @@
 -->
 <section class="secao">
   <div class="desastres-topo">
-    <h1 class="secao-titulo">Desastres naturais</h1>
+    <h1 class="secao-titulo com-icone">{#icone 'desastres' /}Desastres naturais</h1>
     <div class="desastres-numeros" translate="no">
-      <span class="numero"><strong>{total}</strong> na base</span>
-      <span class="numero numero-ativo"><strong>{ativos}</strong> ativos</span>
+      <span class="numero com-icone dica" tabindex="0" data-dica="Eventos gravados na base local, de todas as sincronizações já feitas. Não depende de a NASA estar no ar agora.">{#icone 'banco' /}<strong>{total}</strong> na base</span>
+      <span class="numero numero-ativo com-icone dica" tabindex="0" data-dica="Eventos que a NASA ainda não deu por encerrados — são os que podem gerar alerta agora. Um incêndio apagado sai desta conta e continua na de cima.">{#icone 'atividade' /}<strong>{ativos}</strong> ativos</span>
     </div>
     <div class="desastres-atalhos">
-      <a class="botao botao-discreto" href="/desastres/mapa">Mapa</a>
-      <a class="botao botao-discreto" href="/desastres/estatisticas">Estatísticas</a>
-      <a class="botao botao-discreto" href="/alertas">Alertas</a>
+      <a class="botao botao-discreto com-icone" href="/desastres/mapa">{#icone 'mapa' /}Mapa</a>
+      <a class="botao botao-discreto com-icone" href="/desastres/estatisticas">{#icone 'grafico' /}Estatísticas</a>
+      <a class="botao botao-discreto com-icone" href="/desastres/historico" data-dica="O arquivo completo da NASA, ano a ano desde 2015 — 21 mil eventos que a janela de dias nao alcanca">{#icone 'historico' /}Histórico</a>
+      <a class="botao botao-discreto com-icone" href="/alertas">{#icone 'alertas' /}Alertas</a>
     </div>
   </div>
 
@@ -64,12 +65,12 @@
           hx-target="#resultado-sincronizacao"
           hx-indicator="#sincronizando">
       <div class="filtro">
-        <label class="formulario-rotulo" for="limite">Limite de eventos</label>
+        <label class="formulario-rotulo dica" for="limite" data-dica="Teto de eventos que a NASA devolve numa sincronização. Baixo demais corta o resultado sem avisar.">Limite de eventos</label>
         <input class="campo-formulario" id="limite" name="limite" type="number"
                value="50" min="1" max="500">
       </div>
       <div class="filtro">
-        <label class="formulario-rotulo" for="dias">Janela (dias)</label>
+        <label class="formulario-rotulo dica" for="dias" data-dica="Quantos dias para trás buscar na NASA. Para o arquivo completo por ano, use a tela de histórico — a API não devolve anos antigos por janela de dias.">Janela (dias)</label>
         <input class="campo-formulario" id="dias" name="dias" type="number"
                value="30" min="1" max="365">
       </div>
@@ -83,7 +84,7 @@
         </span>
       </div>
       <div class="filtros-acoes">
-        <button class="botao botao-principal" type="submit">Sincronizar</button>
+        <button class="botao botao-principal com-icone" type="submit">{#icone 'sincronizar' /}Sincronizar</button>
         <span class="htmx-indicator carregando" id="sincronizando" translate="no">
           falando com a NASA…
         </span>
@@ -100,7 +101,7 @@
           hx-target="#lista-eventos"
           hx-trigger="submit, change from:#categoria">
       <div class="filtro">
-        <label class="formulario-rotulo" for="categoria">Categoria</label>
+        <label class="formulario-rotulo dica" for="categoria" data-dica="Filtra a lista por tipo de evento — incêndio, tempestade, vulcão. Em branco, mostra todos.">Categoria</label>
         <select class="campo-formulario" id="categoria" name="categoria">
           <option value="">Todas</option>
           <option value="wildfires">Incêndios florestais</option>
@@ -114,7 +115,7 @@
         </select>
       </div>
       <div class="filtros-acoes">
-        <button class="botao" type="submit">Filtrar</button>
+        <button class="botao com-icone" type="submit">{#icone 'filtrar' /}Filtrar</button>
       </div>
     </form>
 
@@ -140,28 +141,28 @@
           hx-indicator="#buscando-proximos">
       <input type="hidden" name="procurou" value="true">
       <div class="filtro">
-        <label class="formulario-rotulo" for="latitude">Latitude</label>
+        <label class="formulario-rotulo dica" for="latitude" data-dica="Latitude do ponto de onde medir a distância. Positiva ao norte do Equador, negativa ao sul. São Paulo fica em -23,55.">Latitude</label>
         <input class="campo-formulario" id="latitude" name="latitude" type="number"
                step="any" value="-23.5505" required>
       </div>
       <div class="filtro">
-        <label class="formulario-rotulo" for="longitude">Longitude</label>
+        <label class="formulario-rotulo dica" for="longitude" data-dica="Longitude do ponto. Negativa a oeste de Greenwich. São Paulo fica em -46,63.">Longitude</label>
         <input class="campo-formulario" id="longitude" name="longitude" type="number"
                step="any" value="-46.6333" required>
       </div>
       <div class="filtro">
-        <label class="formulario-rotulo" for="raioKm">Raio (km)</label>
+        <label class="formulario-rotulo dica" for="raioKm" data-dica="Distância máxima do ponto. A busca usa geodésia de verdade: o canto de uma caixa de 100 km fica a 141 km, e eventos ali NÃO entram.">Raio (km)</label>
         <input class="campo-formulario" id="raioKm" name="raioKm" type="number"
                step="any" value="100" min="0.1" max="20000" required>
       </div>
       <div class="filtro">
-        <label class="formulario-rotulo" for="diasProx">Janela (dias)</label>
+        <label class="formulario-rotulo dica" for="diasProx" data-dica="Só eventos ocorridos dentro desta janela entram na busca por proximidade.">Janela (dias)</label>
         <input class="campo-formulario" id="diasProx" name="dias" type="number"
                value="30" min="1" max="365">
       </div>
       <div class="filtros-acoes">
-        <button class="botao botao-principal" type="submit">Buscar por perto</button>
-        <button class="botao" type="button" data-usar-minha-posicao>Usar minha posição</button>
+        <button class="botao botao-principal com-icone" type="submit">{#icone 'buscar' /}Buscar por perto</button>
+        <button class="botao com-icone" type="button" data-usar-minha-posicao>{#icone 'enderecos' /}Usar minha posição</button>
         <span class="htmx-indicator carregando" id="buscando-proximos" translate="no">
           calculando…
         </span>

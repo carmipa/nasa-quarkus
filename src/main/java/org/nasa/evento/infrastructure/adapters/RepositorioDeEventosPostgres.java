@@ -288,6 +288,81 @@ public class RepositorioDeEventosPostgres implements RepositorioDeEventosPort {
         }
     }
 
+    /**
+     * Contagem por ANO, agrupada em UTC.
+     *
+     * <p>O {@code AT TIME ZONE 'UTC'} é obrigatório pela mesma razão do agrupamento por
+     * dia — e aqui a consequência é mais visível: um evento de 31/12 às 22h UTC cairia no
+     * ano seguinte numa sessão em fuso positivo, mudando <b>duas</b> colunas do gráfico.</p>
+     *
+     * <p>{@code count(DISTINCT categoria)} na mesma varredura: um ano com 400 eventos de
+     * uma só categoria conta uma história diferente de um com 400 de doze, e fazer uma
+     * segunda consulta por ano seria uma consulta por coluna do gráfico.</p>
+     */
+    @Override
+    public List<ContagemPorAno> contarPorAno() {
+        String sql = """
+                SELECT EXTRACT(YEAR FROM ocorrido_em AT TIME ZONE 'UTC')::int AS ano,
+                       count(*) AS quantos,
+                       count(DISTINCT categoria) AS categorias
+                  FROM evento_natural
+                 GROUP BY 1
+                 ORDER BY 1""";
+        List<ContagemPorAno> serie = new ArrayList<>();
+        try (Connection c = Conexoes.abrir(dataSource, "evento_natural");
+             PreparedStatement ps = c.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                serie.add(new ContagemPorAno(rs.getInt("ano"), rs.getLong("quantos"),
+                        rs.getLong("categorias")));
+            }
+            return serie;
+        } catch (SQLException e) {
+            throw new FalhaNaPersistenciaDeEventosException("contar-por-ano", "todos", e);
+        }
+    }
+
+    @Override
+    public List<ContagemPorCategoria> contarPorCategoriaNoAno(int ano) {
+        String sql = """
+                SELECT COALESCE(categoria, 'SEM_CATEGORIA') AS categoria, count(*) AS quantos
+                  FROM evento_natural
+                 WHERE EXTRACT(YEAR FROM ocorrido_em AT TIME ZONE 'UTC') = ?
+                 GROUP BY 1
+                 ORDER BY quantos DESC, categoria""";
+        List<ContagemPorCategoria> contagens = new ArrayList<>();
+        try (Connection c = Conexoes.abrir(dataSource, "evento_natural");
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, ano);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    contagens.add(new ContagemPorCategoria(
+                            rs.getString("categoria"), rs.getLong("quantos")));
+                }
+            }
+            return contagens;
+        } catch (SQLException e) {
+            throw new FalhaNaPersistenciaDeEventosException("contar-categoria-do-ano",
+                    String.valueOf(ano), e);
+        }
+    }
+
+    @Override
+    public long contarDoAno(int ano) {
+        String sql = "SELECT count(*) FROM evento_natural "
+                + "WHERE EXTRACT(YEAR FROM ocorrido_em AT TIME ZONE 'UTC') = ?";
+        try (Connection c = Conexoes.abrir(dataSource, "evento_natural");
+             PreparedStatement ps = c.prepareStatement(sql)) {
+            ps.setInt(1, ano);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getLong(1) : 0L;
+            }
+        } catch (SQLException e) {
+            throw new FalhaNaPersistenciaDeEventosException("contar-do-ano",
+                    String.valueOf(ano), e);
+        }
+    }
+
     @Override
     public long contar() {
         return umNumero("SELECT count(*) FROM evento_natural", "contar");

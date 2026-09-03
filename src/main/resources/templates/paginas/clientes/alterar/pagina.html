@@ -24,7 +24,7 @@
     <a href="/clientes/{cliente.id}">&larr; Voltar ao cadastro</a>
   </nav>
 
-  <h1 class="secao-titulo">Alterar cliente</h1>
+  <h1 class="secao-titulo com-icone">{#icone 'editar' /}Alterar cliente</h1>
   <p class="alterar-identificacao" translate="no">#{cliente.id}</p>
 
   {#if salvo}
@@ -41,21 +41,21 @@
 
   <form class="formulario" method="post" action="/clientes/{cliente.id}/alterar">
     <div class="formulario-campo">
-      <label class="formulario-rotulo" for="nome">Nome</label>
+      <label class="formulario-rotulo dica" for="nome" data-dica="Primeiro nome de quem recebe o alerta. Aparece na mensagem enviada.">Nome</label>
       <input class="campo-formulario{#if campo == 'nome'} campo-formulario-erro{/if}"
              id="nome" name="nome" type="text" value="{nome}" required autofocus>
       {#if campo == 'nome'}<span class="formulario-erro-campo">{erro}</span>{/if}
     </div>
 
     <div class="formulario-campo">
-      <label class="formulario-rotulo" for="sobrenome">Sobrenome</label>
+      <label class="formulario-rotulo dica" for="sobrenome" data-dica="Sobrenome, guardado separado do nome para busca e ordenação.">Sobrenome</label>
       <input class="campo-formulario{#if campo == 'sobrenome'} campo-formulario-erro{/if}"
              id="sobrenome" name="sobrenome" type="text" value="{sobrenome}" required>
       {#if campo == 'sobrenome'}<span class="formulario-erro-campo">{erro}</span>{/if}
     </div>
 
     <div class="formulario-campo">
-      <label class="formulario-rotulo" for="dataNascimento">Data de nascimento</label>
+      <label class="formulario-rotulo dica" for="dataNascimento" data-dica="Usada para conferir identidade. Não é usada para decidir alerta.">Data de nascimento</label>
       <input class="campo-formulario{#if campo == 'dataNascimento'} campo-formulario-erro{/if}"
              id="dataNascimento" name="dataNascimento" type="date"
              value="{dataNascimento}" required>
@@ -63,7 +63,7 @@
     </div>
 
     <div class="formulario-campo">
-      <label class="formulario-rotulo" for="documento">CPF ou CNPJ</label>
+      <label class="formulario-rotulo dica" for="documento" data-dica="CPF ou CNPJ. É a chave única do cadastro: dois clientes não podem ter o mesmo, e é por ele que a busca encontra a pessoa.">CPF ou CNPJ</label>
       <input class="campo-formulario{#if campo == 'documento'} campo-formulario-erro{/if}"
              id="documento" name="documento" type="text" value="{documento}"
              inputmode="numeric" autocomplete="off" required>
@@ -74,8 +74,8 @@
     </div>
 
     <div class="formulario-acoes">
-      <button class="botao botao-principal" type="submit">Salvar alterações</button>
-      <a class="botao" href="/clientes/{cliente.id}">Cancelar</a>
+      <button class="botao botao-principal com-icone" type="submit">{#icone 'salvar' /}Salvar alterações</button>
+      <a class="botao com-icone" href="/clientes/{cliente.id}">{#icone 'voltar' /}Cancelar</a>
     </div>
   </form>
 </section>

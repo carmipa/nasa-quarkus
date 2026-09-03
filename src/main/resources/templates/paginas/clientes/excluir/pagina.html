@@ -29,15 +29,15 @@
       <strong>{cliente.nomeCompleto}</strong> foi excluído.
     </div>
     <div class="excluir-acoes">
-      <a class="botao botao-principal" href="/clientes/listar">Voltar à lista</a>
-      <a class="botao" href="/clientes/cadastrar">Cadastrar outro</a>
+      <a class="botao botao-principal com-icone" href="/clientes/listar">{#icone 'voltar' /}Voltar à lista</a>
+      <a class="botao com-icone" href="/clientes/cadastrar">{#icone 'adicionar' /}Cadastrar outro</a>
     </div>
   {#else}
     <nav class="excluir-volta">
       <a href="/clientes/{cliente.id}">&larr; Voltar ao cadastro</a>
     </nav>
 
-    <h1 class="secao-titulo">Excluir cliente</h1>
+    <h1 class="secao-titulo com-icone">{#icone 'excluir' /}Excluir cliente</h1>
 
     <div class="aviso aviso-erro" role="alert">
       <strong>Esta ação não pode ser desfeita.</strong>
@@ -70,8 +70,8 @@
     <form class="excluir-acoes" method="post" action="/clientes/{cliente.id}/excluir">
       <!-- "Cancelar" vem PRIMEIRO e é o botão de destaque: numa tela de ação
            irreversível, o caminho seguro é o que deve estar sob o dedo. -->
-      <a class="botao botao-principal" href="/clientes/{cliente.id}">Cancelar</a>
-      <button class="botao botao-perigo" type="submit">Excluir definitivamente</button>
+      <a class="botao botao-principal com-icone" href="/clientes/{cliente.id}">{#icone 'voltar' /}Cancelar</a>
+      <button class="botao botao-perigo com-icone" type="submit">{#icone 'excluir' /}Excluir definitivamente</button>
     </form>
   {/if}
 </section>

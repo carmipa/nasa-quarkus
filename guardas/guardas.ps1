@@ -58,6 +58,7 @@ function ExecutarGuarda([string]$nome, [string]$script, [string[]]$argumentos) {
 
 ExecutarGuarda 'guarda de caminhos proibidos' 'guarda-caminhos-proibidos.ps1' @('-Modo', $Modo, '-Caminho', $raiz)
 ExecutarGuarda 'guarda de segredos'            'guarda-segredos.ps1'            @('-Modo', $Modo, '-Caminho', $raiz)
+ExecutarGuarda 'guarda de CSS em porcentagem'  'guarda-css-porcentagem.ps1'     @('-Caminho', $raiz)
 
 Write-Host ''
 Write-Host '================ PLACAR ================' -ForegroundColor White

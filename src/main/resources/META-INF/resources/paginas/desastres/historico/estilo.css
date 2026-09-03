@@ -1,0 +1,205 @@
+/*
+ * HISTÓRICO POR ANO — e só desta tela.
+ *
+ * A DECISÃO VISUAL QUE CARREGA O SENTIDO DA TELA: ano sincronizado é barra
+ * sólida; ano não sincronizado é LISTRADO. São dois estados com a mesma
+ * aparência natural — coluna vazia — e significados opostos. O listrado é o
+ * que os separa, e a legenda diz o que ele quer dizer.
+ *
+ * INVARIANTES herdadas do base.css: largura em `%`, `width:100%`, grid com
+ * `auto-fit`. `px` só em borda fina, sombra e breakpoint.
+ */
+
+.hist-topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+}
+
+.hist-numeros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+
+/* ------------------------------------------------------------------ gráfico */
+
+/*
+ * As colunas dividem a largura em partes IGUAIS e preenchem a faixa toda.
+ * `1fr` por coluna, e não largura fixa: com doze anos hoje e treze no ano que
+ * vem, largura fixa deixaria uma sobra à direita que cresce todo janeiro.
+ */
+.hist-grafico {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  align-items: end;
+  gap: 0.6%;
+  width: 100%;
+  height: 34vh;          /* altura relativa à JANELA: o gráfico acompanha a tela */
+  min-height: 14rem;     /* ...mas nunca fica baixo demais para ser lido */
+  padding: 1rem 1.5% 0;
+  border: 1px solid var(--cor-borda);
+  border-radius: 0.5rem;
+  background: var(--cor-superficie);
+}
+
+.hist-coluna {
+  display: flex;
+  height: 100%;
+  margin: 0;
+}
+
+/*
+ * A coluna inteira é um BOTÃO, não um div com onclick. Assim ela é alcançável
+ * por Tab, aciona com Enter e é anunciada como ação por leitor de tela — de
+ * graça, por ser o elemento certo.
+ */
+.hist-botao {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.3rem;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  border-bottom: 1px dashed transparent;   /* o `.dica` desenha o tracejado; aqui ele
+                                              fica transparente para não riscar a coluna */
+  transition: opacity .15s ease;
+}
+.hist-botao:hover, .hist-botao:focus-visible { outline: none; }
+.hist-botao:hover .hist-barra, .hist-botao:focus-visible .hist-barra {
+  filter: brightness(1.35);
+}
+.hist-botao:focus-visible .hist-ano { color: var(--cor-destaque); }
+
+.hist-valor {
+  color: var(--cor-texto-fraco);
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+}
+.hist-botao:hover .hist-valor, .hist-botao:focus-visible .hist-valor {
+  color: var(--cor-texto);
+}
+
+.hist-barra {
+  display: block;
+  width: 100%;
+  border-radius: 0.25rem 0.25rem 0 0;
+  background: linear-gradient(180deg, var(--cor-destaque), #14807a);
+  transition: filter .15s ease;
+}
+
+/*
+ * ANO NÃO SINCRONIZADO. O listrado precisa ser reconhecível SEM depender de
+ * cor: cerca de 8% dos homens não distinguem verde de vermelho, e uma tela que
+ * codifica "temos dado" só na cor não informa essa parcela. A textura informa
+ * a todos, e a dica ao passar o mouse informa por escrito.
+ *
+ * A altura mínima existe para a coluna ser CLICÁVEL: uma faixa de altura zero
+ * não tem onde receber o clique que traria o ano.
+ */
+.hist-coluna-ausente .hist-barra {
+  min-height: 0.6rem;
+  background: repeating-linear-gradient(
+      45deg,
+      var(--cor-borda) 0,
+      var(--cor-borda) 0.25rem,
+      transparent 0.25rem,
+      transparent 0.5rem);
+  border: 1px dashed var(--cor-borda);
+  border-bottom: none;
+}
+.hist-coluna-ausente .hist-valor { color: var(--cor-borda); }
+
+.hist-ano {
+  color: var(--cor-texto-fraco);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* O ícone que gira enquanto a NASA responde. Um ano de 5000 eventos leva
+   segundos, e sem sinal nenhum a pessoa clica de novo — e clicar de novo é
+   seguro (a gravação é idempotente), mas dobra o trabalho à toa. */
+.hist-girando { line-height: 0; color: var(--cor-destaque); }
+.hist-girando .icone { animation: hist-girar 1.1s linear infinite; }
+
+@keyframes hist-girar { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .hist-girando .icone { animation: none; }
+}
+
+/* ----------------------------------------------------------------- legenda */
+
+.hist-legenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  margin-top: 0.8rem;
+  color: var(--cor-texto-fraco);
+  font-size: 0.85rem;
+}
+
+.hist-amostra {
+  display: inline-block;
+  width: 1.4rem;
+  height: 0.75rem;
+  border-radius: 0.2rem;
+}
+.hist-amostra-cheia {
+  background: linear-gradient(180deg, var(--cor-destaque), #14807a);
+}
+.hist-amostra-ausente {
+  background: repeating-linear-gradient(
+      45deg,
+      var(--cor-borda) 0,
+      var(--cor-borda) 0.25rem,
+      transparent 0.25rem,
+      transparent 0.5rem);
+  border: 1px dashed var(--cor-borda);
+}
+
+/* ----------------------------------------------------------------- detalhe */
+
+.hist-detalhe { width: 100%; margin-top: 1.5rem; }
+
+.ano-numeros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.2rem;
+  margin: 0.6rem 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.9rem;
+}
+.ano-numeros li { display: inline-flex; align-items: center; gap: 0.4em; }
+
+.ano-nota { margin: 0.6rem 0 0; color: var(--cor-texto-fraco); font-size: 0.88rem; }
+.ano-erro-texto { display: block; margin-top: 0.2rem; font-family: ui-monospace, monospace;
+                  font-size: 0.85rem; overflow-wrap: anywhere; }
+.ano-recarregar { margin: 0.9rem 0 0; }
+
+/*
+ * Em tela estreita, doze colunas viram doze riscos ilegíveis. O gráfico passa
+ * a ROLAR na horizontal, com largura mínima por coluna — assim cada ano
+ * continua clicável e o rótulo continua legível, em vez de tudo caber e nada
+ * ser lido.
+ */
+@media (max-width: 720px) {
+  .hist-grafico {
+    grid-auto-columns: minmax(2.6rem, 1fr);
+    overflow-x: auto;
+    height: 30vh;
+  }
+  .hist-valor { font-size: 0.62rem; }
+}

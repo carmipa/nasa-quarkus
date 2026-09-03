@@ -95,3 +95,56 @@ reescrita.
 
 Achei que `99999999` fosse um CEP falso e que a BrasilAPI estivesse errada ao responder
 `200`. Medi: é **real** — Sarandi/PR. Quase "corrigi" um comportamento correto.
+
+## O teto que truncava 903 eventos, com o aviso calado
+
+A sincronização por ano tinha um teto de 6000 eventos e um aviso para quando ele fosse
+atingido. Medido em 02/09/2026, contra a API real:
+
+```
+o que a EONET tem de 2026 ....... 6900 eventos
+o que o sistema gravou .......... 5997 eventos
+o aviso de truncamento .......... nao disparou
+```
+
+O aviso comparava `lidos.size() >= limite` — a lista **já filtrada**. Como um evento torto
+é pulado durante a leitura, a lista sai menor que o corpo: a API devolveu 6000 (truncando
+900), três vieram tortos, a lista ficou com 5997, e `5997 >= 6000` é falso.
+
+O que torna este defeito pior que a truncagem em si: **a guarda falhava exatamente no caso
+em que ela existe para servir**. Quanto mais dado a API tem, mais provável que algum venha
+torto — e mais provável que o alarme de excesso de dado se cale.
+
+A correção compara contra `recebidos`, o número de eventos no corpo antes de filtrar. O
+teto subiu para 20.000. Ressincronizando 2026: **883 eventos novos** entraram, e 6014
+foram atualizados sem duplicar.
+
+O teste que trava isso foi calibrado reintroduzindo o defeito — reprovou; restaurado —
+passou.
+
+## A expressão que virou texto na tela, com status 200
+
+O ícone foi escrito como `{'historico'.icone.raw}`, apostando numa `@TemplateExtension`.
+O Qute **não reconhece expressão que começa por aspas**. Ele não falhou: imprimiu
+
+```
+{'historico'.icone.raw}
+```
+
+como texto literal na página, com **HTTP 200** e sem uma linha de log.
+
+Nenhum dos testes existentes pegaria — todos conferem `statusCode == 200`, e o 200 estava
+lá. É a mesma lição, terceira vez neste projeto: **200 não prova que a página está certa**.
+A verificação passou a medir o HTML, e há guarda para as duas metades — que o `<svg>` seja
+tag e não texto escapado, e que nenhuma expressão de template vaze para a página.
+
+## A dica que eu mesmo esqueci de ligar
+
+O componente de dica exigia `class="dica"` **junto** de `data-dica="..."`. No primeiro
+arquivo em que usei o componente — o menu do layout —, escrevi o atributo e esqueci a
+classe. A explicação estava escrita, e nada aparecia. Sem erro, sem aviso.
+
+Se quem acabou de escrever o componente esquece a metade, todo mundo esquece. O seletor
+passou a ser `[data-dica]`: escrever a explicação **é** ligá-la, e não sobra segunda metade
+para esquecer. O tracejado que anuncia a dica virou classe separada e opcional, porque um
+item de menu não pode receber sublinhado por baixo da borda de seção ativa.

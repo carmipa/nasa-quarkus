@@ -103,6 +103,47 @@ public class EonetApiAdapter implements FonteDeEventosNaturaisPort {
         return interpretar(enviar(url.toString()));
     }
 
+    @Override
+    public List<EventoNatural> buscarDoAno(int ano, int limite) {
+        // `status=all` de proposito: o arquivo historico e feito de eventos ENCERRADOS,
+        // e o padrao da EONET traz so os abertos. Sem isto, um ano antigo voltaria vazio.
+        String url = urlBase + "?limit=" + Math.max(1, limite)
+                + "&status=all"
+                + "&start=" + ano + "-01-01"
+                + "&end=" + ano + "-12-31";
+
+        Lote lote = interpretarLote(enviar(url));
+
+        // A COMPARACAO E CONTRA `recebidos`, NUNCA CONTRA A LISTA JA FILTRADA.
+        //
+        // O DEFEITO QUE ISTO CORRIGE, medido em 02/09/2026. A primeira versao comparava
+        // `lidos.size() >= limite`. Como `interpretar` PULA eventos tortos, a lista sai
+        // menor que o que a API mandou: com teto 6000 e 3 eventos tortos, a API devolveu
+        // 6000 (truncando 900) e a lista veio com 5997 — o aviso nao disparou, e o ano
+        // ficou 13% incompleto EM SILENCIO.
+        //
+        // O aviso falhava exatamente no caso em que ele existe para servir: quanto mais
+        // dado a API tem, mais provavel que algum venha torto, e mais provavel que a
+        // guarda de truncamento se cale.
+        if (lote.recebidos() >= limite) {
+            LOG.warn(Registro.recusa(OPERACAO, String.valueOf(ano),
+                    "TETO_ATINGIDO_HA_MAIS_QUE_" + limite + "_RECEBIDOS_" + lote.recebidos()));
+        }
+        return lote.lidos();
+    }
+
+    /**
+     * Um lote lido da EONET: o que virou evento, e <b>quantos a API mandou</b>.
+     *
+     * @param lidos     os eventos aproveitados
+     * @param recebidos quantos vieram no corpo, <b>antes</b> de descartar os tortos. É este
+     *                  o número que se compara ao teto — a lista filtrada é sempre menor, e
+     *                  compará-la faz a guarda de truncamento se calar justamente quando há
+     *                  dado demais
+     */
+    protected record Lote(List<EventoNatural> lidos, int recebidos) {
+    }
+
     /**
      * Traduz o corpo da EONET em eventos.
      *
@@ -111,6 +152,11 @@ public class EonetApiAdapter implements FonteDeEventosNaturaisPort {
      * medido, sem rede e sem depender de haver tempestade no dia do teste.</p>
      */
     protected List<EventoNatural> interpretar(String corpo) {
+        return interpretarLote(corpo).lidos();
+    }
+
+    /** Como {@link #interpretar(String)}, mas dizendo também quantos a API mandou. */
+    protected Lote interpretarLote(String corpo) {
         JsonNode raiz;
         try {
             raiz = json.readTree(corpo);
@@ -139,7 +185,7 @@ public class EonetApiAdapter implements FonteDeEventosNaturaisPort {
             LOG.warn(Registro.de(OPERACAO, "lote",
                     "eventos ignorados por dado invalido: " + tortos + " de " + eventos.size()));
         }
-        return lidos;
+        return new Lote(lidos, eventos.size());
     }
 
     private EventoNatural umEvento(JsonNode e) {
