@@ -129,15 +129,35 @@
     // dimensoes livres — e a cor passou a dizer o tipo.
     var cor = item.dataset.cor || '#8b949e';
 
+    /*
+     * CONTORNO ESCURO, PREENCHIMENTO NA COR DO TIPO.
+     *
+     * VISTO NA TELA em 02/09/2026: com o contorno na propria cor da categoria,
+     * os pinos de TERREMOTO (#bcaaa4, bege) ficavam quase invisiveis — o mapa
+     * de ruas e claro, e bege sobre bege claro some. Neve (#e0e6ed) some ainda
+     * mais.
+     *
+     * A CAUSA FOI UMA ESCOLHA MINHA MAL CALIBRADA: escolhi as 13 cores para
+     * serem legiveis sobre o FUNDO ESCURO do sistema (#0d1117), que e onde
+     * elas aparecem nos chips e nos graficos. Mas no mapa elas caem sobre
+     * ladrilho CLARO — e sobre satelite caem sobre qualquer coisa. Nao ha cor
+     * unica que resolva os tres fundos.
+     *
+     * O anel escuro resolve por outro caminho: ele separa o pino do fundo seja
+     * qual for o fundo, e o miolo continua dizendo o tipo. E a solucao
+     * cartografica de sempre, e vale igual em ruas, satelite e tema escuro.
+     */
     L.circleMarker([lat, lon], {
       radius: ativo ? 8 : 5,
-      color: cor,
+      color: '#11161d',
       fillColor: cor,
-      fillOpacity: ativo ? 0.7 : 0.25,
+      // Opacidade alta: o miolo E a informacao, e miolo lavado desfaz o
+      // ganho do contorno.
+      fillOpacity: ativo ? 0.92 : 0.45,
       // Encerrado ganha traco tracejado ALEM da opacidade menor: opacidade
       // sozinha se confunde com sobreposicao de pinos numa regiao cheia.
       dashArray: ativo ? null : '3 3',
-      weight: 2
+      weight: ativo ? 1.5 : 1
     })
       .bindPopup(
         '<strong>' + escapar(item.dataset.titulo) + '</strong><br>' +
@@ -158,4 +178,57 @@
   }
 
   caixa.setAttribute('data-mapa-ativo', '');
+})();
+
+/*
+ * FILTRO DE TIPOS EM UM CLIQUE.
+ *
+ * PROPÓSITO: marcar "Vulcões" já mostra só vulcões. Sem isto são dois passos —
+ * marcar e depois procurar o botão —, e o segundo passo é onde se esquece que
+ * o filtro não foi aplicado ainda: os chips dizem uma coisa e o mapa mostra
+ * outra, sem nada avisando da diferença.
+ *
+ * BLOCO SEPARADO, e de propósito. O bloco do mapa desiste cedo quando não há
+ * mapa para desenhar (`return` se a caixa não existe), e o filtro precisa
+ * funcionar exatamente aí: é quando o recorte não achou nada e a pessoa quer
+ * escolher outro. Pendurar isto lá dentro faria o filtro morrer no único
+ * momento em que ele é indispensável.
+ *
+ * NÃO DEPENDE DO LEAFLET. Se a biblioteca falhar, o mapa não desenha mas os
+ * chips continuam filtrando a lista de baixo — que é o mesmo dado.
+ *
+ * O BOTÃO "APLICAR" É ESCONDIDO AQUI, POR SCRIPT, e não no CSS. Se este script
+ * não rodar, o botão continua na tela e o formulário continua funcionando.
+ * Escondê-lo no CSS deixaria quem está sem JavaScript com chips que marcam e
+ * nada que aplique — um filtro quebrado que parece inteiro.
+ *
+ * FALHA: qualquer erro aqui deixa o formulário exatamente como veio do
+ * servidor, com o botão visível e funcionando.
+ */
+(function () {
+  'use strict';
+
+  var formulario = document.querySelector('[data-filtro-mapa]');
+  if (!formulario) {
+    return;
+  }
+
+  var aplicar = formulario.querySelector('[data-aplicar]');
+  if (aplicar) {
+    aplicar.hidden = true;
+  }
+
+  formulario.addEventListener('change', function (evento) {
+    if (!evento.target || evento.target.type !== 'checkbox') {
+      return;
+    }
+    // O chip recém-clicado ganha o aviso de "carregando" ANTES do envio: entre
+    // o clique e a página nova há uma consulta ao banco, e sem sinal nenhum o
+    // clique parece não ter funcionado — e a pessoa clica de novo.
+    var chip = evento.target.closest('.mapa-chip');
+    if (chip) {
+      chip.classList.add('mapa-chip-carregando');
+    }
+    formulario.submit();
+  });
 })();

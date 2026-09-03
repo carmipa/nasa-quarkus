@@ -56,7 +56,7 @@
     esperando escolha seria uma tela em branco pedindo trabalho antes de mostrar
     qualquer coisa.
   -->
-  <form class="mapa-filtro" method="get" action="/desastres/mapa">
+  <form class="mapa-filtro" method="get" action="/desastres/mapa" data-filtro-mapa>
     <div class="mapa-filtro-cabecalho">
       <span class="mapa-filtro-titulo com-icone">
         {#icone 'filtrar' /}
@@ -85,8 +85,17 @@
       {/for}
     </div>
 
+    <!--
+      O BOTAO "APLICAR" E O CAMINHO SEM JAVASCRIPT, e por isso ele esta no HTML.
+
+      Com JavaScript, o proprio script o esconde e marcar um chip ja aplica o
+      recorte — um clique, nao dois. Escondido POR SCRIPT e nao por CSS de
+      propósito: se o script nao rodar, o botao continua la e o filtro continua
+      funcionando. Esconder no CSS deixaria quem esta sem JavaScript com chips
+      que marcam e nada que aplique.
+    -->
     <div class="mapa-filtro-acoes">
-      <button class="botao botao-principal com-icone" type="submit">
+      <button class="botao botao-principal com-icone" type="submit" data-aplicar>
         {#icone 'mapa' /}Aplicar
       </button>
       {#if filtrando}

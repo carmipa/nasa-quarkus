@@ -157,3 +157,54 @@ Passou a abrir expandido, com os dois rótulos escritos. Duas palavras visíveis
 um ícone que exige descobrir que dá para clicar — mesmo se o ícone estivesse lá. E os
 controles do Leaflet ganharam as cores do sistema: eles nascem claros, para mapas claros, e
 sobre o tema escuro ficavam como retângulos berrantes.
+
+## Telemetria
+
+O sistema mede a si mesmo. O log responde *"o que aconteceu naquele momento"*; a telemetria
+responde as perguntas de agregado que o log não responde — com que frequência cada operação
+roda, qual está lenta, o que está falhando e desde quando.
+
+**Toda requisição é medida por um filtro**, não por instrumentação espalhada. São 40+ métodos
+de resource: instrumentar um a um significaria 40 lugares para esquecer, e o primeiro
+esquecido seria invisível — uma rota sem telemetria não aparece como zero, ela **não existe**
+no gráfico, e ninguém procura o que não sabe que falta.
+
+O nome da operação vem do **padrão da rota**, nunca da URL crua: `/desastres/[id]`, não
+`/desastres/15320`. Sem isso haveria uma linha de telemetria por evento do banco — 21.542
+para uma tela só.
+
+**Recusa e falha são contadas separadamente.** 4xx é o sistema funcionando (pediram o que não
+existe); 5xx é o sistema quebrado. Somá-las num "erros" faria um rastreador varrendo URLs
+inexistentes parecer uma pane, e mandaria investigar infraestrutura quando o problema é o
+pedido.
+
+**Acumula em memória, descarrega de minuto em minuto.** Uma gravação por operação medida
+poria latência de banco dentro de cada chamada observada — e apoio que cobra pedágio da
+função que observa acaba desligado no dia em que o sistema fica lento, que é o dia em que ele
+mais serve. A descarga também acontece no desligamento, senão todo restart perderia o último
+minuto.
+
+O agregado guarda **soma, mínimo e máximo — nunca média**. Média de médias está errada:
+agregar uma hora com 1 chamada e outra com 1000 dando peso igual mente. Com soma e contagem,
+a média de qualquer janela sai certa, e o máximo revela o caso ruim que a média esconde.
+
+**A página mede a si mesma**, e isso é deliberado: uma tela de telemetria que se excluísse da
+telemetria não poderia ser usada para verificar se a telemetria funciona.
+
+### O primeiro defeito que ela encontrou
+
+Nas primeiras horas no ar:
+
+```
+GET /                   media 1340 ms   pior 4015 ms
+GET /desastres          media   27 ms
+GET /clientes/listar    media    9 ms
+```
+
+A home era **duas ordens de grandeza** mais lenta que qualquer outra tela. A causa: ela
+buscava o noticiário do GDACS dentro da própria requisição — 1 MB e 348 itens, com cache de
+10 minutos. Todo primeiro visitante depois de um reinício, e um a cada dez minutos, pagava a
+busca inteira antes de ver qualquer coisa.
+
+O noticiário passou a chegar depois, por HTMX. Uma fonte externa lenta, ou fora do ar, deixou
+de segurar a porta de entrada do sistema.

@@ -1,0 +1,186 @@
+{#include layout/base}
+{#titulo}Telemetria{/titulo}
+
+{#estilos}
+<link rel="stylesheet" href="/paginas/telemetria/estilo.css?v={versaoAssets}">
+{/estilos}
+
+{#corpo}
+<!--
+  TELEMETRIA — o que o sistema mediu de si mesmo.
+
+  ELA MEDE A SI MESMA. A rota desta página é medida pelo mesmo filtro que mede
+  todas as outras, e isso é deliberado: uma tela de telemetria que se exclui da
+  telemetria não pode ser usada para verificar se a telemetria funciona. Abrir
+  esta página e ver a própria visita contada é o controle positivo mais barato
+  que existe.
+
+  SEM BIBLIOTECA DE GRÁFICO, como no resto do sistema. Coluna é um retângulo
+  com altura proporcional; o CSS faz numa linha e o servidor já sabe o pico. O
+  resultado é legível sem JavaScript, imprimível, e navegável por teclado.
+-->
+<section class="secao">
+  <div class="linha-topo tel-topo">
+    <h1 class="secao-titulo com-icone">{#icone 'atividade' /}Telemetria</h1>
+    <form class="tel-janela" method="get" action="/telemetria">
+      <label class="formulario-rotulo dica" for="horas"
+             data-dica="Quantas horas para trás olhar. A contagem é em UTC e vai de 1 hora a 30 dias.">Janela (horas)</label>
+      <input class="campo-formulario tel-campo-horas" id="horas" name="horas"
+             type="number" value="{horas}" min="1" max="720">
+      <button class="botao botao-principal com-icone" type="submit">
+        {#icone 'grafico' /}Recalcular
+      </button>
+    </form>
+  </div>
+
+  {#if vazio}
+    <div class="vazio">
+      <p><strong>Nada medido ainda</strong> nas últimas {horas} horas.</p>
+      <p class="vazio-dica">
+        Isto não é o mesmo que "nada aconteceu": a telemetria acumula em memória e
+        descarrega no banco de minuto em minuto. Navegue pelo sistema e volte —
+        cada tela aberta vira uma linha aqui, <strong>inclusive esta</strong>.
+      </p>
+      <p class="vazio-dica" translate="no">
+        {pendentesEmMemoria} medida(s) aguardando descarga neste instante.
+      </p>
+    </div>
+  {#else}
+
+  <!-- ================================================== números do topo -->
+  <div class="tel-cartoes">
+    <div class="tel-cartao realce" data-dica="Total de operações medidas na janela. Cada tela aberta, cada fragmento carregado e cada consulta a fonte externa conta uma.">
+      <span class="tel-cartao-rotulo com-icone">{#icone 'atividade' /}Chamadas</span>
+      <strong class="tel-cartao-valor" translate="no">{totalChamadas}</strong>
+      <span class="tel-cartao-nota" translate="no">
+        em {operacoesDistintas} operação(ões) distinta(s)
+      </span>
+    </div>
+
+    <div class="tel-cartao realce" data-dica="Quantas terminaram bem. O que sobra está separado em recusas e falhas — que são coisas diferentes.">
+      <span class="tel-cartao-rotulo com-icone">{#icone 'ok' /}Sucesso</span>
+      <strong class="tel-cartao-valor tel-verde" translate="no">{percentualDeSucesso}%</strong>
+      <span class="tel-cartao-nota" translate="no">{totalSucessos} de {totalChamadas}</span>
+    </div>
+
+    <!--
+      RECUSA E FALHA EM CARTÕES SEPARADOS, e não somadas num "erros".
+      404 é o sistema funcionando: a pessoa pediu o que não existe.
+      500 é o sistema quebrado.
+      Somá-las faria um rastreador varrendo URLs inexistentes parecer uma pane —
+      e mandaria investigar infraestrutura quando o problema é o pedido.
+    -->
+    <div class="tel-cartao realce" data-dica="O sistema decidiu NÃO fazer, e sabe por quê: página inexistente, CEP inválido, coordenada fora da Terra. É trabalho correto — um pico aqui indica entrada ruim, não sistema quebrado.">
+      <span class="tel-cartao-rotulo com-icone">{#icone 'aviso' /}Recusas</span>
+      <strong class="tel-cartao-valor tel-laranja" translate="no">{totalRecusas}</strong>
+      <span class="tel-cartao-nota">pedido inválido — sistema funcionando</span>
+    </div>
+
+    <div class="tel-cartao realce" data-dica="Algo quebrou: fonte externa fora do ar, banco recusando, contrato mudado. É trabalho que deveria ter dado certo — qualquer número acima de zero aqui merece investigação.">
+      <span class="tel-cartao-rotulo com-icone">{#icone 'erro' /}Falhas</span>
+      <strong class="tel-cartao-valor tel-vermelho" translate="no">{totalFalhas}</strong>
+      <span class="tel-cartao-nota">algo quebrou — investigar</span>
+    </div>
+
+    <div class="tel-cartao realce" data-dica="Média ponderada por chamada, calculada de soma ÷ contagem. Nunca média de médias, que daria peso igual a uma operação com 1 chamada e outra com 10 mil.">
+      <span class="tel-cartao-rotulo com-icone">{#icone 'relogio' /}Latência média</span>
+      <strong class="tel-cartao-valor" translate="no">{mediaGeralMs} ms</strong>
+      <span class="tel-cartao-nota">ponderada por chamada</span>
+    </div>
+
+    <div class="tel-cartao realce" data-dica="A telemetria acumula em memória e descarrega no banco de minuto em minuto. Este número é o que ainda não foi gravado — some depois da próxima descarga.">
+      <span class="tel-cartao-rotulo com-icone">{#icone 'banco' /}Na fila</span>
+      <strong class="tel-cartao-valor" translate="no">{pendentesEmMemoria}</strong>
+      <span class="tel-cartao-nota" translate="no">
+        {linhasNaTabela} linha(s) já gravadas
+      </span>
+    </div>
+  </div>
+
+  <!-- ==================================================== série horária -->
+  <h2 class="secao-titulo com-icone">{#icone 'historico' /}Chamadas por hora</h2>
+  <p class="secao-texto">
+    Pico de <strong translate="no">{pico}</strong> chamada(s) numa hora. A parte
+    <span class="tel-legenda-problema">avermelhada</span> de cada coluna são recusas e
+    falhas — <span class="dica" tabindex="0" data-dica="Mostrar o problema DENTRO da coluna, e não num gráfico ao lado, é o que faz perceber que uma hora movimentada foi também uma hora ruim. Dois gráficos separados exigiriam comparar alturas de olho.">o problema aparece no desenho</span>,
+    não só na tabela.
+  </p>
+
+  <!--
+    Horas SEM registro aparecem, com altura zero. O banco só devolve o que
+    existe; desenhar apenas as horas retornadas encurtaria a linha do tempo e
+    faria duas horas de atividade separadas por um dia parecerem consecutivas.
+  -->
+  <div class="tel-serie" role="img"
+       aria-label="Chamadas por hora nas últimas {horas} horas, pico de {pico}">
+    {#for c in colunas}
+    <div class="tel-coluna{#if c.chamadas == 0} tel-coluna-vazia{/if}"
+         data-dica="{c.rotulo} UTC — {c.chamadas} chamada(s), {c.problemas} com problema, {c.mediaMs} ms em média"
+         tabindex="0">
+      <span class="tel-barra" style="height: {c.altura}%">
+        <span class="tel-barra-problema" style="height: {c.fatiaDeProblema}%"></span>
+      </span>
+      <span class="tel-rotulo" translate="no">{c.rotulo}</span>
+    </div>
+    {/for}
+  </div>
+
+  <!-- ================================================ tabela de operações -->
+  <h2 class="secao-titulo com-icone">{#icone 'filtrar' /}Por operação</h2>
+  <p class="secao-texto">
+    Ordenadas pelas mais chamadas. A barra é a
+    <span class="dica" tabindex="0" data-dica="A escala é a operação MAIS LENTA, não o total. Com o total, uma operação dominante achataria as demais a ponto de não dar para compará-las — e comparar é a única coisa que este gráfico serve para fazer.">latência média relativa à mais lenta</span>.
+  </p>
+
+  <div class="tel-tabela-caixa">
+    <table class="tel-tabela">
+      <thead>
+        <tr>
+          <th data-dica="O nome no mesmo vocabulário do log. Rotas HTTP aparecem como método e padrão — `/desastres/[id]`, nunca o id concreto, senão haveria uma linha por evento do banco." class="dica-abaixo">Operação</th>
+          <th data-dica="Quantas vezes rodou na janela" class="dica-abaixo tel-num">Chamadas</th>
+          <th data-dica="Terminaram bem" class="dica-abaixo tel-num">OK</th>
+          <th data-dica="O sistema decidiu não fazer, e sabe por quê" class="dica-abaixo tel-num">Recusas</th>
+          <th data-dica="Algo quebrou — merece investigação" class="dica-abaixo tel-num">Falhas</th>
+          <th data-dica="Soma ÷ contagem da janela. Nunca média de médias." class="dica-abaixo tel-num">Média</th>
+          <th data-dica="A mais lenta que já aconteceu. É o caso que a média esconde — e é ele que derruba o sistema, não a média." class="dica-abaixo tel-num">Pior</th>
+          <th data-dica="A hora mais recente com registro. Diz se a operação ainda roda ou parou." class="dica-abaixo">Última vez</th>
+        </tr>
+      </thead>
+      <tbody>
+        {#for l in linhas}
+        <tr class="realce-linha{#if l.resumo.falhas > 0} tel-linha-falha{/if}">
+          <td class="tel-operacao" translate="no">{l.resumo.operacao}</td>
+          <td class="tel-num" translate="no">{l.resumo.chamadas}</td>
+          <td class="tel-num tel-verde" translate="no">{l.resumo.sucessos}</td>
+          <td class="tel-num{#if l.resumo.recusas > 0} tel-laranja{/if}" translate="no">{l.resumo.recusas}</td>
+          <td class="tel-num{#if l.resumo.falhas > 0} tel-vermelho{/if}" translate="no">{l.resumo.falhas}</td>
+          <td class="tel-num tel-media" translate="no">
+            <span class="tel-media-barra" style="width: {l.larguraDaMedia}%"></span>
+            <span class="tel-media-valor">{l.resumo.mediaMs} ms</span>
+          </td>
+          <td class="tel-num" translate="no">{l.resumo.maximoMs} ms</td>
+          <td class="tel-quando" translate="no">{l.ultimaVez}</td>
+        </tr>
+        {/for}
+      </tbody>
+    </table>
+  </div>
+  {/if}
+
+  <!-- ==================================================== tamanho da base -->
+  {#if tabelas}
+  <h2 class="secao-titulo com-icone">{#icone 'banco' /}Tamanho da base</h2>
+  <div class="tel-tabelas">
+    {#for t in tabelas}
+    <span class="numero com-icone dica" tabindex="0"
+          data-dica="Linhas na tabela {t.tabela} agora">
+      {#icone 'banco' /}
+      <span translate="no">{t.tabela}</span>
+      <strong translate="no">{t.linhas}</strong>
+    </span>
+    {/for}
+  </div>
+  {/if}
+</section>
+{/corpo}
+{/include}

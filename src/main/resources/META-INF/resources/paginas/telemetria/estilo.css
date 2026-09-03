@@ -1,0 +1,226 @@
+/*
+ * TELEMETRIA — e só desta tela.
+ *
+ * INVARIANTES herdadas do base.css: largura em `%`, `width:100%`, grid com
+ * `auto-fit`. `px` só em borda fina, sombra e breakpoint de `@media`.
+ */
+
+.tel-topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem;
+  width: 100%;
+}
+
+.tel-janela {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.6rem;
+  margin-left: auto;
+}
+
+.tel-janela .formulario-rotulo { display: block; margin-bottom: 0.3rem; }
+.tel-campo-horas { width: 7rem; }
+
+/* ------------------------------------------------------------------ cartões */
+
+/*
+ * `auto-fit` e `1fr`: os cartões esticam e preenchem a largura toda. Com
+ * `auto-fill` sobrariam colunas vazias à direita e os cartões ficariam colados
+ * na esquerda — o defeito que a regra do projeto existe para impedir.
+ */
+.tel-cartoes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: 1rem;
+  width: 100%;
+  margin: 1.2rem 0 2rem;
+}
+
+.tel-cartao {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 0.5rem;
+  background: var(--cor-superficie);
+}
+
+.tel-cartao-rotulo {
+  color: var(--cor-texto-fraco);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tel-cartao-valor {
+  font-size: 1.7rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.tel-cartao-nota { color: var(--cor-texto-fraco); font-size: 0.8rem; }
+
+/*
+ * As três cores de estado. Elas acompanham SEMPRE um rótulo escrito
+ * ("Recusas", "Falhas") — cor sozinha deixaria de fora quem não a distingue,
+ * e num painel de diagnóstico isso é a informação inteira.
+ */
+.tel-verde    { color: #4ade80; }
+.tel-laranja  { color: var(--cor-alerta); }
+.tel-vermelho { color: #f87171; }
+
+/* ------------------------------------------------------------ série horária */
+
+.tel-serie {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.35rem;
+  width: 100%;
+  height: 26vh;
+  min-height: 11rem;
+  padding: 0.5rem 0 0;
+  margin: 1rem 0 2rem;
+  border-bottom: 1px solid var(--cor-borda);
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.tel-coluna {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.3rem;
+  flex: 1 1 1.5rem;
+  min-width: 1.5rem;
+  height: 100%;
+  border-bottom: 1px dashed transparent;   /* o `[data-dica]` não risca a coluna */
+}
+.tel-coluna:focus-visible { outline: 2px solid var(--cor-destaque); outline-offset: 2px; }
+
+.tel-barra {
+  position: relative;
+  display: block;
+  width: 100%;
+  border-radius: 0.25rem 0.25rem 0 0;
+  background: linear-gradient(180deg, var(--cor-destaque), #14807a);
+  transition: filter .15s ease;
+}
+.tel-coluna:hover .tel-barra { filter: brightness(1.3); }
+
+/*
+ * A FATIA DE PROBLEMA VIVE DENTRO DA COLUNA, ancorada embaixo.
+ *
+ * Um gráfico separado de erros ao lado obrigaria comparar alturas de olho entre
+ * dois desenhos para descobrir que a hora movimentada foi também a hora ruim.
+ * Dentro, a proporção se lê sem comparar nada.
+ */
+.tel-barra-problema {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 0 0 0.25rem 0.25rem;
+  background: #f87171;
+}
+
+/* Hora sem atividade: nenhuma barra, e é de propósito. O vazio é a informação,
+   e um tracinho falsificaria atividade numa hora em que não houve nenhuma. */
+.tel-coluna-vazia .tel-barra { background: none; }
+
+.tel-rotulo {
+  color: var(--cor-texto-fraco);
+  font-size: 0.62rem;
+  white-space: nowrap;
+  transform: rotate(-45deg);
+  transform-origin: center;
+}
+
+.tel-legenda-problema { color: #f87171; font-weight: 600; }
+
+/* ----------------------------------------------------------------- tabela */
+
+/* A tabela ROLA DENTRO DE SI. Sem isto, oito colunas empurrariam a largura da
+   página e criariam barra horizontal no documento inteiro. */
+.tel-tabela-caixa {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--cor-borda);
+  border-radius: 0.5rem;
+  background: var(--cor-superficie);
+}
+
+.tel-tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.tel-tabela th, .tel-tabela td {
+  padding: 0.6rem 0.9rem;
+  border-bottom: 1px solid var(--cor-borda);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.tel-tabela thead th {
+  color: var(--cor-texto-fraco);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  border-bottom: 2px solid var(--cor-borda);
+}
+
+.tel-tabela tbody tr:last-child td { border-bottom: none; }
+
+/* Números alinhados à direita e com dígitos de largura fixa: coluna de número
+   que não alinha obriga a ler dígito a dígito para comparar duas linhas. */
+.tel-num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.tel-operacao {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.82rem;
+  overflow-wrap: anywhere;
+}
+
+/* Linha com falha ganha marca na lateral ALÉM da cor do número — quem não
+   distingue a cor ainda vê a barra vermelha na borda. */
+.tel-linha-falha td:first-child { border-left: 3px solid #f87171; }
+
+/* A célula de média carrega a barra atrás do número: sobrepostos, o número é
+   exato e a barra dá a comparação, sem gastar uma coluna a mais. */
+.tel-media { position: relative; min-width: 7rem; }
+
+.tel-media-barra {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 1.5rem;
+  border-radius: 0.2rem;
+  background: rgba(45, 212, 191, .18);
+}
+
+.tel-media-valor { position: relative; }
+
+.tel-quando { color: var(--cor-texto-fraco); font-size: 0.82rem; white-space: nowrap; }
+
+/* ----------------------------------------------------------- base */
+
+.tel-tabelas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  width: 100%;
+  margin-top: 1rem;
+}
+
+@media (max-width: 720px) {
+  .tel-janela { margin-left: 0; width: 100%; }
+  .tel-rotulo { font-size: 0.55rem; }
+}

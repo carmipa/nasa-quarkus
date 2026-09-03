@@ -26,6 +26,11 @@ dependencies {
     // desta combinacao (Quarkus 3.39.1 + Java 25 + SQLite) e medida por
     // SqliteViabilidadeTest antes de qualquer coisa ser construida em cima.
     implementation 'io.quarkus:quarkus-agroal'
+    // Scheduler: a telemetria acumula em memoria e DESCARREGA periodicamente.
+    // Gravar uma linha por operacao executada poria uma ida ao banco dentro de
+    // cada chamada — telemetria e apoio, e apoio nao pode cobrar pedagio da
+    // funcao que ele observa.
+    implementation 'io.quarkus:quarkus-scheduler'
     implementation 'io.quarkus:quarkus-jdbc-postgresql'
 
     // Documentacao: Markdown renderizado NO SERVIDOR. A alternativa — montar no

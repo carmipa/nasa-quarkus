@@ -11,3 +11,4 @@
 V001__esquema_inicial.sql
 V002__tipo_de_contato_restrito.sql
 V003__evento_encerrado.sql
+V004__telemetria_de_operacoes.sql

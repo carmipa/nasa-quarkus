@@ -16,6 +16,7 @@
  * │
  * ├── geo/           PEER — coordenada, distância, caixa delimitadora
  * ├── persistencia/  PEER — esquema do banco e as migrações
+ * ├── telemetria/   PEER — o que o sistema mediu, persistido e lido
  * │
  * ├── cliente/      FATIA — quem recebe o alerta
  * ├── endereco/     FATIA — CEP, geocodificação, CRUD de endereço

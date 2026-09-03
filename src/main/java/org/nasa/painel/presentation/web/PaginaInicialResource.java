@@ -75,16 +75,53 @@ public class PaginaInicialResource {
     @Inject
     ConsultarNoticiasUseCase noticias;
 
+    @Inject
+    @io.quarkus.qute.Location("painel/fragmento-noticiario.html")
+    Template fragmentoNoticiario;
+
+    /**
+     * A home — que NÃO espera o noticiário.
+     *
+     * <p><b>O QUE MUDOU, e por quê.</b> Esta página buscava as notícias do GDACS dentro da
+     * própria requisição. A telemetria mediu o custo em 02/09/2026:</p>
+     * <pre>
+     * GET /                      media 1340 ms   pior 4015 ms
+     * GET /desastres              media   27 ms
+     * GET /clientes/listar        media    9 ms
+     * </pre>
+     * <p>A home era duas ordens de grandeza mais lenta que qualquer outra tela. A causa: o
+     * feed do GDACS tem <b>1 MB e 348 itens</b>, e o cache dura 10 minutos — então todo
+     * primeiro visitante depois de um reinício, e um a cada dez minutos, pagava a busca
+     * inteira antes de ver qualquer coisa.</p>
+     *
+     * <p><b>Agora o noticiário chega depois</b>, por HTMX. Uma fonte externa lenta, ou fora
+     * do ar, deixa de segurar a porta de entrada do sistema — que é o comportamento certo:
+     * notícia é complemento da home, não a home.</p>
+     */
     @GET
     @Produces(MediaType.TEXT_HTML)
     public TemplateInstance pagina() {
+        return moldura.vestir(index.instance(), "inicio");
+    }
+
+    /**
+     * O noticiário, buscado fora da renderização da home.
+     *
+     * <p><b>Fonte fora NÃO é erro HTTP.</b> Devolve 200 com o estado declarado na tela —
+     * um 500 aqui faria o HTMX deixar o bloco de carregamento girando para sempre, e a
+     * home mostraria "buscando…" eternamente em vez de "indisponível".</p>
+     */
+    @GET
+    @jakarta.ws.rs.Path("/fragmento/noticiario")
+    @Produces(MediaType.TEXT_HTML)
+    public TemplateInstance fragmentoDoNoticiario() {
         // 12 noticias: e o que cabe num carrossel sem virar rolagem infinita, e foi o
         // limite que o legado usava. As mais graves vem primeiro, decidido na fonte.
         var noticiario = noticias.executar(12);
-        return moldura.vestir(index
+        return fragmentoNoticiario
                 .data("noticias", noticiario.noticias())
                 .data("noticiarioIndisponivel", noticiario.fonteIndisponivel())
-                .data("motivoDoNoticiario", noticiario.motivo()), "inicio");
+                .data("motivoDoNoticiario", noticiario.motivo());
     }
 
     /**

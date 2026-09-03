@@ -86,60 +86,29 @@
     <span class="noticias-fonte" translate="no">GDACS — ONU / UE</span>
   </div>
 
-  {#if noticiarioIndisponivel}
-    <div class="aviso" role="status">
-      <strong>Noticiário indisponível no momento.</strong> {motivoDoNoticiario}
-    </div>
-  {#else if noticias.isEmpty()}
-    <div class="aviso" role="status">{motivoDoNoticiario}</div>
-  {#else}
-    <div class="carrossel" data-carrossel data-intervalo="6000">
-      <button class="carrossel-seta carrossel-seta-esq" type="button"
-              data-carrossel-anterior aria-label="Anterior" translate="no">&#8249;</button>
+  <!--
+    O NOTICIARIO CHEGA DEPOIS, por HTMX. A home nao espera por ele.
 
-      <ul class="carrossel-trilho" data-carrossel-trilho>
-        {#for n in noticias}
-        <li class="noticia {n.nivel.classeCss}">
-          <a class="noticia-link" href="{n.link}" target="_blank" rel="noopener noreferrer">
-            {#if n.temImagem}
-            <!--
-              A imagem passa pelo NOSSO servidor, nunca direto do GDACS. Dois
-              motivos medidos: aquele host limita vazão (a mesma URL responde 200
-              isolada e falha em sequência), e um <img> apontando para fora faria o
-              navegador de CADA visitante entregar o IP dele a um terceiro.
-              `loading="lazy"`: só a imagem visível é buscada. Num carrossel de 12,
-              isso é a diferença entre 1 e 12 requisições ao abrir a home.
-            -->
-            <img class="noticia-imagem" loading="lazy" decoding="async"
-                 src="/midia/noticiario?u={n.imagemPreferida.urlEncoded}"
-                 alt="Mapa do evento: {n.titulo}">
-            {/if}
-            <div class="noticia-cabecalho">
-              <span class="noticia-nivel" translate="no">{n.nivel.rotulo}</span>
-              <span class="noticia-tipo">{n.tipoPorExtenso}</span>
-            </div>
-            <h3 class="noticia-titulo">{n.titulo}</h3>
-            <dl class="noticia-campos">
-              {#if n.pais}
-              <div><dt>Local</dt><dd>{n.pais}</dd></div>
-              {/if}
-              {#if n.severidade}
-              <div><dt>Severidade</dt><dd translate="no">{n.severidade}</dd></div>
-              {/if}
-              {#if n.publicadaEm}
-              <div><dt>Publicado</dt>
-                  <dd translate="no">{n.publicadaEm} <span class="campo-fuso">UTC</span></dd></div>
-              {/if}
-            </dl>
-          </a>
-        </li>
-        {/for}
-      </ul>
+    Medido pela telemetria em 02/09/2026: com o noticiario dentro da
+    requisicao, `GET /` levava 1340 ms em media e 4015 ms no pior caso —
+    contra 6 a 27 ms de todas as outras telas. O feed do GDACS tem 1 MB e 348
+    itens, e o cache dura 10 minutos: todo primeiro visitante depois de um
+    reinicio pagava a busca inteira antes de ver a tela.
 
-      <button class="carrossel-seta carrossel-seta-dir" type="button"
-              data-carrossel-proximo aria-label="Próximo" translate="no">&#8250;</button>
-    </div>
-  {/if}
+    `hx-trigger="load"` dispara assim que o elemento existe. Sem JavaScript, o
+    bloco fica com a mensagem abaixo — e o resto da home continua inteiro, que
+    e o ponto: noticia e complemento, nao a pagina.
+  -->
+  <div id="noticiario"
+       hx-get="/fragmento/noticiario"
+       hx-trigger="load"
+       hx-target="this"
+       hx-swap="outerHTML">
+    <p class="noticias-carregando com-icone" role="status">
+      {#icone 'sincronizar' /}
+      <span>Buscando o noticiário do GDACS…</span>
+    </p>
+  </div>
 </section>
 
 {/corpo}

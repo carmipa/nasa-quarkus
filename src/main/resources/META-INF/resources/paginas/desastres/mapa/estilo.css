@@ -290,3 +290,15 @@
   color: var(--cor-texto-fraco) !important;
 }
 .leaflet-control-attribution a { color: var(--cor-destaque) !important; }
+
+/* O chip recém-clicado enquanto a página nova não chega. Entre o clique e a
+   resposta há uma consulta ao banco; sem sinal, o clique parece não ter
+   funcionado e a pessoa clica de novo. */
+.mapa-chip-carregando {
+  opacity: 0.55;
+  cursor: progress;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mapa-chip { transition: none; }
+}

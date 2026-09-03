@@ -66,7 +66,7 @@ class FronteiraArquiteturaTest {
     private static final Set<String> KERNEL = Set.of("core", "config");
 
     /** Peers: conceito de domínio com dono único. Não conhecem fatia. */
-    private static final Set<String> PEERS = Set.of("geo", "persistencia");
+    private static final Set<String> PEERS = Set.of("geo", "persistencia", "telemetria");
 
     /** Fatias: recorte vertical de um caso de uso. Não conhecem outra fatia. */
     private static final Set<String> FATIAS = Set.of("endereco", "painel", "cliente", "contato", "evento", "alerta");

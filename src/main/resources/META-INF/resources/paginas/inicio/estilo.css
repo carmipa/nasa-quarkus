@@ -198,3 +198,25 @@
   .carrossel[data-carrossel-ativo] .carrossel-seta { display: none; }
   .noticia { width: 86%; }
 }
+
+/* O estado de espera do noticiário. Ele existe porque a home agora aparece
+   ANTES das notícias: sem um lugar marcado, o bloco surgiria do nada e
+   empurraria o conteúdo abaixo dele. */
+.noticias-carregando {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  width: 100%;
+  padding: 1.5rem 2%;
+  border: 1px dashed var(--cor-borda);
+  border-radius: 0.5rem;
+  color: var(--cor-texto-fraco);
+  font-size: 0.9rem;
+}
+.noticias-carregando .icone { animation: noticias-girar 1.1s linear infinite; }
+
+@keyframes noticias-girar { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .noticias-carregando .icone { animation: none; }
+}
