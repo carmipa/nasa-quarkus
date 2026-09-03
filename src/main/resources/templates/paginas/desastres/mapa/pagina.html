@@ -71,16 +71,37 @@
       </span>
     </div>
 
+    <!--
+      AS 13 APARECEM SEMPRE, inclusive as que não têm nada para desenhar.
+
+      A primeira versão listava só as 10 com evento desenhável. As três de fora
+      — neve, extremos de temperatura e origem humana — NÃO estão vazias:
+      medido em 02/09/2026, elas têm 3, 14 e 5 eventos na base, todos sem
+      coordenada publicada pela NASA.
+
+      Escondê-las repetia o defeito que este projeto já tinha corrigido no
+      filtro da lista: quem procura "neve" concluiria que a NASA não publica
+      neve, quando ela publica e o que falta é a posição. O chip inerte diz
+      qual das duas coisas é — e essa é toda a diferença.
+    -->
     <div class="mapa-chips">
       {#for c in chips}
-      <label class="mapa-chip{#if c.marcada} mapa-chip-marcado{/if}"
+      <label class="mapa-chip{#if c.marcada} mapa-chip-marcado{/if}{#if c.inerte} mapa-chip-inerte{/if}"
              style="--cor-chip: {c.categoria.cor}"
-             data-dica="{c.quantos} evento(s) de {c.categoria.nome} com posição publicada. Marque vários para ver os tipos juntos; sem nenhum marcado, o mapa mostra todos.">
+             data-dica="{#if c.semPosicao}{c.naBase} evento(s) de {c.categoria.nome} na base — nenhum com posição publicada pela NASA, então não há o que desenhar no mapa. Eles aparecem na lista do painel.{#else if c.semNada}Nenhum evento de {c.categoria.nome} na base ainda. Sincronize mais anos no histórico para trazer o arquivo completo.{#else}{c.quantos} evento(s) de {c.categoria.nome} com posição publicada. Marque vários para ver os tipos juntos; sem nenhum marcado, o mapa mostra todos.{/if}">
         <input type="checkbox" name="categoria" value="{c.categoria.id}"
-               {#if c.marcada}checked{/if}>
+               {#if c.marcada}checked{/if}{#if c.inerte} disabled{/if}>
         {#icone c.categoria.icone /}
         <span class="mapa-chip-nome">{c.categoria.nome}</span>
+        {#if c.semPosicao}
+        <span class="mapa-chip-conta mapa-chip-conta-inerte" translate="no">
+          {c.naBase} sem posição
+        </span>
+        {#else if c.semNada}
+        <span class="mapa-chip-conta mapa-chip-conta-inerte">—</span>
+        {#else}
         <span class="mapa-chip-conta" translate="no">{c.quantos}</span>
+        {/if}
       </label>
       {/for}
     </div>

@@ -256,6 +256,35 @@ class TodasAsTelasRespondemTest {
     }
 
     @Test
+    @DisplayName("CONTROLE POSITIVO: o filtro do mapa traz AS 13 categorias, nunca menos")
+    void oFiltroDoMapaTrazAsTreze() {
+        // O DEFEITO QUE ESTE TESTE TRAVA, medido em 02/09/2026. A primeira versao do
+        // filtro listava so as categorias COM evento desenhavel — eram 10. As tres de
+        // fora (neve, extremos de temperatura, origem humana) nao estavam vazias: tinham
+        // 3, 14 e 5 eventos na base, todos sem coordenada publicada pela NASA.
+        //
+        // Escondê-las repetia o defeito que este projeto ja tinha corrigido no filtro da
+        // lista, e esta escrito na propria documentacao dele: filtro incompleto nao erra,
+        // ele simplesmente NUNCA mostra o que ficou de fora. Quem procurasse "neve"
+        // concluiria que a NASA nao publica neve.
+        String corpo = corpoDe("/desastres/mapa");
+
+        for (var categoria : org.nasa.evento.presentation.web.CategoriasDeDesastre.TODAS) {
+            assertTrue(corpo.contains(categoria.nome()),
+                    "a categoria '" + categoria.nome() + "' sumiu do filtro do mapa — "
+                            + "quem procurar por ela vai concluir que ela nao existe");
+        }
+
+        // CONTROLE do controle: 13 caixas de selecao, uma por categoria. Sem contar, o
+        // teste acima passaria com o nome aparecendo em qualquer outro lugar da pagina.
+        long caixas = corpo.lines()
+                .filter(l -> l.contains("name=\"categoria\"") && l.contains("checkbox"))
+                .count();
+        assertEquals(13, caixas,
+                "o filtro do mapa tem " + caixas + " caixas; a EONET tem 13 categorias");
+    }
+
+    @Test
     @DisplayName("as telas trazem DICAS explicando os campos")
     void asTelasTrazemDicas() {
         // A dica explica o que cada campo faz. Sem ela a tela funciona e ninguem

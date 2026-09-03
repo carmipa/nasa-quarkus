@@ -122,6 +122,16 @@ Chips marcáveis, um por categoria com eventos desenháveis, cada um com ícone,
 **contagem**. Nenhum marcado significa **todos** — um mapa que abrisse vazio esperando
 escolha seria uma tela em branco pedindo trabalho antes de mostrar qualquer coisa.
 
+**As 13 aparecem sempre**, inclusive as que não têm nada para desenhar. A primeira versão
+listava só as 10 com evento desenhável — e as três de fora não estavam vazias: medido,
+neve, extremos de temperatura e origem humana têm 3, 14 e 5 eventos na base, todos **sem
+coordenada publicada pela NASA**.
+
+Escondê-las repetia, na mesma tela, o defeito que esta documentação já descrevia dois
+parágrafos acima: filtro incompleto não erra, ele simplesmente nunca mostra o que ficou de
+fora. Quem procurasse "neve" concluiria que a NASA não publica neve — quando ela publica e o
+que falta é a posição. O chip inerte diz qual das duas coisas é, e essa é toda a diferença.
+
 **O filtro é do servidor, e essa é a decisão que importa.** Filtrar no navegador filtraria
 só os eventos já carregados, e o mapa desenha no máximo 500 de 21.542. Medido em 02/09/2026:
 

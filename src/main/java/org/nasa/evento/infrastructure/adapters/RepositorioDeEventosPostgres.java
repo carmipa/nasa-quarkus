@@ -361,23 +361,35 @@ public class RepositorioDeEventosPostgres implements RepositorioDeEventosPort {
         }
     }
 
+    /**
+     * Os DOIS números por categoria, numa varredura só.
+     *
+     * <p>O {@code FILTER} do PostgreSQL conta um subconjunto dentro do mesmo
+     * {@code GROUP BY}. Fazer duas consultas traria os mesmos dados em duas viagens — e,
+     * pior, elas poderiam divergir se um evento fosse gravado entre uma e outra.</p>
+     *
+     * <p>A condição de coordenada é a MESMA de {@code comCoordenadaNasCategorias}: o
+     * número no chip é a promessa do que o filtro vai desenhar, e promessa que não bate
+     * faz a pessoa procurar pinos que não existem.</p>
+     */
     @Override
-    public List<ContagemPorCategoria> contarPorCategoriaComCoordenada() {
-        // A MESMA condicao de `comCoordenadaNasCategorias`. As duas consultas precisam
-        // concordar: o numero no chip e a promessa do que o filtro vai desenhar.
+    public List<ContagemDoMapa> contarPorCategoriaComCoordenada() {
         String sql = """
-                SELECT COALESCE(categoria, 'SEM_CATEGORIA') AS categoria, count(*) AS quantos
+                SELECT COALESCE(categoria, 'SEM_CATEGORIA') AS categoria,
+                       count(*) AS total,
+                       count(*) FILTER (
+                           WHERE latitude IS NOT NULL AND longitude IS NOT NULL
+                       ) AS com_coordenada
                   FROM evento_natural
-                 WHERE latitude IS NOT NULL AND longitude IS NOT NULL
                  GROUP BY 1
-                 ORDER BY quantos DESC, categoria""";
-        List<ContagemPorCategoria> contagens = new ArrayList<>();
+                 ORDER BY com_coordenada DESC, total DESC, categoria""";
+        List<ContagemDoMapa> contagens = new ArrayList<>();
         try (Connection c = Conexoes.abrir(dataSource, "evento_natural");
              PreparedStatement ps = c.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
-                contagens.add(new ContagemPorCategoria(
-                        rs.getString("categoria"), rs.getLong("quantos")));
+                contagens.add(new ContagemDoMapa(rs.getString("categoria"),
+                        rs.getLong("total"), rs.getLong("com_coordenada")));
             }
             return contagens;
         } catch (SQLException e) {

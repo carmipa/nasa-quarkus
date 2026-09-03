@@ -238,15 +238,35 @@ public class DesastrePaginasResource {
 
         var eventos = consultar.paraOMapa(pedidas, ConsultarEventosUseCase.MAXIMO_NO_MAPA);
 
-        // OS CHIPS mostram TODAS as categorias que existem na base com coordenada, com o
-        // numero de cada uma — nao so as que estao na tela agora. Um filtro que some
-        // depois de usado nao deixa voltar, e e justamente quando o resultado veio vazio
-        // que se precisa do caminho de volta.
-        var chips = consultar.categoriasDoMapa().stream()
-                .map(c -> new ChipDeCategoria(
-                        CategoriasDeDesastre.de(c.categoria()),
-                        c.quantos(),
-                        pedidas.contains(c.categoria())))
+        // OS CHIPS MOSTRAM AS 13, SEMPRE — inclusive as que nao tem nada para desenhar.
+        //
+        // A primeira versao listava so as categorias com evento desenhavel, e eram 10.
+        // As tres de fora — neve, extremos de temperatura e origem humana — NAO estao
+        // vazias: medido em 02/09/2026, elas tem 3, 14 e 5 eventos na base, todos SEM
+        // coordenada publicada pela NASA.
+        //
+        // Esconde-las repetia exatamente o defeito que este projeto ja tinha corrigido no
+        // filtro da lista: quem procura "neve" concluiria que a NASA nao publica neve,
+        // quando ela publica e o que falta e a posicao. Filtro que some com a opcao nao
+        // erra — ele simplesmente nunca mostra o que ficou de fora, e ninguem procura o
+        // que nao sabe que existe.
+        var naBase = consultar.categoriasDoMapa().stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        c -> c.categoria(), c -> c, (a, b) -> a));
+
+        var chips = CategoriasDeDesastre.TODAS.stream()
+                .map(cat -> {
+                    var c = naBase.get(cat.id());
+                    long total = c == null ? 0 : c.total();
+                    long desenhaveis = c == null ? 0 : c.comCoordenada();
+                    return new ChipDeCategoria(cat, desenhaveis, total,
+                            pedidas.contains(cat.id()));
+                })
+                // Ordenadas pelo que da para DESENHAR: o chip que produz mapa cheio vem
+                // primeiro, e os que nao produzem nada ficam no fim, visiveis e ao alcance.
+                .sorted(java.util.Comparator
+                        .comparingLong(ChipDeCategoria::quantos).reversed()
+                        .thenComparing(c -> c.categoria().nome()))
                 .toList();
 
         // A LEGENDA mostra so o que esta DESENHADO — e outra coisa dos chips. Chip e
@@ -272,14 +292,32 @@ public class DesastrePaginasResource {
     /**
      * Um chip de filtro do mapa.
      *
-     * @param categoria a categoria, com nome, cor e ícone
-     * @param quantos   quantos eventos <b>desenháveis</b> ela tem. O número é a promessa do
-     *                  que o filtro vai mostrar — contar eventos sem coordenada aqui faria
-     *                  o chip prometer pinos que nunca aparecem
-     * @param marcada   se está no recorte atual
+     * @param categoria   a categoria, com nome, cor e ícone
+     * @param quantos     eventos <b>desenháveis</b> — com coordenada. É a promessa do que o
+     *                    filtro vai mostrar: contar os sem posição aqui faria o chip
+     *                    prometer pinos que nunca aparecem
+     * @param naBase      eventos da categoria na base, com ou sem posição. A diferença
+     *                    entre os dois números é o que separa "a NASA não publica isto" de
+     *                    "publica, mas sem dizer onde"
+     * @param marcada     se está no recorte atual
      */
     public record ChipDeCategoria(CategoriasDeDesastre.Categoria categoria, long quantos,
-                                  boolean marcada) {
+                                  long naBase, boolean marcada) {
+
+        /** Existe na base, mas nada dá para desenhar — o chip diz isso em vez de sumir. */
+        public boolean semPosicao() {
+            return quantos == 0 && naBase > 0;
+        }
+
+        /** Nem na base existe. */
+        public boolean semNada() {
+            return naBase == 0;
+        }
+
+        /** Se clicar produziria um mapa vazio — o chip fica inerte e explica. */
+        public boolean inerte() {
+            return quantos == 0;
+        }
     }
 
     // ------------------------------------------------------------ estatisticas

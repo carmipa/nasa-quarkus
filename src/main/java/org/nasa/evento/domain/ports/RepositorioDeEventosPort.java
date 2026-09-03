@@ -138,7 +138,23 @@ public interface RepositorioDeEventosPort {
      * procurar os 13 que faltam, e não há o que achar. Número ao lado de um filtro é uma
      * promessa do que ele vai mostrar.</p>
      */
-    List<ContagemPorCategoria> contarPorCategoriaComCoordenada();
+    List<ContagemDoMapa> contarPorCategoriaComCoordenada();
+
+    /**
+     * Quantos eventos de uma categoria existem, e quantos podem ser DESENHADOS.
+     *
+     * <p><b>Os dois números, e não um.</b> Medido em 02/09/2026: neve, extremos de
+     * temperatura e origem humana têm 3, 14 e 5 eventos na base — e <b>nenhum com
+     * coordenada</b>. Com um número só, essas categorias sumiriam do filtro, e sumir é a
+     * pior resposta: quem procura "neve" concluiria que a NASA não publica neve, quando
+     * ela publica e o que falta é a posição.</p>
+     *
+     * @param categoria     o identificador da EONET
+     * @param total         eventos gravados da categoria
+     * @param comCoordenada quantos deles têm posição — é este que o mapa consegue desenhar
+     */
+    record ContagemDoMapa(String categoria, long total, long comCoordenada) {
+    }
 
     /** Contagem por categoria DENTRO de um ano — o detalhe de uma coluna do histórico. */
     List<ContagemPorCategoria> contarPorCategoriaNoAno(int ano);

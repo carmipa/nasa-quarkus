@@ -200,8 +200,8 @@ public class ConsultarEventosUseCase {
         return repositorio.comCoordenadaNasCategorias(categorias, limitarMapa(limite));
     }
 
-    /** Quantos eventos desenháveis de cada categoria — o número dos chips do mapa. */
-    public List<RepositorioDeEventosPort.ContagemPorCategoria> categoriasDoMapa() {
+    /** Quantos eventos de cada categoria existem, e quantos podem ser desenhados. */
+    public List<RepositorioDeEventosPort.ContagemDoMapa> categoriasDoMapa() {
         return repositorio.contarPorCategoriaComCoordenada();
     }
 

@@ -302,3 +302,32 @@
 @media (prefers-reduced-motion: reduce) {
   .mapa-chip { transition: none; }
 }
+
+/*
+ * CHIP INERTE — a categoria existe, mas não há o que desenhar.
+ *
+ * Ele APARECE, e essa é a decisão. Escondê-lo faria quem procura "neve"
+ * concluir que a NASA não publica neve — quando ela publica e o que falta é a
+ * coordenada. O chip inerte diz qual das duas coisas é, e a dica diz por quê.
+ *
+ * NÃO é só opacidade: a caixa está `disabled`, então ele não marca nem entra
+ * no formulário, e o cursor muda. Um chip que parece clicável e não faz nada
+ * é pior que um chip apagado — ele faz clicar de novo, mais forte.
+ */
+.mapa-chip-inerte {
+  opacity: 0.5;
+  cursor: not-allowed;
+  border-style: dashed;
+}
+.mapa-chip-inerte:hover {
+  /* Sem realce no hover: realce promete que o clique faz algo. */
+  border-color: var(--cor-borda);
+  color: var(--cor-texto-fraco);
+}
+
+.mapa-chip-conta-inerte {
+  background: none;
+  font-style: italic;
+  font-weight: 400;
+  white-space: nowrap;
+}
