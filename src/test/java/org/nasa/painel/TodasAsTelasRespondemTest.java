@@ -81,47 +81,7 @@ class TodasAsTelasRespondemTest {
         }
     }
 
-    /**
-     * Quantos registros criar antes de olhar.
-     *
-     * <p>Precisa passar do tamanho de página das listas — que é 20 — para que o bloco de
-     * paginação seja <b>realmente</b> desenhado. Foi exatamente esse bloco que escondeu o
-     * defeito por um dia inteiro.</p>
-     */
-    private static final int REGISTROS = 22;
 
-    private static String documentoNovo() {
-        return String.format("%011d", System.nanoTime() % 100_000_000_000L);
-    }
-
-    private void criarClientesSuficientesParaPaginar() {
-        for (int i = 0; i < REGISTROS; i++) {
-            given().contentType(ContentType.JSON)
-                    .body("""
-                            {"nome":"Paginacao%d","sobrenome":"Teste",
-                             "dataNascimento":"1990-01-01","documento":"%s"}"""
-                            .formatted(i, documentoNovo()))
-                    .when().post("/api/clientes");
-        }
-    }
-
-    @Test
-    @DisplayName("as telas de CLIENTE renderizam, e a PAGINACAO e desenhada de verdade")
-    void telasDeClienteComPaginacao() {
-        criarClientesSuficientesParaPaginar();
-
-        // A lista inteira, com o bloco de paginacao desenhado — o ramo que escondia o
-        // `urlEncoded` inexistente.
-        String lista = corpoDe("/clientes/fragmento/lista");
-        assertTrue(lista.contains("paginacao") || lista.contains("Próxima"),
-                "o bloco de paginacao NAO foi desenhado: este teste nao esta exercitando "
-                        + "o ramo que escondeu o defeito. Aumente REGISTROS.");
-
-        // E com TERMO, que e o valor que passa pelo urlEncoded.
-        deveResponder("/clientes/fragmento/lista?termo=paginacao");
-        deveResponder("/clientes/fragmento/lista?termo=nome%20com%20espaco%20e%20acento");
-        deveResponder("/clientes/fragmento/lista?termo=paginacao&pagina=1");
-    }
 
     @Test
     @DisplayName("as telas de DESASTRE renderizam, com e sem filtro")
@@ -158,16 +118,35 @@ class TodasAsTelasRespondemTest {
         rotas.forEach((nome, rota) -> deveResponder(rota));
     }
 
+
     @Test
-    @DisplayName("as telas de CONTATO renderizam, com e sem filtro de tipo")
-    void telasDeContato() {
-        deveResponder("/contatos/listar");
-        deveResponder("/contatos/cadastrar");
-        deveResponder("/contatos/fragmento/lista");
-        deveResponder("/contatos/fragmento/lista?tipo=EMERGENCIA");
-        deveResponder("/contatos/fragmento/lista?termo=exemplo");
-        // O ramo com termo E pagina: e onde o urlEncoded aparece.
-        deveResponder("/contatos/fragmento/lista?termo=exemplo&tipo=&pagina=1");
+    @DisplayName("a tela de INSCRICAO renderiza, e o e-mail repetido e RECUSA, nao erro")
+    void telaDeInscricao() {
+        deveResponder("/inscricao");
+        deveResponder("/inscricao?pagina=1");
+
+        // O CLIQUE DUPLO. E o erro de boa-fe mais comum que existe num formulario:
+        // clicar de novo porque a pagina demorou. A segunda inscricao com o mesmo e-mail
+        // tem de responder 200 com "voce ja esta inscrito" — nao 500, e nao uma segunda
+        // linha no banco que faria a pessoa receber cada alerta em dobro.
+        String email = "duplo" + System.nanoTime() + "@exemplo.test";
+        for (int i = 0; i < 2; i++) {
+            int status = given().contentType(ContentType.URLENC)
+                    .formParam("nome", "Teste Duplo")
+                    .formParam("email", email)
+                    .formParam("cep", "01310100")
+                    .when().post("/inscricao").statusCode();
+            assertEquals(200, status,
+                    "a inscricao numero " + (i + 1) + " respondeu " + status);
+        }
+
+        String corpo = given().when().get("/inscricao").asString();
+        // Uma vez, nao duas: a restricao do banco e o que garante isso, e este teste e o
+        // que prova que ela esta la.
+        int quantas = corpo.split(java.util.regex.Pattern.quote(email), -1).length - 1;
+        assertEquals(1, quantas,
+                "o e-mail aparece " + quantas + " vez(es) na lista: o clique duplo criou "
+                        + "duas inscricoes, e a pessoa vai receber cada alerta em dobro");
     }
 
     @Test
@@ -182,17 +161,6 @@ class TodasAsTelasRespondemTest {
         deveResponder("/alertas/fragmento/lista?situacao=ENVIADO&pagina=1");
     }
 
-    @Test
-    @DisplayName("as telas de ENDERECO renderizam, e os TRES estados do CEP")
-    void telasDeEndereco() {
-        deveResponder("/enderecos/listar");
-        deveResponder("/enderecos/cadastrar");
-        deveResponder("/enderecos/cadastrar?clienteId=1");
-        // Os tres estados do fragmento de CEP, cada um com seu texto proprio.
-        deveResponder("/enderecos/fragmento/por-cep");                 // nao consultei
-        deveResponder("/enderecos/fragmento/por-cep?cep=123");         // incompleto
-        deveResponder("/enderecos/fragmento/por-cep?cep=00000000");    // nao existe
-    }
 
     @Test
     @DisplayName("as telas PUBLICAS renderizam, e trazem a moldura inteira")
@@ -213,11 +181,8 @@ class TodasAsTelasRespondemTest {
     void nenhumaTelaVazaRastroDePilha() {
         // Pagina de erro do Quarkus mostra pacote, classe e linha — informacao de
         // infraestrutura para quem nao deveria ve-la.
-        for (String rota : new String[] { "/", "/contato", "/desastres", "/desastres/mapa",
-                "/desastres/estatisticas", "/clientes/listar", "/clientes/cadastrar",
-                "/clientes/buscar", "/alertas", "/contatos/listar",
-                "/contatos/cadastrar", "/enderecos/listar",
-                "/enderecos/cadastrar" }) {
+        for (String rota : new String[] { "/", "/contato", "/inscricao", "/desastres", "/desastres/mapa",
+                "/desastres/estatisticas", "/alertas", }) {
             String corpo = corpoDe(rota);
             assertTrue(!corpo.contains("org.nasa.") || !corpo.contains("at java."),
                     "rastro de pilha visivel em " + rota);
@@ -261,7 +226,7 @@ class TodasAsTelasRespondemTest {
         //   &lt;svg              -> escapou, e a pagina mostra o codigo do desenho
         //   nada                 -> sumiu em silencio, indistinguivel de layout correto
         for (String rota : new String[] { "/", "/desastres", "/desastres/historico",
-                "/clientes/listar", "/documentacao" }) {
+                "/documentacao" }) {
             String corpo = corpoDe(rota);
             assertFalse(corpo.contains("&lt;svg"),
                     "o SVG foi ESCAPADO em " + rota + " — falta o `.raw`");
@@ -363,7 +328,7 @@ class TodasAsTelasRespondemTest {
         // A dica explica o que cada campo faz. Sem ela a tela funciona e ninguem
         // entende — que e o estado em que o sistema parece simples e nao e.
         for (String rota : new String[] { "/desastres", "/desastres/historico",
-                "/desastres/estatisticas", "/clientes/buscar", "/alertas" }) {
+                "/desastres/estatisticas", "/alertas" }) {
             String corpo = corpoDe(rota);
             assertTrue(corpo.contains("data-dica="),
                     "nenhuma dica de campo em " + rota);
@@ -372,11 +337,8 @@ class TodasAsTelasRespondemTest {
 
     /** As telas com moldura — as que um visitante abre pela URL. */
     private static final String[] ROTAS_COM_MOLDURA = {
-            "/", "/contato", "/documentacao",
+            "/", "/contato", "/documentacao", "/inscricao", "/telemetria",
             "/desastres", "/desastres/mapa", "/desastres/estatisticas", "/desastres/historico",
-            "/clientes/listar", "/clientes/cadastrar", "/clientes/buscar",
-            "/contatos/listar", "/contatos/cadastrar",
-            "/enderecos/listar", "/enderecos/cadastrar",
             "/alertas" };
 
     // ------------------------------------------------------------------ apoio

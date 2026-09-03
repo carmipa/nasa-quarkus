@@ -31,7 +31,12 @@ dependencies {
     // cada chamada — telemetria e apoio, e apoio nao pode cobrar pedagio da
     // funcao que ele observa.
     implementation 'io.quarkus:quarkus-scheduler'
-    implementation 'io.quarkus:quarkus-jdbc-postgresql'
+    // SQLite NAO e extensao oficial do Quarkus — o driver entra puro, sob o Agroal,
+    // com `db-kind=other`. Versao FIXA e a MESMA que este projeto ja rodou antes da
+    // passagem por PostgreSQL: trocar motor e versao de driver ao mesmo tempo tornaria
+    // qualquer falha ambigua. Existe 3.53.4.0; a subida fica para depois de o sistema
+    // estar de pe, com uma coisa mudando por vez.
+    implementation 'org.xerial:sqlite-jdbc:3.50.1.0'
 
     // Documentacao: Markdown renderizado NO SERVIDOR. A alternativa — montar no
     // navegador com `marked` — poria a interpretacao de texto do lado de quem le,

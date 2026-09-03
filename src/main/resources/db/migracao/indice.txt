@@ -7,8 +7,10 @@
 #
 # Uma linha por arquivo, no formato V<numero>__<descricao>.sql
 # Migração aplicada é IMUTÁVEL: correção vira migração nova.
+#
+# A NUMERAÇÃO RECOMEÇOU em 03/09/2026, e isso não é descuido: o motor mudou de
+# PostgreSQL para SQLite e cinco das nove tabelas deixaram de existir. As
+# migrações antigas não executam no motor novo. Elas estão preservadas, com o
+# motivo, em `docs/historico-migracoes-postgres/`.
 
 V001__esquema_inicial.sql
-V002__tipo_de_contato_restrito.sql
-V003__evento_encerrado.sql
-V004__telemetria_de_operacoes.sql

@@ -48,8 +48,8 @@ public class ConsultarAlertasUseCase {
                 Math.max(0, pagina), limitar(tamanho));
     }
 
-    public List<Alerta> doCliente(long clienteId, int pagina, int tamanho) {
-        return repositorio.doCliente(clienteId, Math.max(0, pagina), limitar(tamanho));
+    public List<Alerta> doInscrito(long inscritoId, int pagina, int tamanho) {
+        return repositorio.doInscrito(inscritoId, Math.max(0, pagina), limitar(tamanho));
     }
 
     public Optional<Alerta> porId(long id) {

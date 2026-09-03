@@ -96,11 +96,11 @@ public class AlertaResource {
     }
 
     @GET
-    @Path("/cliente/{clienteId}")
-    public List<AlertaResposta> doCliente(@PathParam("clienteId") long clienteId,
+    @Path("/cliente/{inscritoId}")
+    public List<AlertaResposta> doInscrito(@PathParam("inscritoId") long inscritoId,
                                           @QueryParam("pagina") @DefaultValue("0") int pagina,
                                           @QueryParam("tamanho") @DefaultValue("20") int tamanho) {
-        return AlertaResposta.de(consultar.doCliente(clienteId, pagina, tamanho));
+        return AlertaResposta.de(consultar.doInscrito(inscritoId, pagina, tamanho));
     }
 
     @GET
@@ -136,12 +136,12 @@ public class AlertaResource {
      * tela de auditoria, que alguém abre para mostrar a outra pessoa. Dá para conferir
      * para onde foi, e não dá para colher endereços de um print.</p>
      */
-    public record AlertaResposta(Long id, long clienteId, long eventoId, String destinoMascarado,
+    public record AlertaResposta(Long id, long inscritoId, long eventoId, String destinoMascarado,
                                  String situacao, String situacaoRotulo, String causaRaiz,
                                  int tentativas, String criadoEm, String concluidoEm) {
 
         static AlertaResposta de(Alerta a) {
-            return new AlertaResposta(a.id(), a.clienteId(), a.eventoId(),
+            return new AlertaResposta(a.id(), a.inscritoId(), a.eventoId(),
                     a.destinoMascarado(),
                     a.situacao().name(), a.situacao().rotulo(), a.causaRaiz(), a.tentativas(),
                     a.criadoEm() == null ? null : a.criadoEm().toString(),

@@ -16,9 +16,12 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import org.nasa.persistencia.infrastructure.adapters.InstanteEmTexto;
+
 import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
+import org.nasa.persistencia.infrastructure.adapters.InstanteEmTexto;
+
+import java.time.Instant;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -63,55 +66,39 @@ class FluxoDeAlertaTest {
 
     // ------------------------------------------------------------- montagem
 
-    private long inserirCliente(String sufixo) throws SQLException {
+    /**
+     * Um inscrito com nome, e-mail e posição — o que antes exigia TRÊS inserções.
+     *
+     * <p>Este método é a medida da simplificação: cliente + endereço + contato de
+     * emergência, com duas tabelas de ligação, viraram uma linha. A montagem do teste
+     * encolheu junto com o modelo, e é o mesmo cenário.</p>
+     */
+    private long inserirInscrito(String sufixo, double lat, double lon) throws SQLException {
         return inserirRetornandoId("""
-                INSERT INTO cliente (nome, sobrenome, data_nascimento, documento, criado_em)
-                VALUES (?, 'Teste', DATE '1990-01-01', ?, ?) RETURNING id""",
+                INSERT INTO inscrito (nome, email, cep, latitude, longitude, raio_km, criado_em)
+                VALUES (?, ?, '01310200', ?, ?, 100.0, ?) RETURNING id""",
                 ps -> {
                     ps.setString(1, "Alerta" + sufixo);
-                    ps.setString(2, sufixo);
-                    ps.setObject(3, OffsetDateTime.now(ZoneOffset.UTC));
+                    ps.setString(2, sufixo + "@exemplo.test");
+                    ps.setDouble(3, lat);
+                    ps.setDouble(4, lon);
+                    ps.setString(5, InstanteEmTexto.de(Instant.now()));
                 });
-    }
-
-    private long inserirEndereco(long clienteId, double lat, double lon) throws SQLException {
-        long id = inserirRetornandoId("""
-                INSERT INTO endereco (cep, logradouro, localidade, uf, latitude, longitude, criado_em)
-                VALUES ('01310200', 'Rua de teste', 'Sao Paulo', 'SP', ?, ?, ?) RETURNING id""",
-                ps -> {
-                    ps.setDouble(1, lat);
-                    ps.setDouble(2, lon);
-                    ps.setObject(3, OffsetDateTime.now(ZoneOffset.UTC));
-                });
-        executar("INSERT INTO cliente_endereco (cliente_id, endereco_id) VALUES (?, ?)",
-                ps -> { ps.setLong(1, clienteId); ps.setLong(2, id); });
-        return id;
-    }
-
-    private long inserirContatoDeEmergencia(long clienteId, String email) throws SQLException {
-        long id = inserirRetornandoId("""
-                INSERT INTO contato (email, tipo_contato, criado_em)
-                VALUES (?, 'EMERGENCIA', ?) RETURNING id""",
-                ps -> {
-                    ps.setString(1, email);
-                    ps.setObject(2, OffsetDateTime.now(ZoneOffset.UTC));
-                });
-        executar("INSERT INTO cliente_contato (cliente_id, contato_id) VALUES (?, ?)",
-                ps -> { ps.setLong(1, clienteId); ps.setLong(2, id); });
-        return id;
     }
 
     private long inserirEvento(String sufixo, double lat, double lon) throws SQLException {
         return inserirRetornandoId("""
                 INSERT INTO evento_natural (eonet_id, titulo, categoria, ocorrido_em,
-                                            latitude, longitude, sincronizado_em)
-                VALUES (?, 'Incendio de teste', 'wildfires', ?, ?, ?, ?) RETURNING id""",
+                                            latitude, longitude, criado_em, sincronizado_em)
+                VALUES (?, 'Incendio de teste', 'wildfires', ?, ?, ?, ?, ?) RETURNING id""",
                 ps -> {
                     ps.setString(1, "EONET_FLUXO_" + sufixo);
-                    ps.setObject(2, OffsetDateTime.now(ZoneOffset.UTC).minusHours(2));
+                    ps.setString(2, InstanteEmTexto.de(Instant.now().minusSeconds(7200)));
                     ps.setDouble(3, lat);
                     ps.setDouble(4, lon);
-                    ps.setObject(5, OffsetDateTime.now(ZoneOffset.UTC));
+                    String agora = InstanteEmTexto.de(Instant.now());
+                    ps.setString(5, agora);
+                    ps.setString(6, agora);
                 });
     }
 
@@ -124,43 +111,39 @@ class FluxoDeAlertaTest {
         String marca = marcaUnica();
 
         // Perto: cliente com endereco a ~1 km do evento, com contato de emergencia.
-        long clientePerto = inserirCliente(marca);
-        inserirEndereco(clientePerto, LAT_SE, LON_SE);
-        inserirContatoDeEmergencia(clientePerto, "perto" + marca + "@exemplo.com");
+        long inscritoPerto = inserirInscrito("perto" + marca, LAT_SE, LON_SE);
 
         // CONTROLE POSITIVO — o LONGE. Identico em tudo, exceto a ~440 km (Rio de
         // Janeiro). Sem este caso, uma varredura que avisasse TODO MUNDO passaria.
-        long clienteLonge = inserirCliente("9" + marca.substring(1));
-        inserirEndereco(clienteLonge, -22.9068, -43.1729);
-        inserirContatoDeEmergencia(clienteLonge, "longe" + marca + "@exemplo.com");
+        long inscritoLonge = inserirInscrito("longe" + marca + "@exemplo.com".replace("@exemplo.com", ""), -22.9068, -43.1729);
 
         long evento = inserirEvento(marca, LAT_SE + 0.01, LON_SE);
 
         // ---- varredura
         var r1 = varrer.executar(100.0, 30);
         System.out.println("[FLUXO] varredura 1: " + r1);
-        assertTrue(r1.novos() >= 1, "o cliente perto tinha de gerar aviso");
+        assertTrue(r1.novos() >= 1, "o inscrito perto tinha de gerar aviso");
 
         // A base de teste e COMPARTILHADA entre as classes, e outras inserem eventos
         // perto daqui. Contar o total de avisos do cliente mediria a poluicao das outras;
         // o que este teste tem a provar e sobre o SEU evento.
-        var doMeuEvento = avisosDe(clientePerto, evento);
-        assertEquals(1, doMeuEvento, "esperava UM aviso do cliente perto para ESTE evento");
+        var doMeuEvento = avisosDe(inscritoPerto, evento);
+        assertEquals(1, doMeuEvento, "esperava UM aviso do inscrito perto para ESTE evento");
         assertEquals(SituacaoAlerta.PENDENTE,
-                consultar.doCliente(clientePerto, 0, 50).stream()
+                consultar.doInscrito(inscritoPerto, 0, 50).stream()
                         .filter(a2 -> a2.eventoId() == evento).findFirst().orElseThrow()
                         .situacao(),
                 "o aviso nasce PENDENTE: gravar antes de enviar e o que torna o envio "
                         + "seguro de repetir");
 
-        assertTrue(consultar.doCliente(clienteLonge, 0, 10).isEmpty(),
-                "o cliente a 440 km foi avisado: a geodesia nao esta filtrando, e o "
+        assertTrue(consultar.doInscrito(inscritoLonge, 0, 10).isEmpty(),
+                "o inscrito a 440 km foi avisado: a geodesia nao esta filtrando, e o "
                         + "alerta virou spam");
 
         // ---- IDEMPOTENCIA: a segunda varredura NAO pode gerar nada novo
         var r2 = varrer.executar(100.0, 30);
         System.out.println("[FLUXO] varredura 2: " + r2);
-        assertEquals(1, avisosDe(clientePerto, evento),
+        assertEquals(1, avisosDe(inscritoPerto, evento),
                 "a segunda varredura duplicou o aviso: uma tempestade de cinco dias "
                         + "viraria cinco mensagens para a mesma pessoa");
         assertTrue(r2.jaExistiam() >= 1, "a repeticao tem de ser CONTADA, nao silenciosa");
@@ -172,7 +155,7 @@ class FluxoDeAlertaTest {
         assertFalse(d.entregaDeVerdade(),
                 "sem servidor de e-mail, o resultado TEM de declarar que nao entrega");
 
-        Alerta depois = consultar.doCliente(clientePerto, 0, 50).stream()
+        Alerta depois = consultar.doInscrito(inscritoPerto, 0, 50).stream()
                 .filter(a2 -> a2.eventoId() == evento).findFirst().orElseThrow();
         assertEquals(SituacaoAlerta.ENVIADO, depois.situacao());
         assertEquals(1, depois.tentativas(), "tentativas sempre incrementa");
@@ -191,28 +174,40 @@ class FluxoDeAlertaTest {
 
     @Test
     @Transactional
-    @DisplayName("contato que NAO e de emergencia nao vira destinatario")
-    void soEmergenciaViraDestinatario() throws Exception {
+    @DisplayName("CONTROLE POSITIVO: inscricao CANCELADA nao vira destinatario")
+    void canceladaNaoViraDestinatario() throws Exception {
+        // O QUE ESTE TESTE SUBSTITUIU. Antes ele provava que um contato do tipo
+        // PRINCIPAL, e nao EMERGENCIA, ficava de fora dos avisos. Esse conceito saiu
+        // com a fatia `contato`: agora nao ha tipo de contato, ha inscricao.
+        //
+        // O EQUIVALENTE no modelo novo e o cancelamento, e a invariante e a mesma:
+        // existe um registro no banco, com posicao valida, a poucos quilometros do
+        // evento — e ele NAO pode ser avisado. Sem esta guarda, cancelar viraria um
+        // botao decorativo, e quem pediu para sair continuaria recebendo.
         String marca = marcaUnica();
-        long cliente = inserirCliente("8" + marca.substring(1));
-        inserirEndereco(cliente, LAT_SE, LON_SE);
-
-        // PRINCIPAL, nao EMERGENCIA: ninguem o inscreveu em avisos de desastre.
-        long id = inserirRetornandoId("""
-                INSERT INTO contato (email, tipo_contato, criado_em)
-                VALUES (?, 'PRINCIPAL', ?) RETURNING id""",
+        long cancelado = inserirInscrito("cancelado" + marca, LAT_SE, LON_SE);
+        executar("UPDATE inscrito SET cancelado_em = ? WHERE id = ?",
                 ps -> {
-                    ps.setString(1, "principal" + marca + "@exemplo.com");
-                    ps.setObject(2, OffsetDateTime.now(ZoneOffset.UTC));
+                    ps.setString(1, InstanteEmTexto.de(Instant.now()));
+                    ps.setLong(2, cancelado);
                 });
-        executar("INSERT INTO cliente_contato (cliente_id, contato_id) VALUES (?, ?)",
-                ps -> { ps.setLong(1, cliente); ps.setLong(2, id); });
 
-        inserirEvento("SOEMERG" + marca, LAT_SE + 0.01, LON_SE);
+        long evento = inserirEvento("CANC" + marca, LAT_SE, LON_SE);
+
+        var r = varrer.executar(100.0, 30);
+        System.out.println("[FLUXO] varredura com inscrito cancelado: " + r);
+
+        assertTrue(consultar.doInscrito(cancelado, 0, 10).isEmpty(),
+                "o inscrito CANCELADO foi avisado: o cancelamento virou botao decorativo, "
+                        + "e quem pediu para sair continua recebendo");
+
+        // CONTROLE DO CONTROLE: um inscrito ATIVO no MESMO ponto tem de ser avisado.
+        // Sem ele, a asercao acima passaria com uma varredura que nao avisa ninguem.
+        long ativo = inserirInscrito("ativo" + marca, LAT_SE, LON_SE);
         varrer.executar(100.0, 30);
-
-        assertTrue(consultar.doCliente(cliente, 0, 50).isEmpty(),
-                "um contato PRINCIPAL recebeu alerta de desastre sem ter sido inscrito nisso");
+        assertFalse(consultar.doInscrito(ativo, 0, 10).isEmpty(),
+                "nem o inscrito ATIVO no mesmo ponto foi avisado — a varredura nao esta "
+                        + "avisando ninguem, e o teste acima nao prova nada");
     }
 
     @Test
@@ -228,8 +223,8 @@ class FluxoDeAlertaTest {
     // ------------------------------------------------------------------ apoio
 
     /** Quantos avisos este cliente tem para ESTE evento — imune a poluicao das outras classes. */
-    private long avisosDe(long clienteId, long eventoId) {
-        return consultar.doCliente(clienteId, 0, 50).stream()
+    private long avisosDe(long inscritoId, long eventoId) {
+        return consultar.doInscrito(inscritoId, 0, 50).stream()
                 .filter(a -> a.eventoId() == eventoId).count();
     }
 

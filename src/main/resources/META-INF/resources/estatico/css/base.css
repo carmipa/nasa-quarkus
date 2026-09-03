@@ -693,3 +693,16 @@ body {
  * rótulo e o campo vizinho, sem alinhar com nenhum dos dois.
  */
 .filtros .rotulo-caixa { align-self: flex-end; padding-bottom: 0.55rem; }
+
+/* A autoria e o repositório, no rodapé. O link vai numa LINHA PRÓPRIA: colado
+   no nome, o endereço do GitHub se lê como parte da frase. */
+.rodape-autoria { display: flex; flex-direction: column; gap: 0.2rem; }
+
+.rodape-repositorio {
+  color: var(--cor-destaque);
+  font-size: 0.85em;
+  text-decoration: none;
+}
+.rodape-repositorio:hover, .rodape-repositorio:focus-visible {
+  text-decoration: underline;
+}

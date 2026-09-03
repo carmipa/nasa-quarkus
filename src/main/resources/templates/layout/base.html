@@ -114,12 +114,8 @@
 <nav class="menu" aria-label="Seções">
   <a class="menu-item com-icone{#if secaoAtiva == 'inicio'} menu-item-ativo{/if}" href="/"
      data-dica="Painel de abertura: desastres em tempo real, notícias e o que o sistema está vigiando agora">{#icone 'casa' /}Início</a>
-  <a class="menu-item com-icone{#if secaoAtiva == 'clientes'} menu-item-ativo{/if}" href="/clientes/listar"
-     data-dica="Quem recebe o alerta — cadastro, busca e os endereços de cada pessoa">{#icone 'clientes' /}Clientes</a>
-  <a class="menu-item com-icone{#if secaoAtiva == 'contatos'} menu-item-ativo{/if}" href="/contatos/listar"
-     data-dica="Por onde a pessoa é avisada: telefone, e-mail e canal de emergência">{#icone 'contatos' /}Contatos</a>
-  <a class="menu-item com-icone{#if secaoAtiva == 'enderecos'} menu-item-ativo{/if}" href="/enderecos/listar"
-     data-dica="Onde a pessoa está. É a coordenada daqui que decide se um desastre está perto dela.">{#icone 'enderecos' /}Endereços</a>
+  <a class="menu-item com-icone{#if secaoAtiva == 'inscricao'} menu-item-ativo{/if}" href="/inscricao"
+     data-dica="Peça para ser avisado: nome, e-mail e o CEP de onde você está. O alerta dispara quando um desastre entra no seu raio.">{#icone 'alertas' /}Inscrever-se</a>
   <a class="menu-item com-icone{#if secaoAtiva == 'desastres'} menu-item-ativo{/if}" href="/desastres"
      data-dica="O que a NASA publica: eventos em tempo real, mapa, estatísticas e o arquivo histórico ano a ano">{#icone 'desastres' /}Desastres</a>
   <a class="menu-item com-icone{#if secaoAtiva == 'alertas'} menu-item-ativo{/if}" href="/alertas"
@@ -146,7 +142,21 @@
   atribuição justamente onde ela é obrigatória.
 -->
 <footer class="rodape">
-  <span>Projeto acadêmico FIAP — reconstrução em Java 25 / Quarkus</span>
+  <span class="rodape-autoria">
+    Desenvolvido por <strong>Paulo André Carminati</strong> em
+    <span translate="no">Java 25 / Quarkus</span>
+    <!--
+      `rel="noopener"` e obrigatorio em link que abre em aba nova: sem ele a
+      pagina de destino recebe `window.opener` e pode redirecionar esta aqui.
+      `noreferrer` nao manda a URL de origem junto.
+    -->
+    <a class="rodape-repositorio com-icone" translate="no"
+       href="https://github.com/carmipa/nasa-quarkus"
+       target="_blank" rel="noopener noreferrer"
+       data-dica="O código-fonte deste projeto, aberto no GitHub">
+      {#icone 'link-externo' /}github.com/carmipa/nasa-quarkus
+    </a>
+  </span>
   {#if temMapa}
   <span class="rodape-atribuicao" translate="no">© OpenStreetMap contributors (ODbL)</span>
   {/if}

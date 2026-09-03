@@ -1,0 +1,204 @@
+{#include layout/base}
+{#titulo}Inscrever-se para receber alertas{/titulo}
+
+{#estilos}
+<link rel="stylesheet" href="/paginas/inscricao/estilo.css?v={versaoAssets}">
+{/estilos}
+
+{#corpo}
+<!--
+  A INSCRIÇÃO — a porta de entrada do sistema.
+
+  Substituiu três telas de CRUD (cliente, contato, endereço) que modelavam
+  gestão de clientes. Este sistema não gerencia clientes: ele AVISA GENTE SOBRE
+  DESASTRE. Uma inscrição é o que basta — quem é, onde está, por onde avisar.
+
+  O FORMULÁRIO É UM `<form method="post">` DE VERDADE, sem JavaScript. É a
+  única coisa que o sistema pede a quem chega, e quebrá-la por elegância seria
+  trocar a função pela forma.
+-->
+<section class="secao">
+  <div class="linha-topo insc-topo">
+    <h1 class="secao-titulo com-icone">{#icone 'alertas' /}Receber alertas de desastre</h1>
+    <div class="desastres-numeros">
+      <span class="numero com-icone dica" tabindex="0"
+            data-dica="Inscrições ativas: quantas pessoas o sistema avisa quando um desastre entra no raio delas">
+        {#icone 'clientes' /}<strong translate="no">{ativos}</strong> ativas
+      </span>
+      {#if semCoordenada > 0}
+      <!--
+        MOSTRADO, nunca escondido. Uma inscrição sem coordenada existe e NÃO
+        recebe alerta de proximidade. Deixá-la parecer normal faria alguém
+        esperar um aviso que nunca vem — a pior falha possível num sistema de
+        alerta, porque ela é silenciosa dos dois lados.
+      -->
+      <span class="numero numero-ativo com-icone dica" tabindex="0"
+            data-dica="Inscrições que existem mas ainda NÃO recebem alerta: o CEP delas não virou coordenada, então não há como medir a distância até o desastre. Acontece quando os provedores de CEP estão fora do ar.">
+        {#icone 'aviso' /}<strong translate="no">{semCoordenada}</strong> sem posição
+      </span>
+      {/if}
+    </div>
+  </div>
+
+  {#if resultado}
+  <div class="aviso aviso-ok com-icone" role="status">
+    {#icone 'ok' /}
+    <div>
+      <strong>Pronto, {resultado.inscrito.nome}.</strong>
+      {#if resultado.achouPosicao}
+        Você vai ser avisado quando houver desastre a até
+        <strong translate="no">{resultado.inscrito.raioKm} km</strong> do
+        CEP <span translate="no">{resultado.inscrito.cep.digitos}</span>.
+      {#else}
+        <!--
+          A inscrição VALE, mas ainda não avisa. Dizer isso é obrigatório: a
+          alternativa é a pessoa achar que está protegida e não estar.
+        -->
+        A inscrição foi gravada, mas <strong>ainda não recebe alerta de
+        proximidade</strong> — {resultado.motivoSemPosicao}. Sem a posição não há
+        como medir a distância até o desastre. Confira o CEP, ou tente de novo
+        mais tarde: os provedores voltam.
+      {/if}
+    </div>
+  </div>
+  {/if}
+
+  {#if erro}
+  <div class="aviso {#if jaInscrito}aviso-atencao{#else}aviso-erro{/if} com-icone" role="status">
+    {#if jaInscrito}{#icone 'info' /}{#else}{#icone 'erro' /}{/if}
+    <div>
+      {#if jaInscrito}
+        <strong>Você já está inscrito.</strong>
+        Não há o que fazer — o aviso já vai chegar quando houver desastre perto.
+      {#else}
+        <strong>Não deu para inscrever.</strong> {erro}
+      {/if}
+    </div>
+  </div>
+  {/if}
+
+  <p class="secao-texto">
+    Informe onde você está e o sistema passa a vigiar aquele ponto. Quando a NASA
+    publicar um desastre dentro do seu raio,
+    <span class="dica" tabindex="0"
+          data-dica="A distância é geodésica, medida sobre a curvatura da Terra — não é uma caixa no mapa. O canto de uma caixa de 100 km fica a 141 km, e eventos ali NÃO entram.">a
+    distância é medida de verdade</span> e o alerta entra na fila.
+  </p>
+
+  <form class="insc-formulario" method="post" action="/inscricao">
+    <div class="campo">
+      <label class="formulario-rotulo dica" for="nome"
+             data-dica="Como você quer ser chamado no alerta">Nome</label>
+      <input class="campo-formulario" id="nome" name="nome" type="text"
+             required maxlength="120" autocomplete="name">
+    </div>
+
+    <div class="campo">
+      <label class="formulario-rotulo dica" for="email"
+             data-dica="Para onde o alerta é enviado. É o único canal que o sistema sabe usar hoje, por isso é obrigatório.">E-mail</label>
+      <input class="campo-formulario" id="email" name="email" type="email"
+             required maxlength="254" autocomplete="email">
+    </div>
+
+    <div class="campo">
+      <label class="formulario-rotulo dica" for="telefone"
+             data-dica="Opcional, e hoje é só registro: o sistema ainda não envia mensagem. Guardá-lo prometendo envio que não existe seria mentir no cadastro.">Telefone (opcional)</label>
+      <input class="campo-formulario" id="telefone" name="telefone" type="tel"
+             maxlength="20" autocomplete="tel">
+    </div>
+
+    <div class="campo">
+      <label class="formulario-rotulo dica" for="cep"
+             data-dica="É o CEP que vira a coordenada usada para medir a distância até o desastre. Digite só os oito dígitos.">CEP</label>
+      <input class="campo-formulario" id="cep" name="cep" type="text"
+             required inputmode="numeric" maxlength="9" placeholder="00000000"
+             autocomplete="postal-code">
+      <span class="formulario-dica">
+        Oito dígitos. O resto o sistema descobre sozinho.
+      </span>
+    </div>
+
+    <div class="campo">
+      <label class="formulario-rotulo dica" for="raioKm"
+             data-dica="A que distância você quer ser avisado. 100 km é a distância em que um desastre natural ainda é assunto de quem mora ali: fumaça de incêndio viaja mais que isso, e uma tempestade a 100 km chega em horas.">Raio do alerta (km)</label>
+      <input class="campo-formulario" id="raioKm" name="raioKm" type="number"
+             value="{raioPadrao}" min="1" max="20000" step="1">
+    </div>
+
+    <div class="insc-acoes">
+      <button class="botao botao-principal com-icone" type="submit">
+        {#icone 'alertas' /}Quero ser avisado
+      </button>
+    </div>
+  </form>
+
+  <!-- ============================================================ a lista -->
+  <h2 class="secao-titulo com-icone">{#icone 'clientes' /}Quem está inscrito</h2>
+
+  {#if inscritos.isEmpty()}
+    <div class="vazio">
+      <p>Nenhuma inscrição ainda.</p>
+      <p class="vazio-dica">
+        A primeira pode ser a sua — o formulário está logo acima.
+      </p>
+    </div>
+  {#else}
+    <ul class="insc-lista">
+      {#for i in inscritos}
+      <li class="insc-item realce{#if !i.ativo} insc-item-cancelado{/if}">
+        <div class="insc-item-topo">
+          <span class="insc-nome">{i.nome}</span>
+          {#if !i.ativo}
+            <span class="insc-selo insc-selo-cancelado com-icone">
+              {#icone 'erro' /}cancelada
+            </span>
+          {#else if i.coordenada}
+            <span class="insc-selo insc-selo-ativo com-icone"
+                  data-dica="Esta inscrição recebe alerta: tem posição, e a distância até o desastre pode ser medida.">
+              {#icone 'ok' /}recebendo alertas
+            </span>
+          {#else}
+            <span class="insc-selo insc-selo-sem-posicao com-icone"
+                  data-dica="Esta inscrição existe mas NÃO recebe alerta de proximidade: o CEP não virou coordenada, então não há como medir a distância. Ela aparece assim de propósito — esconder faria esperar um aviso que nunca chega.">
+              {#icone 'aviso' /}sem posição — não recebe alerta
+            </span>
+          {/if}
+        </div>
+
+        <dl class="insc-dados">
+          <div><dt>E-mail</dt><dd translate="no">{i.email.valor}</dd></div>
+          <div><dt>CEP</dt><dd translate="no">{i.cep.digitos}</dd></div>
+          <div><dt>Raio</dt><dd translate="no">{i.raioKm} km</dd></div>
+          {#if i.coordenada}
+          <div><dt>Posição</dt>
+            <dd translate="no">{i.coordenada.latitude}, {i.coordenada.longitude}</dd></div>
+          {/if}
+        </dl>
+
+        {#if i.ativo}
+        <form method="post" action="/inscricao/{i.id}/cancelar">
+          <button class="botao botao-discreto com-icone" type="submit"
+                  data-dica="Cancelar não apaga o registro: a inscrição sai dos alertas e o histórico do que já foi enviado continua fazendo sentido.">
+            {#icone 'excluir' /}Cancelar
+          </button>
+        </form>
+        {/if}
+      </li>
+      {/for}
+    </ul>
+
+    {#if temProxima || pagina > 0}
+    <nav class="paginacao" aria-label="Páginas">
+      {#if pagina > 0}
+      <a class="botao botao-discreto" href="/inscricao?pagina={pagina - 1}">‹ Anteriores</a>
+      {/if}
+      <span class="paginacao-atual" translate="no">página {pagina + 1}</span>
+      {#if temProxima}
+      <a class="botao botao-discreto" href="/inscricao?pagina={pagina + 1}">Próximas ›</a>
+      {/if}
+    </nav>
+    {/if}
+  {/if}
+</section>
+{/corpo}
+{/include}

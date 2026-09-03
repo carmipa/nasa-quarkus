@@ -24,13 +24,13 @@ package org.nasa.alerta.domain;
  *
  * <p><b>COMPORTAMENTO EM CASO DE FALHA.</b> Não tem: é um resultado de consulta.</p>
  *
- * @param clienteId    quem
- * @param nomeCliente  como a pessoa é chamada no aviso
+ * @param inscritoId    quem
+ * @param nomeInscrito  como a pessoa é chamada no aviso
  * @param destino      o e-mail do contato de emergência
  * @param eventoId     qual evento
  * @param eventoTitulo o nome do evento, como a NASA publica
  * @param distanciaKm  distância real entre o endereço e o evento
  */
-public record DestinatarioProximo(long clienteId, String nomeCliente, String destino,
+public record DestinatarioProximo(long inscritoId, String nomeInscrito, String destino,
                                   long eventoId, String eventoTitulo, double distanciaKm) {
 }

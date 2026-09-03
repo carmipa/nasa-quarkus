@@ -37,7 +37,7 @@ import java.util.Optional;
  * campo. O destino nunca entra na mensagem de erro: é o e-mail de uma pessoa.</p>
  *
  * @param id           nulo enquanto não gravado
- * @param clienteId    quem é avisado
+ * @param inscritoId    quem é avisado
  * @param eventoId     o evento que motivou
  * @param destino      para onde vai — o e-mail do contato de emergência
  * @param situacao     PENDENTE, ENVIADO ou FALHOU
@@ -46,7 +46,7 @@ import java.util.Optional;
  * @param criadoEm     quando o aviso foi registrado
  * @param concluidoEm  quando terminou; obrigatório em estado terminal
  */
-public record Alerta(Long id, long clienteId, long eventoId, String destino,
+public record Alerta(Long id, long inscritoId, long eventoId, String destino,
                      SituacaoAlerta situacao, String causaRaiz, int tentativas,
                      Instant criadoEm, Instant concluidoEm) {
 
@@ -71,14 +71,14 @@ public record Alerta(Long id, long clienteId, long eventoId, String destino,
     }
 
     /** Um aviso recém-registrado, ainda por despachar. */
-    public static Alerta pendente(long clienteId, long eventoId, String destino) {
-        return new Alerta(null, clienteId, eventoId, destino, SituacaoAlerta.PENDENTE,
+    public static Alerta pendente(long inscritoId, long eventoId, String destino) {
+        return new Alerta(null, inscritoId, eventoId, destino, SituacaoAlerta.PENDENTE,
                 null, 0, null, null);
     }
 
     /** O mesmo aviso, entregue. */
     public Alerta entregue(Instant quando) {
-        return new Alerta(id, clienteId, eventoId, destino, SituacaoAlerta.ENVIADO,
+        return new Alerta(id, inscritoId, eventoId, destino, SituacaoAlerta.ENVIADO,
                 null, tentativas + 1, criadoEm, quando);
     }
 
@@ -89,7 +89,7 @@ public record Alerta(Long id, long clienteId, long eventoId, String destino,
      * para descobrir se foi o servidor de e-mail, o endereço inválido, ou nós.</p>
      */
     public Alerta falho(Instant quando, String causa) {
-        return new Alerta(id, clienteId, eventoId, destino, SituacaoAlerta.FALHOU,
+        return new Alerta(id, inscritoId, eventoId, destino, SituacaoAlerta.FALHOU,
                 causa, tentativas + 1, criadoEm, quando);
     }
 

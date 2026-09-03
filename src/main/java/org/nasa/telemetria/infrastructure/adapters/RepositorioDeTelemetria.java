@@ -5,13 +5,13 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.nasa.core.telemetria.Telemetria;
 import org.nasa.persistencia.infrastructure.adapters.Conexoes;
+import org.nasa.persistencia.infrastructure.adapters.InstanteEmTexto;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Instant;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -66,32 +66,36 @@ public class RepositorioDeTelemetria {
                 INSERT INTO telemetria_operacao
                        (operacao, hora, chamadas, recusas, falhas,
                         duracao_soma_ms, duracao_min_ms, duracao_max_ms, atualizado_em)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, now())
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT (operacao, hora) DO UPDATE SET
-                    chamadas        = telemetria_operacao.chamadas + EXCLUDED.chamadas,
-                    recusas         = telemetria_operacao.recusas  + EXCLUDED.recusas,
-                    falhas          = telemetria_operacao.falhas   + EXCLUDED.falhas,
+                    chamadas        = telemetria_operacao.chamadas + excluded.chamadas,
+                    recusas         = telemetria_operacao.recusas  + excluded.recusas,
+                    falhas          = telemetria_operacao.falhas   + excluded.falhas,
                     duracao_soma_ms = telemetria_operacao.duracao_soma_ms
-                                      + EXCLUDED.duracao_soma_ms,
-                    duracao_min_ms  = LEAST(
-                        COALESCE(telemetria_operacao.duracao_min_ms, EXCLUDED.duracao_min_ms),
-                        EXCLUDED.duracao_min_ms),
-                    duracao_max_ms  = GREATEST(
+                                      + excluded.duracao_soma_ms,
+                    duracao_min_ms  = MIN(
+                        COALESCE(telemetria_operacao.duracao_min_ms, excluded.duracao_min_ms),
+                        excluded.duracao_min_ms),
+                    duracao_max_ms  = MAX(
                         COALESCE(telemetria_operacao.duracao_max_ms, 0),
-                        EXCLUDED.duracao_max_ms),
-                    atualizado_em   = now()""";
+                        excluded.duracao_max_ms),
+                    atualizado_em   = excluded.atualizado_em""";
 
         try (Connection c = Conexoes.abrir(dataSource, "telemetria_operacao");
              PreparedStatement ps = c.prepareStatement(sql)) {
             for (var m : medidas) {
                 ps.setString(1, m.operacao());
-                ps.setObject(2, m.hora().atOffset(ZoneOffset.UTC));
+                ps.setString(2, InstanteEmTexto.de(m.hora()));
                 ps.setLong(3, m.chamadas());
                 ps.setLong(4, m.recusas());
                 ps.setLong(5, m.falhas());
                 ps.setLong(6, m.duracaoSomaMs());
                 ps.setLong(7, m.duracaoMinMs());
                 ps.setLong(8, m.duracaoMaxMs());
+                // `now()` do banco NAO serve: ele nao produz o `Z` que o CHECK exige, e a
+                // catraca de UTC proibe ler relogio fora do `Relogio` injetado. O instante
+                // vem da propria medida, que ja e UTC por construcao.
+                ps.setString(9, InstanteEmTexto.de(m.hora()));
                 ps.addBatch();
             }
             int[] r = ps.executeBatch();
@@ -124,7 +128,7 @@ public class RepositorioDeTelemetria {
         List<ResumoDaOperacao> resumos = new ArrayList<>();
         try (Connection c = Conexoes.abrir(dataSource, "telemetria_operacao");
              PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setObject(1, desde.atOffset(ZoneOffset.UTC));
+            ps.setString(1, InstanteEmTexto.de(desde));
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     long chamadas = rs.getLong("chamadas");
@@ -136,7 +140,7 @@ public class RepositorioDeTelemetria {
                             chamadas == 0 ? 0 : rs.getLong("soma") / chamadas,
                             rs.getLong("minimo"),
                             rs.getLong("maximo"),
-                            rs.getObject("ultima", java.time.OffsetDateTime.class).toInstant()));
+                            InstanteEmTexto.para(rs.getString("ultima"))));
                 }
             }
             return resumos;
@@ -193,7 +197,7 @@ public class RepositorioDeTelemetria {
         List<PontoPorHora> serie = new ArrayList<>();
         try (Connection c = Conexoes.abrir(dataSource, "telemetria_operacao");
              PreparedStatement ps = c.prepareStatement(sql)) {
-            ps.setObject(1, desde.atOffset(ZoneOffset.UTC));
+            ps.setString(1, InstanteEmTexto.de(desde));
             if (!filtro.isEmpty()) {
                 ps.setString(2, operacao);
             }
@@ -201,7 +205,7 @@ public class RepositorioDeTelemetria {
                 while (rs.next()) {
                     long chamadas = rs.getLong("chamadas");
                     serie.add(new PontoPorHora(
-                            rs.getObject("hora", java.time.OffsetDateTime.class).toInstant(),
+                            InstanteEmTexto.para(rs.getString("hora")),
                             chamadas,
                             rs.getLong("problemas"),
                             chamadas == 0 ? 0 : rs.getLong("soma") / chamadas));

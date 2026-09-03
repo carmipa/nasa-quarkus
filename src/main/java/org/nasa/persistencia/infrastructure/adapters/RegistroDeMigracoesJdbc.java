@@ -2,6 +2,8 @@ package org.nasa.persistencia.infrastructure.adapters;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import org.jboss.logging.Logger;
+import org.nasa.core.log.Registro;
 import org.nasa.core.tempo.Relogio;
 import org.nasa.persistencia.domain.Migracao;
 import org.nasa.persistencia.domain.exceptions.MigracaoFalhouException;
@@ -45,6 +47,8 @@ import java.util.Map;
  */
 @ApplicationScoped
 public class RegistroDeMigracoesJdbc implements RegistroDeMigracoesPort {
+
+    private static final Logger LOG = Logger.getLogger(RegistroDeMigracoesJdbc.class);
 
     /** Nome fixo e sem prefixo de fatia: o controle é do esquema inteiro. */
     static final String TABELA = "esquema_migracao";
@@ -93,16 +97,37 @@ public class RegistroDeMigracoesJdbc implements RegistroDeMigracoesPort {
             boolean autocommitOriginal = c.getAutoCommit();
             c.setAutoCommit(false);
             try {
-                // O script inteiro numa chamada só. A versão do SQLite dividia o
-                // arquivo em `;` porque ele executa uma instrução por vez — e essa
-                // divisão é uma bomba-relógio: o primeiro `;` dentro de uma string
-                // literal ou de um corpo de função parte o comando ao meio e produz
-                // erro de sintaxe em SQL que está correto. O PostgreSQL aceita o
-                // script completo, então o problema deixa de existir em vez de ficar
-                // esperando a migração que o acione.
-                try (Statement st = c.createStatement()) {
-                    st.execute(migracao.sql());
+                // UM COMANDO POR CHAMADA, e isto NAO e preferencia de estilo.
+                //
+                // MEDIDO em 03/09/2026: o driver do SQLite executa o PRIMEIRO comando de
+                // um script e ignora o resto — sem erro. A migracao registrou "aplicada"
+                // tendo criado 1 de 9 objetos, e o sistema so falhou depois, na primeira
+                // consulta, com "no such table".
+                //
+                // O PIOR e que a migracao ficou marcada como aplicada: o segundo arranque
+                // nao a repetiria, o banco ficaria permanentemente pela metade, e o log
+                // dizendo "aplicadas=1" afirmava que estava tudo certo.
+                //
+                // O comentario anterior avisava que dividir por `;` e bomba-relogio, e ele
+                // estava certo — por isso a divisao nao e um `split(";")`, e sim
+                // `ComandosDoScript`, que sabe quando o `;` esta dentro de literal, de
+                // identificador entre aspas ou de comentario.
+                //
+                // A CONTAGEM E VERIFICADA: zero comando num arquivo de migracao e defeito,
+                // nao migracao vazia. Sem esta guarda, um erro no divisor voltaria a
+                // marcar como aplicada uma migracao que nao criou nada.
+                var comandos = ComandosDoScript.de(migracao.sql());
+                if (comandos.isEmpty()) {
+                    throw new MigracaoFalhouException(
+                            migracao.identificacao() + " — nenhum comando SQL no arquivo", null);
                 }
+                try (Statement st = c.createStatement()) {
+                    for (String comando : comandos) {
+                        st.execute(comando);
+                    }
+                }
+                LOG.debug(Registro.de("migrar-banco", migracao.identificacao(),
+                        comandos.size() + " comando(s) executado(s)"));
 
                 String registro = "INSERT INTO " + TABELA
                         + " (versao, nome, checksum, aplicada_em) VALUES (?, ?, ?, ?)";

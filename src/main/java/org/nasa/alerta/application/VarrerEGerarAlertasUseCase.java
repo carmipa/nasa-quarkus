@@ -106,10 +106,10 @@ public class VarrerEGerarAlertasUseCase {
         List<DestinatarioProximo> dentro = new ArrayList<>();
         for (var c : candidatos) {
             double distancia = Geodesia.distanciaEmKm(
-                    new Coordenada(c.latitudeEndereco(), c.longitudeEndereco()),
+                    new Coordenada(c.latitudeInscrito(), c.longitudeInscrito()),
                     new Coordenada(c.latitudeEvento(), c.longitudeEvento()));
             if (distancia <= raioKm) {
-                dentro.add(new DestinatarioProximo(c.clienteId(), c.nomeCliente(),
+                dentro.add(new DestinatarioProximo(c.inscritoId(), c.nomeInscrito(),
                         c.destino(), c.eventoId(), c.eventoTitulo(), distancia));
             }
         }
@@ -120,12 +120,12 @@ public class VarrerEGerarAlertasUseCase {
         int jaExistiam = 0;
         for (DestinatarioProximo d : dentro) {
             boolean registrou = repositorio.registrarSeNovo(
-                    Alerta.pendente(d.clienteId(), d.eventoId(), d.destino()));
+                    Alerta.pendente(d.inscritoId(), d.eventoId(), d.destino()));
             if (registrou) {
                 novos++;
-                LOG.info(Registro.de(OPERACAO, "cliente=" + d.clienteId(),
+                LOG.info(Registro.de(OPERACAO, "cliente=" + d.inscritoId(),
                         String.format("ALERTA REGISTRADO: %s a %.1f km de \"%s\"",
-                                d.nomeCliente(), d.distanciaKm(), d.eventoTitulo())));
+                                d.nomeInscrito(), d.distanciaKm(), d.eventoTitulo())));
             } else {
                 jaExistiam++;
             }

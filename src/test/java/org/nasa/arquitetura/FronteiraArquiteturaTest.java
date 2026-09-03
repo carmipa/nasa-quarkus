@@ -69,7 +69,7 @@ class FronteiraArquiteturaTest {
     private static final Set<String> PEERS = Set.of("geo", "persistencia", "telemetria");
 
     /** Fatias: recorte vertical de um caso de uso. Não conhecem outra fatia. */
-    private static final Set<String> FATIAS = Set.of("endereco", "painel", "cliente", "contato", "evento", "alerta");
+    private static final Set<String> FATIAS = Set.of("inscrito", "painel", "evento", "alerta");
 
     /**
      * Piso de classes analisadas.

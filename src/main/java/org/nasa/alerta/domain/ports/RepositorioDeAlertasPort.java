@@ -55,7 +55,7 @@ public interface RepositorioDeAlertasPort {
 
     List<Alerta> porSituacao(SituacaoAlerta situacao, int pagina, int tamanho);
 
-    List<Alerta> doCliente(long clienteId, int pagina, int tamanho);
+    List<Alerta> doInscrito(long inscritoId, int pagina, int tamanho);
 
     List<ContagemPorSituacao> contarPorSituacao();
 
@@ -83,9 +83,9 @@ public interface RepositorioDeAlertasPort {
      * é o caso de uso, com a mesma geodésia que o resto do sistema usa. Um segundo
      * cálculo, em SQL, seria um segundo lugar para divergir.</p>
      */
-    record Candidato(long clienteId, String nomeCliente, String destino,
+    record Candidato(long inscritoId, String nomeInscrito, String destino,
                      long eventoId, String eventoTitulo,
-                     double latitudeEndereco, double longitudeEndereco,
+                     double latitudeInscrito, double longitudeInscrito,
                      double latitudeEvento, double longitudeEvento) {
     }
 }
