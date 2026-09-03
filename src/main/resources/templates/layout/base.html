@@ -26,6 +26,67 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{#insert titulo}NASA — Alerta de Desastres Naturais{/}</title>
+
+  <!--
+    ÍCONES DO NAVEGADOR.
+
+    O arquivo original era um `.svg` de 746 KB — e não era vetor: um JPEG de
+    1264x1264 embutido em base64, mais 22 KB de metadados C2PA. Como favicon
+    ele baixava em TODA página, pesando mais que o site inteiro.
+
+    Extraído e redimensionado para os tamanhos que o navegador de fato pede:
+    32px para a barra de endereços (2,5 KB), 180px para o atalho do iOS, 192 e
+    512 para o manifesto. Cada um no tamanho em que é usado — mandar 512 para
+    desenhar 32 é baixar 60 vezes mais do que se vê.
+
+    O `.ico` continua porque navegador antigo e o Windows o procuram em
+    `/favicon.ico` mesmo sem `<link>`, e uma requisição que dá 404 em toda
+    visita polui o log de erro e esconde o erro de verdade.
+  -->
+  <link rel="icon" type="image/png" sizes="32x32"
+        href="/estatico/img/icone/favicon-32.png?v={versaoAssets}">
+  <link rel="icon" type="image/png" sizes="192x192"
+        href="/estatico/img/icone/favicon-192.png?v={versaoAssets}">
+  <link rel="apple-touch-icon" sizes="180x180"
+        href="/estatico/img/icone/apple-touch-icon.png?v={versaoAssets}">
+  <link rel="manifest" href="/manifesto.webmanifest">
+  <meta name="theme-color" content="#0d1117">
+
+  <!--
+    A PRÉVIA DO LINK — o que aparece quando alguém cola o endereço no WhatsApp,
+    no LinkedIn ou no Slack.
+
+    Sem estas linhas o link vira uma caixa cinza com a URL crua, e num projeto
+    que é vitrine isso é o primeiro contato de quem recebe. Com elas, aparece o
+    banner, o título e a descrição.
+
+    `og:` é o Open Graph, que WhatsApp, LinkedIn, Facebook, Discord e Slack
+    leem. `twitter:` é o que o X exige — ele ignora parte do og. As duas
+    famílias juntas cobrem essencialmente tudo, e repetir o conteúdo é o preço.
+
+    A URL da imagem precisa ser ABSOLUTA: quem monta a prévia não é o navegador
+    de quem clicou, é um robô que não tem a página como base para resolver
+    caminho relativo. Por isso ela vem de configuração, e não do endereço da
+    requisição — que um proxy mal configurado reescreve.
+  -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Alerta de Desastres Naturais">
+  <meta property="og:title" content="{#insert titulo}NASA — Alerta de Desastres Naturais{/}">
+  <meta property="og:description" content="Veja se há desastre natural perto de você. Dados da NASA EONET, em tempo real. Informe o CEP e receba o alerta na tela — nada é guardado.">
+  <meta property="og:image" content="{enderecoPublico}/estatico/img/banner/banner.jpg">
+  <meta property="og:image:width" content="1600">
+  <meta property="og:image:height" content="900">
+  <meta property="og:url" content="{enderecoPublico}">
+  <meta property="og:locale" content="pt_BR">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{#insert titulo}NASA — Alerta de Desastres Naturais{/}">
+  <meta name="twitter:description" content="Veja se há desastre natural perto de você. Dados da NASA EONET, em tempo real.">
+  <meta name="twitter:image" content="{enderecoPublico}/estatico/img/banner/banner.jpg">
+
+  <meta name="description" content="Alerta de desastres naturais com dados da NASA EONET. Informe o CEP e veja na hora se há evento perto de você — sem cadastro e sem guardar dados.">
+  <meta name="author" content="Paulo André Carminati">
+
   <link rel="stylesheet" href="/estatico/css/base.css?v={versaoAssets}">
   <!--
     CSS DA PÁGINA, sempre DEPOIS do base.css. A ordem é a cascata: o base define a

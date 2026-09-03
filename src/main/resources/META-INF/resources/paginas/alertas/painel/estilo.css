@@ -1,123 +1,153 @@
 /*
- * ESTILO DO PAINEL DE ALERTAS — e só dele.
+ * A TELA DE ALERTA — e só dela.
+ *
+ * O ENVELOPE parece um e-mail de propósito. É o que a pessoa receberia, e
+ * mostrá-lo como lista de resultados perderia a coisa mais importante da tela:
+ * ela vê ANTES o que chegaria depois.
+ *
+ * INVARIANTES herdadas do base.css: largura em `%`, `width:100%`, grid com
+ * `auto-fit`. `px` só em borda fina, sombra e breakpoint de `@media`.
  */
 
-.alertas-topo {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 1rem;
-  width: 100%;
-  margin-bottom: 1.2rem;
-}
-.alertas-topo .secao-titulo { margin: 0; }
-
-.resumo-situacoes {
+.alerta-formulario {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 1.2rem;
   width: 100%;
-}
-
-.situacao-cartao {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.2rem;
-  padding: 1.1rem 1rem;
+  margin: 1.2rem 0 1.5rem;
+  padding: 1.4rem 1.5%;
   border: 1px solid var(--cor-borda);
-  border-top: 3px solid var(--cor-borda);
   border-radius: 0.5rem;
   background: var(--cor-superficie);
 }
 
-.situacao-numero { font-size: 2rem; font-weight: 800; line-height: 1; }
-.situacao-nome {
+/* As ações ocupam a linha inteira: um botão no meio de uma grade de campos se
+   lê como mais um campo. */
+.alerta-acoes { grid-column: 1 / -1; display: flex; gap: 0.7rem; flex-wrap: wrap; }
+
+.alerta-onde { color: var(--cor-texto-fraco); font-size: 0.9rem; }
+
+/* ---------------------------------------------------------------- envelope */
+
+.alerta-envelope {
+  width: 100%;
+  margin: 1rem 0;
+  border: 1px solid var(--cor-borda);
+  border-radius: 0.6rem;
+  background: var(--cor-superficie);
+  overflow: hidden;
+}
+
+.alerta-cabecalho {
+  padding: 1rem 1.5%;
+  border-bottom: 1px solid var(--cor-borda);
+  background: var(--cor-fundo);
+}
+
+.alerta-linha {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: baseline;
+  margin-bottom: 0.3rem;
+}
+.alerta-linha:last-child { margin-bottom: 0; }
+
+.alerta-rotulo {
+  min-width: 4.5rem;
   color: var(--cor-texto-fraco);
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
+.alerta-valor { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.9rem; }
+.alerta-assunto { font-weight: 700; font-size: 1.02rem; overflow-wrap: anywhere; }
 
-.situacao-pendente { border-top-color: var(--cor-alerta); }
-.situacao-pendente .situacao-numero { color: var(--cor-alerta); }
-.situacao-enviado { border-top-color: var(--cor-destaque); }
-.situacao-enviado .situacao-numero { color: var(--cor-destaque); }
-.situacao-falhou { border-top-color: #f87171; }
-.situacao-falhou .situacao-numero { color: #fca5a5; }
+.alerta-corpo { padding: 1.2rem 1.5%; }
+.alerta-corpo p { margin: 0 0 0.8rem; line-height: 1.65; }
+.alerta-saudacao { color: var(--cor-texto-fraco); }
 
-.vazio-inline { color: var(--cor-texto-fraco); }
-
-/* ---------------------------------------------------------------- alertas */
-
-.alertas { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.65rem; width: 100%; }
-
-.alerta {
-  width: 100%;
-  padding: 0.9rem 1.1rem;
-  border: 1px solid var(--cor-borda);
-  border-left: 4px solid var(--cor-borda);
-  border-radius: 0.5rem;
-  background: var(--cor-superficie);
-}
-.alerta-pendente { border-left-color: var(--cor-alerta); }
-.alerta-enviado { border-left-color: var(--cor-destaque); }
-.alerta-falhou { border-left-color: #f87171; }
-
-.alerta-cabecalho {
+/*
+ * ZERO DESASTRE fica VERDE e com ícone de acerto — não cinza de "vazio".
+ * É a melhor resposta possível, e desenhá-la como ausência faria parecer que
+ * a consulta falhou.
+ */
+.alerta-nenhum {
   display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.6rem;
-  margin-bottom: 0.5rem;
-}
-
-.alerta-situacao {
-  padding: 0.12rem 0.55rem;
-  border: 1px solid currentColor;
-  border-radius: 999px;
-  font-size: 0.68rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-.alerta-pendente .alerta-situacao { color: var(--cor-alerta); }
-.alerta-enviado .alerta-situacao { color: var(--cor-destaque); }
-.alerta-falhou .alerta-situacao { color: #fca5a5; }
-
-/* A ressalva anda COLADA no "Enviado", nunca num rodapé: é ali que a leitura
-   errada acontece, e é ali que ela precisa ser desfeita. */
-.alerta-ressalva {
-  padding: 0.12rem 0.5rem;
-  border-radius: 0.3rem;
-  background: rgba(255, 159, 67, .15);
-  color: var(--cor-alerta);
-  font-size: 0.72rem;
+  align-items: flex-start;
+  gap: 0.6em;
+  margin-top: 1rem;
+  padding: 0.9rem 1.2%;
+  border: 1px solid #4ade80;
+  border-radius: 0.5rem;
+  background: rgba(74, 222, 128, .08);
+  color: #4ade80;
   font-weight: 600;
 }
 
-.alerta-tentativas { color: var(--cor-texto-fraco); font-size: 0.78rem; margin-left: auto; }
+/* ------------------------------------------------------------------- lista */
 
-.alerta-campos {
+.alerta-lista {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
-  gap: 0.4rem 1.5rem;
-  margin: 0;
+  gap: 0.6rem;
+  width: 100%;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
 }
-.alerta-campos dt {
-  color: var(--cor-texto-fraco);
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-.alerta-campos dd { margin: 0; font-size: 0.9rem; overflow-wrap: anywhere; }
-.alerta-campos a { color: var(--cor-destaque); text-decoration: none; }
-.alerta-campos a:hover { text-decoration: underline; }
 
-.alerta-causa {
-  margin: 0.6rem 0 0;
-  padding: 0.45rem 0.7rem;
-  border-left: 3px solid #f87171;
-  background: rgba(248, 113, 113, .08);
-  font-size: 0.85rem;
+.alerta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--cor-borda);
+  /* A borda esquerda na cor do TIPO: reconhecível no canto do olho, sem ler. */
+  border-left: 4px solid var(--cor-tipo, var(--cor-borda));
+  border-radius: 0.4rem;
+  background: var(--cor-fundo);
 }
+
+.alerta-item-topo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+/* A DISTÂNCIA vem primeiro e em destaque: é o que decide se a pessoa deve se
+   importar, e ela precisa ler isso antes do nome do evento. */
+.alerta-distancia {
+  font-size: 1.1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.alerta-tipo { font-size: 0.82rem; font-weight: 600; }
+
+.alerta-selo {
+  padding: 0.1rem 0.5rem;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+.alerta-selo-ativo { color: var(--cor-alerta); }
+.alerta-selo-encerrado { color: var(--cor-texto-fraco); }
+
+.alerta-titulo { font-weight: 600; overflow-wrap: anywhere; }
+.alerta-quando { color: var(--cor-texto-fraco); font-size: 0.78rem; }
+
+/* ------------------------------------------------------------------ rodapé */
+
+/* A promessa de não guardar nada fica no RODAPÉ DO ENVELOPE, não numa nota de
+   página: ela é parte da mensagem, e quem lê o alerta precisa vê-la junto. */
+.alerta-rodape {
+  padding: 0.8rem 1.5%;
+  border-top: 1px solid var(--cor-borda);
+  background: var(--cor-fundo);
+  color: var(--cor-texto-fraco);
+  font-size: 0.82rem;
+}
+
+.alerta-atalhos { margin-top: 1.2rem; }

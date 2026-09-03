@@ -1,5 +1,5 @@
 {#include layout/base}
-{#titulo}Alertas — auditoria{/titulo}
+{#titulo}Alerta de desastres perto de você{/titulo}
 
 {#estilos}
 <link rel="stylesheet" href="/paginas/alertas/painel/estilo.css?v={versaoAssets}">
@@ -7,100 +7,195 @@
 
 {#corpo}
 <!--
-  PAINEL DE ALERTAS.
+  O ALERTA, MOSTRADO NA HORA — e nada é gravado.
 
-  A RESSALVA DO MEIO DE ENTREGA FICA NO TOPO, e nao num rodape. Enquanto nao
-  houver servidor de e-mail, "ENVIADO" nesta tela significa REGISTRADO, e
-  ninguem recebeu nada. A unica coisa pior que nao ter alerta e acreditar que
-  se tem — e a descoberta viria no dia do desastre.
+  A versão anterior cadastrava inscritos: nome, e-mail, telefone e CEP numa
+  tabela. Isso criava três problemas que somem quando não se guarda nada:
+  uma lista de e-mails é uma lista de e-mails (ela vaza, é pedida, é alvo);
+  dado pessoal traz obrigação que este projeto não tem estrutura para cumprir;
+  e um formulário público que escreve no banco é abusado.
+
+  O ganho que não era o objetivo: os datasets exportados deste sistema nascem
+  SANITIZADOS, porque não existe dado pessoal para sanitizar.
+
+  O e-mail informado aparece na saudação e em lugar nenhum mais — nem em log,
+  nem no corpo da mensagem, nem em disco. Ele some no fim da requisição.
 -->
 <section class="secao">
-  <div class="alertas-topo">
-    <h1 class="secao-titulo com-icone">{#icone 'alertas' /}Alertas</h1>
-    <div class="desastres-atalhos">
-      <a class="botao botao-discreto com-icone" href="/desastres/historico" data-dica="O arquivo completo da NASA, ano a ano desde 2015 — 21 mil eventos que a janela de dias nao alcanca">{#icone 'historico' /}Histórico</a>
-      <a class="botao botao-discreto com-icone" href="/desastres">{#icone 'desastres' /}Desastres</a>
-      <a class="botao botao-discreto com-icone" href="/desastres/mapa">{#icone 'mapa' /}Mapa</a>
-    </div>
+  <div class="linha-topo">
+    <h1 class="secao-titulo com-icone">{#icone 'alertas' /}Tem desastre perto de você?</h1>
   </div>
 
-  {#if !meio.entregaDeVerdade}
-  <div class="aviso aviso-erro" role="alert">
-    <strong>Os alertas NÃO estão sendo entregues.</strong>
-    {meio.ressalva}
-    <p class="aviso-nota">
-      Meio em uso: <span translate="no">{meio.descricao}</span>.
-      Nesta tela, <strong>ENVIADO</strong> significa <em>registrado no log</em>.
-    </p>
+  <p class="secao-texto">
+    Informe seu e-mail e o CEP de onde você está. O sistema consulta o que a NASA
+    publicou e monta, <strong>na hora</strong>, o alerta que você receberia —
+    <span class="dica" tabindex="0"
+          data-dica="Nada é gravado: nem o e-mail, nem o CEP, nem a consulta. Sem banco de e-mails não há lista para vazar. Esta tela lê a base de eventos e monta a mensagem em memória.">sem
+    guardar nada</span>.
+  </p>
+
+  <form class="alerta-formulario" method="post" action="/alertas">
+    <div class="campo">
+      <label class="formulario-rotulo dica" for="email"
+             data-dica="Serve só para a saudação da mensagem, para você ver como ela chegaria. Ele não é gravado em lugar nenhum e some quando a página termina de carregar.">Seu e-mail</label>
+      <input class="campo-formulario" id="email" name="email" type="email"
+             required maxlength="254" autocomplete="email"
+             value="{#if email}{email}{/if}">
+      <span class="formulario-dica">Não é guardado. Serve para você ver a mensagem endereçada.</span>
+    </div>
+
+    <div class="campo">
+      <label class="formulario-rotulo dica" for="cep"
+             data-dica="É o CEP que vira a coordenada usada para medir a distância até cada desastre. Digite só os oito dígitos.">CEP</label>
+      <input class="campo-formulario" id="cep" name="cep" type="text"
+             required inputmode="numeric" maxlength="9" placeholder="00000000"
+             autocomplete="postal-code"
+             value="{#if cepDigitado}{cepDigitado}{/if}">
+    </div>
+
+    <div class="campo">
+      <label class="formulario-rotulo dica" for="raioKm"
+             data-dica="A que distância olhar. 100 km é a distância em que um desastre natural ainda é assunto de quem mora ali: fumaça de incêndio viaja mais que isso, e uma tempestade a 100 km chega em horas.">Raio (km)</label>
+      <input class="campo-formulario" id="raioKm" name="raioKm" type="number"
+             value="{raioPadrao}" min="1" max="20000" step="1">
+    </div>
+
+    <div class="campo">
+      <label class="formulario-rotulo dica" for="dias"
+             data-dica="Quantos dias para trás olhar. Um desastre de dois anos atrás não é alerta, é história — e encheria a mensagem escondendo o que importa.">Janela (dias)</label>
+      <input class="campo-formulario" id="dias" name="dias" type="number"
+             value="{diasPadrao}" min="1" max="365" step="1">
+    </div>
+
+    <div class="alerta-acoes">
+      <button class="botao botao-principal com-icone" type="submit">
+        {#icone 'buscar' /}Ver meu alerta
+      </button>
+    </div>
+  </form>
+
+  {#if erro}
+  <div class="aviso aviso-erro com-icone" role="status">
+    {#icone 'erro' /}
+    <div>
+      <strong>Não deu para montar o alerta.</strong> {erro}
+      {#if corrigirCep}
+      <!--
+        DUAS MENSAGENS DIFERENTES, e a distinção é o ponto. "CEP não existe"
+        pede corrigir; "CEP existe sem posição" não pede nada de quem
+        consultou — mandá-lo conferir seria pedir que corrija o que está certo.
+      -->
+      <p class="aviso-nota">Confira os oito dígitos e tente de novo.</p>
+      {#else}
+      <p class="aviso-nota">
+        Não é nada que você tenha feito errado. Tente de novo em alguns minutos.
+      </p>
+      {/if}
+    </div>
   </div>
   {/if}
 
-  <div class="resumo-situacoes">
-    {#for c in contagens}
-    <div class="situacao-cartao situacao-{c.situacao.toLowerCase}">
-      <span class="situacao-numero" translate="no">{c.quantos}</span>
-      <span class="situacao-nome" translate="no">{c.situacao}</span>
-    </div>
-    {/for}
-    {#if contagens.isEmpty()}
-    <p class="vazio-inline">Nenhum alerta registrado ainda.</p>
-    {/if}
-  </div>
-</section>
+  {#if mensagem}
+  <!-- ================================================= o e-mail montado -->
+  <h2 class="secao-titulo com-icone">{#icone 'envelope' /}O e-mail que você receberia</h2>
 
-<section class="secao">
-  <h2 class="secao-titulo">Operações</h2>
-  <p class="secao-texto">
-    <strong>Varrer</strong> cruza os eventos ativos com os endereços cadastrados e
-    <strong>registra</strong> os avisos — sem enviar. <strong>Despachar</strong> envia o que
-    está na fila. As duas são seguras de repetir: a chave
-    <span translate="no">(cliente, evento)</span> do banco impede que uma tempestade de
-    cinco dias vire cinco mensagens para a mesma pessoa.
+  <p class="secao-texto alerta-onde">
+    Medido a partir de <strong translate="no">{mensagem.ondeVoceEsta.descricao}</strong>
+    (CEP <span translate="no">{mensagem.ondeVoceEsta.cep}</span>,
+    <span translate="no">{mensagem.ondeVoceEsta.coordenada.latitude},
+    {mensagem.ondeVoceEsta.coordenada.longitude}</span>) —
+    <span class="dica" tabindex="0"
+          data-dica="Confira se o sistema entendeu o lugar certo antes de confiar no resultado. Se a cidade estiver errada, o CEP está errado.">confira
+    se é aqui mesmo</span>.
   </p>
 
-  <form class="filtros" hx-post="/alertas/varrer" hx-target="#resultado-operacao"
-        hx-indicator="#operando">
-    <div class="filtro">
-      <label class="formulario-rotulo dica" for="raioKm" data-dica="Distância máxima entre o endereço da pessoa e o desastre para que ela seja alertada. A conta é geodésica, sobre a curvatura da Terra — não é uma caixa no mapa.">Raio do alerta (km)</label>
-      <input class="campo-formulario" id="raioKm" name="raioKm" type="number"
-             step="any" value="100" min="0.1" max="20000">
-    </div>
-    <div class="filtro">
-      <label class="formulario-rotulo dica" for="dias" data-dica="Só desastres ocorridos dentro desta janela geram alerta. Evita avisar hoje sobre um evento de meses atrás.">Janela (dias)</label>
-      <input class="campo-formulario" id="dias" name="dias" type="number"
-             value="30" min="1" max="365">
-    </div>
-    <div class="filtros-acoes">
-      <button class="botao botao-principal com-icone" type="submit">{#icone 'buscar' /}Varrer e registrar</button>
-      <button class="botao" type="button"
-              hx-post="/alertas/despachar?limite=50"
-              hx-target="#resultado-operacao"
-              hx-indicator="#operando">Despachar a fila</button>
-      <span class="htmx-indicator carregando" id="operando" translate="no">processando…</span>
-    </div>
-  </form>
+  <!--
+    O ENVELOPE. Ele parece um e-mail de propósito: é o que a pessoa receberia,
+    e mostrá-lo como uma lista de resultados perderia a coisa mais importante
+    da tela — que ela vê ANTES o que chegaria depois.
+  -->
+  <article class="alerta-envelope">
+    <header class="alerta-cabecalho">
+      <div class="alerta-linha">
+        <span class="alerta-rotulo">Para</span>
+        <span class="alerta-valor" translate="no">{email}</span>
+      </div>
+      <div class="alerta-linha">
+        <span class="alerta-rotulo">Assunto</span>
+        <span class="alerta-assunto">{mensagem.assunto}</span>
+      </div>
+    </header>
 
-  <div id="resultado-operacao"></div>
-</section>
+    <div class="alerta-corpo">
+      <p class="alerta-saudacao">{mensagem.saudacao}</p>
+      {#for p in mensagem.corpo}
+      <p>{p}</p>
+      {/for}
 
-<section class="secao">
-  <h2 class="secao-titulo">Avisos registrados</h2>
-  <form class="filtros" hx-get="/alertas/fragmento/lista" hx-target="#lista-alertas"
-        hx-trigger="change from:#situacao">
-    <div class="filtro">
-      <label class="formulario-rotulo dica" for="situacao" data-dica="PENDENTE ainda não saiu; ENVIADO já foi entregue; FALHOU tentou e não conseguiu — e continua na fila para nova tentativa.">Situação</label>
-      <select class="campo-formulario" id="situacao" name="situacao">
-        <option value="">Todas</option>
-        <option value="PENDENTE">Pendentes</option>
-        <option value="ENVIADO">Enviados</option>
-        <option value="FALHOU">Falhos</option>
-      </select>
+      {#if mensagem.semDesastres}
+      <!--
+        ZERO É RESULTADO, e a tela diz isso com todas as letras. Uma lista
+        vazia sem explicação parece falha de carregamento — e neste sistema a
+        diferença entre "não há desastre" e "não consegui verificar" é tudo.
+      -->
+      <div class="alerta-nenhum com-icone">
+        {#icone 'ok' /}
+        <span>Nenhum desastre no raio consultado. Esta é a melhor resposta possível.</span>
+      </div>
+      {#else}
+      <ul class="alerta-lista">
+        {#for d in mensagem.desastres}
+        <li class="alerta-item realce"
+            style="--cor-tipo: {cdi:categorias.cor(d.categoria)}">
+          <div class="alerta-item-topo">
+            <span class="alerta-distancia" translate="no">{d.distanciaArredondadaKm} km</span>
+            <span class="alerta-tipo com-icone"
+                  style="color: {cdi:categorias.cor(d.categoria)}">
+              {#icone cdi:categorias.icone(d.categoria) /}
+              <span>{cdi:categorias.nome(d.categoria)}</span>
+            </span>
+            {#if d.ativo}
+            <span class="alerta-selo alerta-selo-ativo com-icone"
+                  data-dica="A NASA ainda não deu este evento por encerrado.">
+              {#icone 'atividade' /}em curso
+            </span>
+            {#else}
+            <span class="alerta-selo alerta-selo-encerrado com-icone"
+                  data-dica="A NASA já encerrou este evento. Ele aparece porque ocorreu dentro da janela consultada.">
+              {#icone 'ok' /}encerrado
+            </span>
+            {/if}
+          </div>
+          <span class="alerta-titulo">{d.titulo}</span>
+          <span class="alerta-quando" translate="no">{d.ocorridoEm} UTC</span>
+        </li>
+        {/for}
+      </ul>
+      {/if}
     </div>
-  </form>
 
-  <div id="lista-alertas" hx-get="/alertas/fragmento/lista" hx-trigger="load" hx-target="this">
-    <p class="vazio">Carregando…</p>
+    <footer class="alerta-rodape">
+      <span class="com-icone">
+        {#icone 'escudo' /}
+        <span>
+          Esta mensagem foi montada agora e <strong>não foi gravada</strong>.
+          Seu e-mail não está em banco nenhum.
+        </span>
+      </span>
+    </footer>
+  </article>
+
+  <div class="desastres-atalhos alerta-atalhos">
+    <a class="botao botao-discreto com-icone" href="/desastres/mapa"
+       data-dica="Os mesmos eventos, desenhados sobre o mapa-múndi">
+      {#icone 'mapa' /}Ver no mapa
+    </a>
+    <a class="botao botao-discreto com-icone" href="/desastres"
+       data-dica="A lista completa do que a NASA publicou, com filtro por tipo">
+      {#icone 'desastres' /}Todos os desastres
+    </a>
   </div>
+  {/if}
 </section>
 {/corpo}
 {/include}

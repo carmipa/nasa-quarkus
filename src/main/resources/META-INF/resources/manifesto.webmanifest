@@ -1,0 +1,26 @@
+{
+  "name": "Alerta de Desastres Naturais",
+  "short_name": "Alerta NASA",
+  "description": "Veja se há desastre natural perto de você, com dados da NASA EONET. Sem cadastro e sem guardar dados.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0d1117",
+  "theme_color": "#0d1117",
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/estatico/img/icone/favicon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/estatico/img/icone/icone-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

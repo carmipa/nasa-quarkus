@@ -1,0 +1,60 @@
+-- =============================================================================
+-- V002 — o sistema deixa de guardar gente
+--
+-- Saem `inscrito` e `alerta_enviado`. O que sobra: os eventos que a NASA
+-- publica, e o que o sistema mediu de si mesmo. Nenhum dado pessoal.
+--
+-- ─────────────────────────────────────────────────────────────────────────
+-- O QUE MUDOU NO PRODUTO
+--
+-- Antes: a pessoa se cadastrava, uma varredura periódica comparava a posição
+-- dela com a dos desastres, e os alertas iam para uma fila (padrão outbox)
+-- esperando envio.
+--
+-- Agora: a pessoa informa e-mail e CEP, e vê NA HORA a mensagem que receberia.
+-- Nada é gravado — nem o e-mail, nem a consulta, nem o alerta.
+--
+-- POR QUE, e são três razões que só somem juntas:
+--
+--   1. UMA LISTA DE E-MAILS É UMA LISTA DE E-MAILS. Ela vaza, é pedida por
+--      lei, é alvo. Não guardar é a única proteção que não pode falhar.
+--
+--   2. DADO PESSOAL TRAZ OBRIGAÇÃO — consentimento, retenção, exclusão a
+--      pedido. Obrigação que este projeto não tem estrutura para cumprir de
+--      verdade, e cumprir pela metade é pior que não coletar.
+--
+--   3. O CADASTRO ERA UM FORMULÁRIO PÚBLICO QUE ESCREVIA NO BANCO. Medido em
+--      03/09/2026: dez inscrições em segundos, sem nada barrando. A proteção
+--      contra isso (limite por origem) virou desnecessária — não há o que
+--      encher.
+--
+-- E um ganho que não era o objetivo: os datasets exportados deste sistema
+-- nascem SANITIZADOS, porque não existe dado pessoal para sanitizar.
+-- ─────────────────────────────────────────────────────────────────────────
+--
+-- POR QUE ISTO É UMA MIGRAÇÃO NOVA, E NÃO UMA V001 REESCRITA
+--
+-- A V001 foi aplicada. Migração aplicada é IMUTÁVEL — é regra dura deste
+-- projeto, e a única vez em que ela foi quebrada (a passagem de PostgreSQL
+-- para SQLite) teve motivo declarado: o motor mudou, e as migrações antigas
+-- não executavam no motor novo.
+--
+-- Aqui o motor é o mesmo. Só o modelo mudou. Então a mudança vira migração
+-- nova, como manda a regra.
+--
+-- ─────────────────────────────────────────────────────────────────────────
+-- O QUE SE PERDE, DECLARADO
+--
+-- O histórico de alertas enviados. Ele não tinha valor: nunca houve envio real
+-- — a fila era o padrão outbox montado e nunca despachado para fora.
+--
+-- E, com ele, sai o próprio padrão outbox do projeto. Era uma peça técnica
+-- boa, e a troca foi consciente: um padrão bem feito que não protege nada
+-- vale menos que a ausência do dado que ele protegeria.
+-- =============================================================================
+
+-- A ordem importa: `alerta_enviado` referencia `inscrito`, e derrubar o pai
+-- antes do filho falharia com as chaves estrangeiras ligadas — que é
+-- exatamente o que `foreign_keys=on` faz nesta conexão.
+DROP TABLE IF EXISTS alerta_enviado;
+DROP TABLE IF EXISTS inscrito;

@@ -64,6 +64,17 @@ public class MolduraDaPagina {
     Relogio relogio;
 
     /**
+     * O endereço público do sistema, sem barra no fim.
+     *
+     * <p>Em desenvolvimento é {@code http://localhost:8080}. Em produção vem do ambiente:
+     * o domínio definitivo ainda não existe, e chutá-lo faria toda prévia de link apontar
+     * para um lugar errado — o que é pior que não ter prévia.</p>
+     */
+    @org.eclipse.microprofile.config.inject.ConfigProperty(
+            name = "nasa.endereco-publico", defaultValue = "http://localhost:8080")
+    String enderecoPublico;
+
+    /**
      * Veste a página com a moldura comum.
      *
      * @param pagina      o template já com os dados próprios da tela
@@ -93,6 +104,18 @@ public class MolduraDaPagina {
                 .data("horaServidorUtc", FORMATO_UTC.format(agora))
                 .data("instanteIso", agora.toString())
                 .data("versaoAssets", VersaoDosAssets.ATUAL)
+                // O endereco PUBLICO, para as etiquetas de previa de link.
+                //
+                // Ele precisa ser ABSOLUTO: quem monta a previa do WhatsApp ou do
+                // LinkedIn e um robo, nao o navegador de quem clicou, e robo nao tem a
+                // pagina como base para resolver caminho relativo.
+                //
+                // E vem de CONFIGURACAO, nao do cabecalho `Host` da requisicao: aquele
+                // cabecalho e escrito pelo cliente, e um proxy mal configurado o reescreve.
+                // A previa apontaria para o dominio errado — e apontar imagem para dominio
+                // de terceiro numa etiqueta que vira cartao compartilhado e como isso vira
+                // problema de verdade.
+                .data("enderecoPublico", enderecoPublico)
                 .data("secaoAtiva", secaoAtiva)
                 // Fornecida SEMPRE, nos dois caminhos: o Qute e estrito, e chave ausente
                 // e 500 — nao campo vazio. Ja aconteceu tres vezes neste projeto.

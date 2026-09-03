@@ -6,13 +6,45 @@
 {/estilos}
 
 {#corpo}
-<section class="secao">
-  <h1 class="secao-titulo com-icone">{#icone 'globo' /}Alerta de desastres naturais</h1>
-  <p class="secao-texto">
-    O sistema acompanha eventos naturais publicados pela NASA e avisa quando um deles
-    acontece perto de um endereço cadastrado. Os eventos são consultados na
-    <span translate="no">EONET v3</span>, que é aberta e não exige chave de API.
-  </p>
+<!--
+  O BANNER.
+
+  `width` e `height` no HTML, e não só no CSS: sem eles o navegador não sabe a
+  proporção antes de baixar a imagem, e a página SALTA quando ela chega —
+  empurrando para baixo o que a pessoa estava lendo. É o defeito de layout mais
+  comum que existe, e o mais fácil de evitar.
+
+  `fetchpriority="high"` porque ele é o que aparece primeiro; sem isso o
+  navegador o trata como qualquer imagem e pode buscá-lo depois do que está
+  fora da tela.
+
+  NÃO tem `loading="lazy"`: adiar o carregamento do que já está visível atrasa
+  justamente a primeira coisa que se vê.
+
+  O arquivo original tinha 2,1 MB em PNG. PNG guarda foto sem compressão útil —
+  virou JPEG de 184 KB a 1600px, que é 91% menor e indistinguível na tela.
+-->
+<section class="secao inicio-capa">
+  <img class="inicio-banner"
+       src="/estatico/img/banner/banner.jpg?v={versaoAssets}"
+       width="1600" height="900" fetchpriority="high"
+       alt="Vista da Terra a partir do espaço, com o planeta parcialmente iluminado">
+
+  <div class="inicio-chamada">
+    <h1 class="secao-titulo com-icone">{#icone 'globo' /}Alerta de desastres naturais</h1>
+    <p class="secao-texto">
+      O sistema acompanha eventos naturais publicados pela NASA e mostra, na hora, se
+      algum deles aconteceu perto de você. Os eventos vêm da
+      <span translate="no">EONET v3</span>, que é aberta e não exige chave de API.
+    </p>
+    <p class="secao-texto inicio-promessa">
+      <strong>Sem cadastro e sem guardar nada.</strong> Você informa o CEP, vê o alerta,
+      e nada fica em banco nenhum.
+    </p>
+    <a class="botao botao-principal com-icone inicio-acao" href="/alertas">
+      {#icone 'alertas' /}Ver se tem desastre perto de mim
+    </a>
+  </div>
 </section>
 
 <section class="secao">

@@ -220,3 +220,64 @@
 @media (prefers-reduced-motion: reduce) {
   .noticias-carregando .icone { animation: none; }
 }
+
+/* ------------------------------------------------------------------ capa */
+
+/*
+ * A CAPA. O banner ocupa a largura toda e a chamada fica POR CIMA dele em tela
+ * larga, ao lado em tela estreita — nunca texto sobre imagem em telefone, onde
+ * a área útil é pequena e o contraste fica imprevisível.
+ */
+.inicio-capa {
+  position: relative;
+  width: 100%;
+  padding: 0;
+  border: 1px solid var(--cor-borda);
+  border-radius: 0.6rem;
+  overflow: hidden;
+}
+
+.inicio-banner {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* `aspect-ratio` casa com o `width`/`height` do HTML e reserva o espaço antes
+     de a imagem chegar: sem isso a página salta quando ela carrega. */
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
+.inicio-chamada {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 2rem 3% 1.6rem;
+  /*
+   * O DEGRADÊ existe para o texto ser legível sobre QUALQUER imagem. Uma cor
+   * sólida escolhida olhando esta foto quebraria no dia em que a foto mudasse —
+   * e o degradê funciona nos dois casos.
+   */
+  background: linear-gradient(to top,
+              rgba(13, 17, 23, .95) 0%,
+              rgba(13, 17, 23, .85) 45%,
+              rgba(13, 17, 23, 0) 100%);
+}
+
+.inicio-chamada .secao-titulo { font-size: 1.8rem; }
+.inicio-promessa { color: var(--cor-destaque); }
+.inicio-acao { margin-top: 0.8rem; }
+
+/*
+ * Em tela estreita o texto SAI de cima da imagem. Sobreposto, ele cobriria
+ * quase toda a foto e ainda ficaria apertado — os dois piores resultados ao
+ * mesmo tempo.
+ */
+@media (max-width: 720px) {
+  .inicio-chamada {
+    position: static;
+    background: var(--cor-superficie);
+    padding: 1.2rem 4%;
+  }
+  .inicio-chamada .secao-titulo { font-size: 1.35rem; }
+}

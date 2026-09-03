@@ -52,26 +52,6 @@ class TodasAsTelasRespondemTest {
     @jakarta.inject.Inject
     org.nasa.evento.application.ConsultarEventosUseCase consultarEventos;
 
-    /**
-     * O limitador por origem.
-     *
-     * <p><b>Declarado aqui de propósito, e não escondido.</b> Ele é estado global — é essa
-     * a função dele —, e por isso a suíte fica dependente de ORDEM: o teste do limitador
-     * esgota a cota, e este, rodando depois, tinha as inscrições barradas e reprovava por um
-     * motivo que não era defeito.</p>
-     *
-     * <p>Zerar no {@code @BeforeEach} torna a dependência <b>visível</b>. A alternativa —
-     * configurar um limite altíssimo só em teste — esconderia o acoplamento e faria a suíte
-     * medir uma configuração que ninguém roda.</p>
-     */
-    @jakarta.inject.Inject
-    org.nasa.core.web.LimiteDeTentativas limitador;
-
-    @org.junit.jupiter.api.BeforeEach
-    void zerarOLimitador() {
-        limitador.esquecerTudo();
-    }
-
     @jakarta.inject.Inject
     org.nasa.evento.domain.ports.RepositorioDeEventosPort repositorioDeEventos;
 
@@ -139,41 +119,6 @@ class TodasAsTelasRespondemTest {
     }
 
 
-    @Test
-    @DisplayName("a tela de INSCRICAO renderiza, e o e-mail repetido e RECUSA, nao erro")
-    void telaDeInscricao() {
-        deveResponder("/inscricao");
-        deveResponder("/inscricao?pagina=1");
-
-        // O CLIQUE DUPLO. E o erro de boa-fe mais comum que existe num formulario:
-        // clicar de novo porque a pagina demorou. A segunda inscricao com o mesmo e-mail
-        // tem de responder 200 com "voce ja esta inscrito" — nao 500, e nao uma segunda
-        // linha no banco que faria a pessoa receber cada alerta em dobro.
-        String email = "duplo" + System.nanoTime() + "@exemplo.test";
-        String[] corpos = new String[2];
-        for (int i = 0; i < 2; i++) {
-            var r = given().contentType(ContentType.URLENC)
-                    .formParam("nome", "Teste Duplo")
-                    .formParam("email", email)
-                    .formParam("cep", "01310100")
-                    .when().post("/inscricao");
-            assertEquals(200, r.statusCode(),
-                    "a inscricao numero " + (i + 1) + " respondeu " + r.statusCode());
-            corpos[i] = r.asString();
-        }
-
-        // A ASERCAO E SOBRE O COMPORTAMENTO, nao sobre a lista.
-        //
-        // A primeira versao procurava o e-mail na primeira pagina da lista — e reprovou
-        // por um motivo que nao era defeito: a lista e paginada em 20, e outros testes ja
-        // tinham enchido a pagina. Um teste que depende do que outro teste deixou nao
-        // prova nada sobre o que ele diz medir.
-        assertTrue(corpos[0].contains("Pronto,"),
-                "a PRIMEIRA inscricao nao foi aceita");
-        assertTrue(corpos[1].contains("já está inscrito"),
-                "a SEGUNDA inscricao com o mesmo e-mail nao foi reconhecida como repetida — "
-                        + "o clique duplo cria duas inscricoes e a pessoa recebe tudo em dobro");
-    }
 
     @Test
     @DisplayName("as telas de ALERTA renderizam, com e sem filtro de situacao")
@@ -207,7 +152,7 @@ class TodasAsTelasRespondemTest {
     void nenhumaTelaVazaRastroDePilha() {
         // Pagina de erro do Quarkus mostra pacote, classe e linha — informacao de
         // infraestrutura para quem nao deveria ve-la.
-        for (String rota : new String[] { "/", "/contato", "/inscricao", "/desastres", "/desastres/mapa",
+        for (String rota : new String[] { "/", "/contato", "/desastres", "/desastres/mapa",
                 "/desastres/estatisticas", "/alertas", }) {
             String corpo = corpoDe(rota);
             assertTrue(!corpo.contains("org.nasa.") || !corpo.contains("at java."),
@@ -363,7 +308,7 @@ class TodasAsTelasRespondemTest {
 
     /** As telas com moldura — as que um visitante abre pela URL. */
     private static final String[] ROTAS_COM_MOLDURA = {
-            "/", "/contato", "/documentacao", "/inscricao", "/telemetria",
+            "/", "/contato", "/documentacao", "/telemetria",
             "/desastres", "/desastres/mapa", "/desastres/estatisticas", "/desastres/historico",
             "/alertas" };
 

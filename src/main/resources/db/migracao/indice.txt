@@ -14,3 +14,4 @@
 # motivo, em `docs/historico-migracoes-postgres/`.
 
 V001__esquema_inicial.sql
+V002__sem_cadastro_nem_fila.sql
