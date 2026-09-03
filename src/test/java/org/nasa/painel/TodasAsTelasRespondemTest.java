@@ -99,6 +99,13 @@ class TodasAsTelasRespondemTest {
         rotas.put("mapa", "/desastres/mapa");
         rotas.put("estatisticas", "/desastres/estatisticas");
         rotas.put("estatisticas com janela", "/desastres/estatisticas?dias=365");
+        rotas.put("mapa filtrado por um tipo", "/desastres/mapa?categoria=volcanoes");
+        rotas.put("mapa filtrado por dois tipos",
+                "/desastres/mapa?categoria=volcanoes&categoria=floods");
+        // Categoria que NAO existe: a borda descarta e o mapa se comporta como sem filtro,
+        // em vez de consultar o banco por um valor que nunca casa.
+        rotas.put("mapa com categoria inventada", "/desastres/mapa?categoria=xpto");
+        rotas.put("mapa com categoria vazia", "/desastres/mapa?categoria=");
         rotas.put("historico por ano", "/desastres/historico");
         rotas.put("detalhe de um ano", "/desastres/historico/2026");
         // Ano SEM eventos gravados: o ramo em que `barras` vem null, e o template

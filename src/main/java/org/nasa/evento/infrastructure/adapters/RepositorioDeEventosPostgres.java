@@ -185,6 +185,45 @@ public class RepositorioDeEventosPostgres implements RepositorioDeEventosPort {
     }
 
     /**
+     * Eventos com coordenada, das categorias pedidas.
+     *
+     * <p><b>A lista de categorias vira {@code ?} um a um, nunca texto concatenado.</b> Os
+     * valores vêm da URL — é entrada de fora, e montar {@code IN ('a','b')} com concatenação
+     * é a construção que produz injeção de SQL. O número de marcadores é gerado a partir do
+     * <b>tamanho</b> da lista; os valores só entram por {@code setString}.</p>
+     */
+    @Override
+    public List<EventoNatural> comCoordenadaNasCategorias(java.util.Collection<String> categorias,
+                                                          int limite) {
+        var limpas = categorias.stream()
+                .filter(c -> c != null && !c.isBlank())
+                .distinct()
+                .toList();
+
+        StringBuilder sql = new StringBuilder("SELECT ").append(COLUNAS)
+                .append(" FROM evento_natural WHERE latitude IS NOT NULL"
+                        + " AND longitude IS NOT NULL");
+        if (!limpas.isEmpty()) {
+            sql.append(" AND categoria IN (")
+               .append("?,".repeat(limpas.size() - 1)).append("?)");
+        }
+        sql.append(" ORDER BY ocorrido_em DESC, id DESC LIMIT ?");
+
+        try (Connection c = Conexoes.abrir(dataSource, "evento_natural");
+             PreparedStatement ps = c.prepareStatement(sql.toString())) {
+            int i = 1;
+            for (String categoria : limpas) {
+                ps.setString(i++, categoria);
+            }
+            ps.setInt(i, limite);
+            return todos(ps);
+        } catch (SQLException e) {
+            throw new FalhaNaPersistenciaDeEventosException("mapa-por-categoria",
+                    String.join(",", limpas), e);
+        }
+    }
+
+    /**
      * Eventos ativos com coordenada dentro da caixa.
      *
      * <p><b>FILTRO GROSSEIRO, e é deliberado.</b> A caixa é um retângulo em graus; o raio
@@ -319,6 +358,31 @@ public class RepositorioDeEventosPostgres implements RepositorioDeEventosPort {
             return serie;
         } catch (SQLException e) {
             throw new FalhaNaPersistenciaDeEventosException("contar-por-ano", "todos", e);
+        }
+    }
+
+    @Override
+    public List<ContagemPorCategoria> contarPorCategoriaComCoordenada() {
+        // A MESMA condicao de `comCoordenadaNasCategorias`. As duas consultas precisam
+        // concordar: o numero no chip e a promessa do que o filtro vai desenhar.
+        String sql = """
+                SELECT COALESCE(categoria, 'SEM_CATEGORIA') AS categoria, count(*) AS quantos
+                  FROM evento_natural
+                 WHERE latitude IS NOT NULL AND longitude IS NOT NULL
+                 GROUP BY 1
+                 ORDER BY quantos DESC, categoria""";
+        List<ContagemPorCategoria> contagens = new ArrayList<>();
+        try (Connection c = Conexoes.abrir(dataSource, "evento_natural");
+             PreparedStatement ps = c.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                contagens.add(new ContagemPorCategoria(
+                        rs.getString("categoria"), rs.getLong("quantos")));
+            }
+            return contagens;
+        } catch (SQLException e) {
+            throw new FalhaNaPersistenciaDeEventosException("contar-categoria-com-coordenada",
+                    "mapa", e);
         }
     }
 

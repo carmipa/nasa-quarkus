@@ -91,7 +91,17 @@
       {/for}
     </dl>
 
-    <h2 class="secao-titulo est-subtitulo">Histórico — eventos por dia</h2>
+    <!-- A legenda estava DEPOIS do grafico de dias, falando do grafico de
+         categorias que fica acima dele. Explicacao longe do que ela explica
+         nao e explicacao. -->
+    <p class="grafico-legenda">
+      A barra mais longa é a categoria com mais eventos na janela; as demais são
+      proporcionais a ela.
+    </p>
+
+    <h2 class="secao-titulo est-subtitulo com-icone">
+      {#icone 'historico' /}Histórico — eventos por dia
+    </h2>
     <p class="secao-texto" translate="no">
       Pico de <strong>{pico}</strong> evento(s) num dia; <strong>{diasComEvento}</strong> de
       {dias} dias tiveram algum evento.
@@ -119,10 +129,7 @@
       {/for}
     </div>
 
-    <p class="grafico-legenda">
-      A barra mais longa é a categoria com mais eventos na janela; as demais são
-      proporcionais a ela.
-    </p>
+
   {/if}
 </section>
 {/corpo}

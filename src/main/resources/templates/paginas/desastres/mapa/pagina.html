@@ -39,10 +39,81 @@
     </div>
   </div>
 
+  <!--
+    FILTRO POR TIPO DE DESASTRE.
+
+    É UM FORMULÁRIO GET, e não JavaScript escondendo pinos. A diferença importa:
+    o mapa desenha um teto de eventos e a base tem 21.542, então esconder no
+    navegador filtraria só o que já foi carregado. Pedir "vulcões" entre os mais
+    recentes daria vazio, e a tela afirmaria que não há vulcão nenhum. Filtro que
+    mente sobre ausência é pior que filtro nenhum — ele produz uma conclusão, e a
+    conclusão está errada.
+
+    Sendo GET, o recorte vira URL: "olha os incêndios e as enchentes" é um link.
+    E funciona sem JavaScript, como o resto do sistema.
+
+    NENHUM MARCADO = TODOS. É o estado inicial; um mapa que abrisse vazio
+    esperando escolha seria uma tela em branco pedindo trabalho antes de mostrar
+    qualquer coisa.
+  -->
+  <form class="mapa-filtro" method="get" action="/desastres/mapa">
+    <div class="mapa-filtro-cabecalho">
+      <span class="mapa-filtro-titulo com-icone">
+        {#icone 'filtrar' /}
+        <span>Tipos de desastre</span>
+      </span>
+      <span class="mapa-filtro-nota">
+        {#if filtrando}
+          <strong translate="no">{quantosDesenhados}</strong> no recorte
+        {#else}
+          mostrando todos os tipos
+        {/if}
+      </span>
+    </div>
+
+    <div class="mapa-chips">
+      {#for c in chips}
+      <label class="mapa-chip{#if c.marcada} mapa-chip-marcado{/if}"
+             style="--cor-chip: {c.categoria.cor}"
+             data-dica="{c.quantos} evento(s) de {c.categoria.nome} com posição publicada. Marque vários para ver os tipos juntos; sem nenhum marcado, o mapa mostra todos.">
+        <input type="checkbox" name="categoria" value="{c.categoria.id}"
+               {#if c.marcada}checked{/if}>
+        {#icone c.categoria.icone /}
+        <span class="mapa-chip-nome">{c.categoria.nome}</span>
+        <span class="mapa-chip-conta" translate="no">{c.quantos}</span>
+      </label>
+      {/for}
+    </div>
+
+    <div class="mapa-filtro-acoes">
+      <button class="botao botao-principal com-icone" type="submit">
+        {#icone 'mapa' /}Aplicar
+      </button>
+      {#if filtrando}
+      <a class="botao botao-discreto com-icone" href="/desastres/mapa"
+         data-dica="Volta a mostrar todos os tipos de desastre no mapa">
+        {#icone 'sincronizar' /}Mostrar todos
+      </a>
+      {/if}
+    </div>
+  </form>
+
   {#if eventos.isEmpty()}
     <div class="vazio">
-      <p>Nenhum evento na base para desenhar.</p>
-      <a class="botao botao-principal com-icone" href="/desastres">{#icone 'sincronizar' /}Sincronizar com a NASA</a>
+      {#if filtrando}
+        <p>Nenhum evento <strong>com posição publicada</strong> nos tipos escolhidos.</p>
+        <p class="vazio-dica">
+          A NASA nem sempre publica coordenada — e um evento sem posição não pode
+          ser desenhado. Os tipos escolhidos podem existir na base sem nenhum
+          evento localizável.
+        </p>
+        <a class="botao botao-principal com-icone" href="/desastres/mapa">
+          {#icone 'sincronizar' /}Mostrar todos os tipos
+        </a>
+      {#else}
+        <p>Nenhum evento na base para desenhar.</p>
+        <a class="botao botao-principal com-icone" href="/desastres">{#icone 'sincronizar' /}Sincronizar com a NASA</a>
+      {/if}
     </div>
   {#else}
     <div class="mapa-caixa">
@@ -62,6 +133,16 @@
       Cada item traz COR e ÍCONE. Cor sozinha deixaria de fora quem não
       distingue verde de vermelho — cerca de 8% dos homens.
     -->
+    {#if noTeto}
+    <p class="mapa-teto com-icone">
+      {#icone 'aviso' /}
+      <span>
+        O mapa desenha no máximo <strong translate="no">{teto}</strong> eventos por vez —
+        estes são os mais recentes. Filtre por tipo acima para ver outro recorte.
+      </span>
+    </p>
+    {/if}
+
     <div class="mapa-legenda">
       <span class="mapa-legenda-titulo">No mapa:</span>
       {#for c in legenda}

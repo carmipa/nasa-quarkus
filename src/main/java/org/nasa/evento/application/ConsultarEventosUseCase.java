@@ -190,6 +190,35 @@ public class ConsultarEventosUseCase {
         return repositorio.contarPorCategoriaNoAno(ano);
     }
 
+    /**
+     * Os eventos que o mapa desenha, filtrados por categoria.
+     *
+     * @param categorias vazio significa TODAS — o estado inicial do mapa
+     * @param limite     teto; acima dele o mapa vira uma mancha de pinos
+     */
+    public List<EventoNatural> paraOMapa(java.util.Collection<String> categorias, int limite) {
+        return repositorio.comCoordenadaNasCategorias(categorias, limitarMapa(limite));
+    }
+
+    /** Quantos eventos desenháveis de cada categoria — o número dos chips do mapa. */
+    public List<RepositorioDeEventosPort.ContagemPorCategoria> categoriasDoMapa() {
+        return repositorio.contarPorCategoriaComCoordenada();
+    }
+
+    /**
+     * O teto do mapa.
+     *
+     * <p>Separado de {@link #TAMANHO_MAXIMO}, que vale para listas paginadas: uma página de
+     * lista tem 20 itens porque é o que se lê; um mapa comporta muito mais porque os pontos
+     * não competem por espaço vertical. O limite aqui é a legibilidade do desenho, não a
+     * do texto.</p>
+     */
+    public static final int MAXIMO_NO_MAPA = 500;
+
+    private static int limitarMapa(int pedido) {
+        return pedido <= 0 ? MAXIMO_NO_MAPA : Math.min(pedido, MAXIMO_NO_MAPA);
+    }
+
     public long contarDoAno(int ano) {
         return repositorio.contarDoAno(ano);
     }

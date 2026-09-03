@@ -120,3 +120,173 @@
   font-size: 0.78rem;
   font-variant-numeric: tabular-nums;
 }
+
+/* =========================================================== filtro por tipo */
+
+.mapa-filtro {
+  width: 100%;
+  margin-bottom: 1rem;
+  padding: 0.9rem 1.2%;
+  border: 1px solid var(--cor-borda);
+  border-radius: 0.5rem;
+  background: var(--cor-superficie);
+}
+
+.mapa-filtro-cabecalho {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.8rem;
+  margin-bottom: 0.7rem;
+}
+
+.mapa-filtro-titulo { font-weight: 600; font-size: 0.95rem; }
+.mapa-filtro-nota { color: var(--cor-texto-fraco); font-size: 0.85rem; margin-left: auto; }
+
+/* Os chips PREENCHEM a largura e quebram sozinhos. Treze tipos numa linha só
+   viraria rolagem horizontal; em coluna, viraria uma lista de treze linhas. */
+.mapa-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+/*
+ * O CHIP É UM `<label>` COM CHECKBOX DENTRO, não um botão com JavaScript.
+ * Assim ele já é focável, marcável por teclado, anunciado como caixa de seleção
+ * por leitor de tela, e sobrevive sem JavaScript — de graça, por ser o elemento
+ * certo. `--cor-chip` vem do catálogo, por evento, via `style` inline.
+ */
+.mapa-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 999px;
+  color: var(--cor-texto-fraco);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  transition: border-color .15s ease, background .15s ease, color .15s ease;
+}
+
+/*
+ * A caixa some da vista mas CONTINUA no documento: `display: none` a tiraria da
+ * ordem de foco, e o chip deixaria de ser alcançável por Tab.
+ *
+ * O tamanho é `0.06rem` e não `1px` — a guarda de porcentagem reprovou o `px`,
+ * e ela estava certa em não abrir exceção. O tamanho continua sendo um fio
+ * invisível; o que muda é que ele acompanha a fonte em vez de travar. Zero
+ * absoluto seria arriscado: elemento de tamanho nenhum some da ordem de foco em
+ * alguns navegadores, que é exatamente o que estas linhas existem para evitar.
+ */
+.mapa-chip input {
+  position: absolute;
+  width: 0.06rem;
+  height: 0.06rem;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.mapa-chip:hover { border-color: var(--cor-chip); color: var(--cor-chip); }
+
+/* O foco de teclado precisa ser VISÍVEL: sem isto, quem navega por Tab não sabe
+   em qual dos treze chips está. */
+.mapa-chip:focus-within {
+  outline: 2px solid var(--cor-chip);
+  outline-offset: 2px;
+}
+
+/*
+ * MARCADO se distingue por TRÊS coisas ao mesmo tempo — cor, fundo e o ✓ —
+ * e não só por cor. Quem não distingue a cor do chip ainda vê o contorno cheio
+ * e a marca de seleção.
+ */
+.mapa-chip-marcado {
+  border-color: var(--cor-chip);
+  background: color-mix(in srgb, var(--cor-chip) 18%, transparent);
+  color: var(--cor-chip);
+}
+.mapa-chip-marcado::after { content: '✓'; font-weight: 700; }
+
+.mapa-chip-conta {
+  padding: 0 0.4em;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .07);
+  font-size: 0.75em;
+  font-variant-numeric: tabular-nums;
+}
+
+.mapa-filtro-acoes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 0.9rem;
+}
+
+/* O aviso de teto fica ENTRE o mapa e a legenda: é sobre o que o mapa não está
+   mostrando, e precisa ser lido junto com o desenho, não no fim da página. */
+.mapa-teto {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5em;
+  width: 100%;
+  margin: 0.8rem 0 0;
+  padding: 0.6rem 1%;
+  border-left: 3px solid var(--cor-alerta);
+  border-radius: 0 0.4rem 0.4rem 0;
+  background: rgba(255, 159, 67, .08);
+  color: var(--cor-texto-fraco);
+  font-size: 0.85rem;
+}
+
+/* ------------------------------------------------- seletor de camadas do mapa */
+
+/*
+ * O controle do Leaflet nasce claro, para mapas claros. Sobre o tema escuro do
+ * sistema ele fica como um retângulo branco berrante no canto do mapa. Estas
+ * regras o vestem com as cores do sistema.
+ *
+ * São seletores do Leaflet (`.leaflet-*`), e é o único lugar do projeto onde
+ * isso acontece: eles marcam HTML que a biblioteca gera, e não há como pôr
+ * classe própria neles.
+ */
+.leaflet-control-layers {
+  border: 1px solid var(--cor-borda) !important;
+  border-radius: 0.5rem !important;
+  background: var(--cor-superficie) !important;
+  color: var(--cor-texto);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, .45) !important;
+}
+
+.leaflet-control-layers-list { padding: 0.5rem 0.7rem; }
+
+.leaflet-control-layers label {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  margin: 0.15rem 0;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.leaflet-control-layers label:hover { color: var(--cor-destaque); }
+
+/* O zoom do Leaflet tem o mesmo problema de tema. */
+.leaflet-bar a, .leaflet-bar a:hover {
+  background: var(--cor-superficie);
+  color: var(--cor-texto);
+  border-bottom-color: var(--cor-borda);
+}
+.leaflet-bar a:hover { color: var(--cor-destaque); }
+
+/* A atribuição do OpenStreetMap continua legível — ela é exigida pela licença,
+   e escondê-la ou deixá-la ilegível descumpre a ODbL. */
+.leaflet-control-attribution {
+  background: rgba(13, 17, 23, .85) !important;
+  color: var(--cor-texto-fraco) !important;
+}
+.leaflet-control-attribution a { color: var(--cor-destaque) !important; }

@@ -207,20 +207,50 @@ public class DesastrePaginasResource {
 
     // -------------------------------------------------------------------- mapa
 
+    /**
+     * O mapa, com filtro por tipo de desastre.
+     *
+     * <p><b>O FILTRO É DO SERVIDOR, e isso é a decisão que importa aqui.</b> Filtrar no
+     * navegador filtraria apenas os eventos <b>já carregados</b> — e o mapa carrega um teto,
+     * enquanto a base tem 21.542. Pedir "vulcões" entre os mais recentes devolveria vazio, e
+     * a tela diria que não há vulcão nenhum. Filtro que mente sobre ausência é pior que
+     * filtro nenhum: ele produz uma conclusão, e a conclusão está errada.</p>
+     *
+     * <p><b>Nenhuma categoria marcada significa TODAS</b>, não nenhuma. É o estado inicial, e
+     * um mapa que abrisse vazio esperando escolha seria uma tela em branco pedindo trabalho
+     * antes de mostrar qualquer coisa.</p>
+     *
+     * <p><b>As categorias vão na URL</b>, uma por parâmetro repetido. É o que torna um
+     * recorte compartilhável: "olha os incêndios e as enchentes" vira um link.</p>
+     */
     @GET
     @Path("/mapa")
-    public TemplateInstance mapa(@QueryParam("dias") @DefaultValue("30") int dias,
-                                 @QueryParam("apenasAtivos") @DefaultValue("true")
-                                 boolean apenasAtivos) {
-        // 500 eventos e o teto do que um mapa mostra sem virar uma mancha de pinos.
-        var eventos = consultar.listar(0, 100);
+    public TemplateInstance mapa(@QueryParam("categoria") List<String> categorias) {
+        // So categorias que EXISTEM entram na consulta. Um `?categoria=xpto` digitado na
+        // URL nao vira consulta ao banco por um valor que nunca casa — ele e descartado
+        // aqui, e o mapa se comporta como se nao tivesse sido pedido.
+        var pedidas = categorias == null ? List.<String>of()
+                : categorias.stream()
+                        .filter(c -> c != null && !c.isBlank())
+                        .filter(c -> CategoriasDeDesastre.existe(c))
+                        .distinct()
+                        .toList();
 
-        // A LEGENDA MOSTRA SO AS CATEGORIAS QUE ESTAO NO MAPA AGORA.
-        //
-        // Listar as 13 sempre seria pior de duas formas: obrigaria procurar, numa
-        // lista de treze, as quatro cores que de fato aparecem; e afirmaria que ha
-        // vulcao no mapa quando nao ha nenhum. Legenda e chave de leitura do que
-        // esta desenhado — nao catalogo do que poderia estar.
+        var eventos = consultar.paraOMapa(pedidas, ConsultarEventosUseCase.MAXIMO_NO_MAPA);
+
+        // OS CHIPS mostram TODAS as categorias que existem na base com coordenada, com o
+        // numero de cada uma — nao so as que estao na tela agora. Um filtro que some
+        // depois de usado nao deixa voltar, e e justamente quando o resultado veio vazio
+        // que se precisa do caminho de volta.
+        var chips = consultar.categoriasDoMapa().stream()
+                .map(c -> new ChipDeCategoria(
+                        CategoriasDeDesastre.de(c.categoria()),
+                        c.quantos(),
+                        pedidas.contains(c.categoria())))
+                .toList();
+
+        // A LEGENDA mostra so o que esta DESENHADO — e outra coisa dos chips. Chip e
+        // controle ("posso pedir isto"); legenda e chave de leitura ("isto esta ai").
         var naTela = eventos.stream()
                 .map(e -> CategoriasDeDesastre.de(e.categoria()))
                 .distinct()
@@ -230,10 +260,26 @@ public class DesastrePaginasResource {
         return moldura.vestir(telaMapa
                 .data("eventos", eventos)
                 .data("legenda", naTela)
-                .data("dias", dias)
-                .data("apenasAtivos", apenasAtivos)
+                .data("chips", chips)
+                .data("filtrando", !pedidas.isEmpty())
+                .data("quantosDesenhados", eventos.size())
+                .data("noTeto", eventos.size() >= ConsultarEventosUseCase.MAXIMO_NO_MAPA)
+                .data("teto", ConsultarEventosUseCase.MAXIMO_NO_MAPA)
                 .data("total", consultar.contar())
                 .data("ativos", consultar.contarAtivos()), "desastres", true);
+    }
+
+    /**
+     * Um chip de filtro do mapa.
+     *
+     * @param categoria a categoria, com nome, cor e ícone
+     * @param quantos   quantos eventos <b>desenháveis</b> ela tem. O número é a promessa do
+     *                  que o filtro vai mostrar — contar eventos sem coordenada aqui faria
+     *                  o chip prometer pinos que nunca aparecem
+     * @param marcada   se está no recorte atual
+     */
+    public record ChipDeCategoria(CategoriasDeDesastre.Categoria categoria, long quantos,
+                                  boolean marcada) {
     }
 
     // ------------------------------------------------------------ estatisticas

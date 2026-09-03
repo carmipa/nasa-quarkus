@@ -93,8 +93,21 @@
   // com conteudo abaixo dele, isso incomoda; mas quem esta usando um mapa quer
   // ampliar com a roda, e essa e a expectativa que vale.
   var mapa = L.map(caixa, { scrollWheelZoom: true, layers: [ruas] });
+  /*
+   * O SELETOR FICA SEMPRE ABERTO (`collapsed: false`), e nao e preferencia.
+   *
+   * MEDIDO em 02/09/2026: o CSS do Leaflet pede `images/layers.png`,
+   * `images/layers-2x.png` e `images/marker-icon.png` — e as tres respondem
+   * 404, porque so o `.css` e o `.js` foram vendorizados. Fechado, o controle
+   * dependia desse icone e aparecia como um QUADRADO BRANCO VAZIO no canto: a
+   * troca entre ruas e satelite existia e era invisivel.
+   *
+   * Aberto, ele mostra os dois rotulos escritos. Duas palavras visiveis valem
+   * mais que um icone que exige descobrir que da para clicar — mesmo se o
+   * icone estivesse la.
+   */
   L.control.layers({ 'Ruas': ruas, 'Satélite': satelite }, null,
-                   { position: 'topright' }).addTo(mapa);
+                   { position: 'topright', collapsed: false }).addTo(mapa);
 
   var pontos = [];
   itens.forEach(function (item) {

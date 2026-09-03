@@ -95,6 +95,11 @@ public class CategoriasDeDesastre {
         return Map.copyOf(mapa);
     }
 
+    /** Se o código é uma das 13 conhecidas — a borda usa isto para descartar lixo da URL. */
+    public static boolean existe(String id) {
+        return id != null && POR_ID.containsKey(id);
+    }
+
     /** A categoria de um código da NASA. Nunca devolve {@code null}. */
     public static Categoria de(String id) {
         if (id == null || id.isBlank()) {

@@ -47,6 +47,26 @@ public interface RepositorioDeEventosPort {
 
     List<EventoNatural> porCategoria(String categoria, int pagina, int tamanho);
 
+    /**
+     * Eventos <b>com coordenada</b> das categorias pedidas — o que o mapa desenha.
+     *
+     * <p><b>Por que existe, em vez de filtrar a lista já carregada no navegador.</b> O mapa
+     * carrega um teto de eventos, e a base tem 21.542. Filtrar no navegador filtraria
+     * apenas <b>esse teto</b>: pedir "vulcões" entre os 100 eventos mais recentes devolveria
+     * vazio, e a tela diria que não há vulcão nenhum — quando há. O filtro precisa alcançar
+     * a base inteira, e por isso é consulta, não JavaScript.</p>
+     *
+     * <p><b>Só eventos COM coordenada.</b> Evento sem posição não pode ser desenhado, e
+     * incluí-lo gastaria o teto com pontos que nunca aparecem — o mapa mostraria menos
+     * quanto mais eventos sem posição a NASA publicasse.</p>
+     *
+     * @param categorias os identificadores da EONET; <b>vazio significa TODAS</b>, que é o
+     *                   estado inicial do mapa
+     * @param limite     teto de eventos
+     */
+    List<EventoNatural> comCoordenadaNasCategorias(java.util.Collection<String> categorias,
+                                                   int limite);
+
     /** Eventos ATIVOS com coordenada dentro da caixa. Filtro grosseiro, por índice. */
     List<EventoNatural> ativosNaCaixa(CaixaDelimitadora caixa, Instant desde, int limite);
 
@@ -108,6 +128,17 @@ public interface RepositorioDeEventosPort {
      */
     record ContagemPorAno(int ano, long quantos, long categorias) {
     }
+
+    /**
+     * Contagem por categoria <b>entre os eventos com coordenada</b> — os chips do mapa.
+     *
+     * <p><b>Por que não reusar {@link #contarPorCategoria(Instant)}.</b> Aquela conta tudo,
+     * inclusive evento sem posição. O número no chip do mapa tem de bater com o que o mapa
+     * <b>desenha</b>: um chip dizendo "Vulcões (54)" que acende 41 pinos faz a pessoa
+     * procurar os 13 que faltam, e não há o que achar. Número ao lado de um filtro é uma
+     * promessa do que ele vai mostrar.</p>
+     */
+    List<ContagemPorCategoria> contarPorCategoriaComCoordenada();
 
     /** Contagem por categoria DENTRO de um ano — o detalhe de uma coluna do histórico. */
     List<ContagemPorCategoria> contarPorCategoriaNoAno(int ano);

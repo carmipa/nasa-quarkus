@@ -115,3 +115,45 @@ Estas foram encontradas **abrindo as páginas e olhando**, não lendo código:
 | botão "Recalcular" flutuando fora de linha | `align-items: center` centralizava na altura total, que cresce quando um campo tem texto de ajuda |
 | atribuição do OpenStreetMap em páginas sem mapa | rodapé fixo no layout, sem condição |
 | painel de desastres abrindo vazio com 21.542 eventos na base | a aba que abria era o formulário de sincronização |
+
+## Filtro de tipos no mapa
+
+Chips marcáveis, um por categoria com eventos desenháveis, cada um com ícone, cor e
+**contagem**. Nenhum marcado significa **todos** — um mapa que abrisse vazio esperando
+escolha seria uma tela em branco pedindo trabalho antes de mostrar qualquer coisa.
+
+**O filtro é do servidor, e essa é a decisão que importa.** Filtrar no navegador filtraria
+só os eventos já carregados, e o mapa desenha no máximo 500 de 21.542. Medido em 02/09/2026:
+
+```
+vulcões entre os eventos mais recentes ......    0
+vulcões na base, com coordenada ............   547
+```
+
+Um filtro no navegador teria mostrado mapa vazio e produzido a conclusão de que não há
+vulcão nenhum. **Filtro que mente sobre ausência é pior que filtro nenhum** — ele produz uma
+conclusão, e a conclusão está errada.
+
+Sendo um `<form method="get">`, o recorte vira URL compartilhável e funciona sem JavaScript.
+Cada chip é um `<label>` com `<input type="checkbox">` dentro, e não um botão com JavaScript:
+assim ele já é focável, marcável por teclado e anunciado como caixa de seleção — de graça,
+por ser o elemento certo. Marcado se distingue por **três** coisas ao mesmo tempo (cor, fundo
+e um ✓), nunca só por cor.
+
+Valor inválido na URL é **descartado na borda**: `?categoria=xpto` não vira consulta ao banco
+por um valor que nunca casa; o mapa se comporta como se não tivesse sido pedido.
+
+O mapa também **diz quando está no teto** — "desenha no máximo 500 por vez, estes são os mais
+recentes". Sem esse aviso, um recorte truncado pareceria o conjunto inteiro.
+
+## O seletor de camadas que estava invisível
+
+Ruas e satélite sempre existiram, e o controle **não aparecia**. Medido: o CSS do Leaflet pede
+`images/layers.png`, `layers-2x.png` e `marker-icon.png`, e as três respondem **404** — só o
+`.css` e o `.js` foram vendorizados. Fechado, o controle dependia desse ícone e desenhava um
+quadrado branco vazio no canto.
+
+Passou a abrir expandido, com os dois rótulos escritos. Duas palavras visíveis valem mais que
+um ícone que exige descobrir que dá para clicar — mesmo se o ícone estivesse lá. E os
+controles do Leaflet ganharam as cores do sistema: eles nascem claros, para mapas claros, e
+sobre o tema escuro ficavam como retângulos berrantes.
