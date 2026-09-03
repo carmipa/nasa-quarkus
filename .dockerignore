@@ -1,5 +1,21 @@
-*
-!build/*-runner
-!build/*-runner.jar
-!build/lib/*
-!build/quarkus-app/*
+# O contexto precisa do CÓDIGO, não do artefato: o Dockerfile da raiz compila em
+# estágio próprio. O arquivo anterior (gerado pelo Quarkus para o fluxo
+# "build no host, depois docker") excluía `src/` inteiro — ele está em
+# `git show HEAD:.dockerignore`. `build/` segue permitido para os Dockerfiles de
+# src/main/docker continuarem funcionando.
+.git
+.gradle
+build/tmp
+dados
+data
+logs
+*.db
+*.db-shm
+*.db-wal
+.claude
+guardas
+screenshots
+# `docs/documentacao` NAO entra aqui: a pagina publica de documentacao le esses
+# .md do disco em tempo de execucao, entao eles sao artefato de producao.
+docs/historico-migracoes-postgres
+docs/PLANO-MESTRE.md

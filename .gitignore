@@ -359,15 +359,19 @@ lerna-debug.log*
 
 # =============================================================================
 # 5. .NET (o legado em gs/ tem um módulo C#)
+#
+# ANCORADAS NA RAIZ em 03/09/2026: `[Ll]og/` casava em qualquer nível e engoliu
+# `src/main/java/org/nasa/core/log/`. Nada se perde com a âncora — o legado mora
+# em `gs/`, que já está ignorado inteiro na seção 3.
 # =============================================================================
-[Bb]in/
-[Oo]bj/
-[Dd]ebug/
-[Rr]elease/
-x64/
-x86/
-[Ll]og/
-[Ll]ogs/
+/[Bb]in/
+/[Oo]bj/
+/[Dd]ebug/
+/[Rr]elease/
+/x64/
+/x86/
+/[Ll]og/
+/[Ll]ogs/
 .vs/
 *.user
 *.suo
@@ -472,8 +476,8 @@ $RECYCLE.BIN/
 # =============================================================================
 # Log carrega token em URL, header de autorização e stack trace com conexão.
 *.log
-logs/
-log/
+/logs/
+/log/
 *.log.*
 *.pid
 *.seed
@@ -504,7 +508,24 @@ temp/
 _local/
 _privado/
 NOTAS-LOCAIS.md
-data/
+/data/
 *.db
 *.db-wal
 *.db-shm
+
+# =============================================================================
+# REDE DE SEGURANCA — CODIGO-FONTE NUNCA E ARTEFATO
+#
+# MEDIDO em 03/09/2026, e custou o build inteiro: a regra `log/` da secao 9 era
+# para o ARTEFATO de log e casava em qualquer nivel, entao engoliu o pacote
+# src/main/java/org/nasa/core/log/. O arquivo Registro.java nunca entrou em
+# commit, e o repositorio passou a nao compilar — 160 erros, sem nenhum aviso do
+# git, porque arquivo ignorado nao aparece em `git status`.
+#
+# As regras de pasta acima foram ancoradas na raiz (`/log/`, `/logs/`, `/data/`).
+# Estas duas linhas sao a rede que sobra: .java e sempre codigo, nunca artefato
+# nem segredo. Ela so alcanca arquivo cuja PASTA nao esteja ignorada — por isso a
+# ancoragem vem antes, e nao no lugar dela.
+# =============================================================================
+!src/main/java/**/*.java
+!src/test/java/**/*.java
