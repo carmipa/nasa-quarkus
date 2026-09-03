@@ -156,7 +156,22 @@ public class Icones {
             Map.entry("fogo", "<path d='M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143"
                     + "-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153"
                     + ".433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z'/>"),
-            Map.entry("agua", "<path d='M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z'/>"));
+            Map.entry("agua", "<path d='M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z'/>"),
+
+            // ------------------------------------------- tipos de desastre da EONET
+            Map.entry("montanha", "<path d='m8 3 4 8 5-5 5 15H2L8 3z'/>"),
+            Map.entry("terremoto", "<polyline points='2 12 6 12 9 5 13 19 16 12 22 12'/>"),
+            Map.entry("sol", "<circle cx='12' cy='12' r='4'/>"
+                    + "<path d='M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41"
+                    + "M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41'/>"),
+            Map.entry("floco", "<line x1='12' y1='2' x2='12' y2='22'/>"
+                    + "<line x1='2' y1='12' x2='22' y2='12'/>"
+                    + "<line x1='4.9' y1='4.9' x2='19.1' y2='19.1'/>"
+                    + "<line x1='19.1' y1='4.9' x2='4.9' y2='19.1'/>"),
+            Map.entry("poeira", "<path d='M4 8h11a3 3 0 1 0-3-3'/>"
+                    + "<path d='M2 12h15a3 3 0 1 1-3 3'/><path d='M6 16h8'/>"),
+            Map.entry("termometro", "<path d='M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0"
+                    + " 1 0 5 0z'/>"));
 
     /** O que se mostra quando o nome não existe — visível, e portanto corrigível. */
     private static final String DESCONHECIDO =

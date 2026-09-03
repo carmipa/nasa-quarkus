@@ -140,6 +140,11 @@ body {
   font-weight: 600;
 }
 
+/* Numa linha de topo (título + contadores + atalhos), o título não tem margem
+   inferior: quem espaça é o `gap` da linha, e a margem sozinha desalinharia o
+   título em relação aos botões ao lado dele. */
+.linha-topo .secao-titulo { margin-bottom: 0; }
+
 .secao-texto {
   margin: 0;
   max-width: 100%;
@@ -337,6 +342,24 @@ body {
   font-weight: 600;
 }
 
+/*
+ * O TRACEJADO DA DICA NÃO PODE ATRAVESSAR O CAMPO INTEIRO.
+ *
+ * Visto na tela em 02/09/2026: `<label>` é elemento de bloco, então a
+ * `border-bottom` do `.dica` esticava por toda a largura da coluna. O
+ * resultado não parecia "há explicação aqui" — parecia a borda de cima de um
+ * campo de entrada quebrado, logo acima do campo de verdade. Dois retângulos
+ * empilhados, um deles falso.
+ *
+ * `width: fit-content` faz o risco abraçar SÓ O TEXTO, que é o que ele
+ * sublinha. `align-self: start` mantém isso dentro do flex da coluna.
+ */
+.formulario-rotulo.dica {
+  width: fit-content;
+  max-width: 100%;
+  align-self: start;
+}
+
 /* A dica fica SEMPRE visível, não só depois do erro: dizer o formato antes
    evita o erro; dizer depois só explica o que já incomodou. */
 .formulario-dica { color: var(--cor-texto-fraco); font-size: 0.78rem; }
@@ -382,7 +405,24 @@ body {
   padding: 0.55rem 0;
 }
 
-.filtros-acoes { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
+/*
+ * `align-items: center` centralizava o botao na ALTURA TOTAL da linha — e a
+ * linha fica mais alta quando um dos campos tem texto de ajuda embaixo. O
+ * resultado, visto na tela: o botao "Recalcular" flutuando no meio, sem
+ * alinhar nem com o campo nem com a base da linha.
+ *
+ * `flex-end` alinha o botao com a BASE DO CAMPO, que e onde o olho espera —
+ * a mesma linha de base do `.filtros`, que ja usa `align-items: flex-end`.
+ */
+.filtros-acoes { display: flex; align-items: flex-end; gap: 0.75rem; flex-wrap: wrap; }
+
+/*
+ * O texto de ajuda sai do FLUXO DA ALTURA da linha: ele e explicacao, nao
+ * campo, e deixa-lo empurrar a linha faz os campos vizinhos — que nao tem
+ * ajuda — parecerem desalinhados por defeito. Visto no cadastro de cliente,
+ * onde a ajuda do CPF deixava a coluna dele um degrau abaixo das outras tres.
+ */
+.filtro .formulario-dica, .campo .formulario-dica { margin-top: 0.3rem; }
 
 .carregando { color: var(--cor-destaque); font-size: 0.85rem; }
 
@@ -408,7 +448,18 @@ body {
 .paginacao-atual { color: var(--cor-texto-fraco); font-size: 0.9rem; }
 
 /* Contadores do topo das telas de desastre. */
-.desastres-numeros { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+/*
+ * Os contadores ficam COLADOS no título sem esta margem — visto na tela: o
+ * "Desastres naturais" e o "21542 na base" corriam juntos, e o olho lia os
+ * dois como uma frase só. O respiro separa o nome da tela do dado dela.
+ */
+.desastres-numeros {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-left: 1.2rem;
+}
 
 .numero {
   padding: 0.3rem 0.7rem;
@@ -635,3 +686,10 @@ body {
   .realce, .realce-linha { transition: none; }
   .realce:hover, .realce:focus-within { transform: none; }
 }
+
+/*
+ * A CAIXA DE MARCAR alinha pela BASE do campo ao lado, não pelo meio da linha.
+ * Visto na tela: com `align-items: center` no pai, a caixa flutuava entre o
+ * rótulo e o campo vizinho, sem alinhar com nenhum dos dois.
+ */
+.filtros .rotulo-caixa { align-self: flex-end; padding-bottom: 0.55rem; }

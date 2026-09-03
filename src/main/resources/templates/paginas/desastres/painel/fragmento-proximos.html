@@ -33,7 +33,11 @@
       <div class="proximo-dados">
         <a class="proximo-titulo" href="/desastres/{p.evento.id}">{p.evento.titulo}</a>
         <span class="proximo-meta" translate="no">
-          {#if p.evento.categoria}{p.evento.categoria} · {/if}{p.evento.ocorridoEm} UTC
+          <span class="com-icone" style="color: {cdi:categorias.cor(p.evento.categoria)}">
+            {#icone cdi:categorias.icone(p.evento.categoria) /}
+            <span>{cdi:categorias.nome(p.evento.categoria)}</span>
+          </span>
+          · {p.evento.ocorridoEm} UTC
         </span>
       </div>
     </li>

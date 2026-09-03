@@ -74,10 +74,19 @@
  * ROLA NA HORIZONTAL quando há muitos dias — 365 colunas não cabem em tela
  * nenhuma, e espremê-las até 1px transformaria o gráfico numa mancha.
  */
+/*
+ * O ESPACO ENTRE AS COLUNAS ERA 0.15rem, e na tela elas se fundiam num bloco
+ * unico — visto em 02/09/2026. Um grafico de barras cujas barras se tocam para
+ * de ser um grafico de barras: o olho le a silhueta de cima como uma linha, e
+ * a contagem de cada dia, que e o que o grafico serve para mostrar, some.
+ *
+ * `0.4rem` separa sem afinar demais, e `min-width` garante que a coluna
+ * continue clicavel e visivel mesmo com 365 dias na janela.
+ */
 .serie {
   display: flex;
   align-items: flex-end;
-  gap: 0.15rem;
+  gap: 0.4rem;
   width: 100%;
   height: 12rem;
   padding: 0.5rem 0 0;

@@ -41,10 +41,10 @@
   </div>
 
   <div class="abas" role="tablist">
-    <button class="aba aba-ativa" type="button" role="tab" data-aba="sincronizar">
+    <button class="aba" type="button" role="tab" data-aba="sincronizar">
       Sincronizar com a NASA
     </button>
-    <button class="aba" type="button" role="tab" data-aba="lista">
+    <button class="aba aba-ativa" type="button" role="tab" data-aba="lista">
       Eventos na base
     </button>
     <button class="aba" type="button" role="tab" data-aba="proximos">
@@ -53,7 +53,15 @@
   </div>
 
   <!-- ================================================ aba: sincronizar -->
-  <div class="painel-aba" data-painel="sincronizar">
+  <!--
+    A ABA QUE ABRE E A LISTA, nao a sincronizacao.
+
+    Visto na tela em 02/09/2026: com 21.542 eventos gravados, o painel abria num
+    formulario e mostrava NADA — nove decimos da tela em branco, e o dado que o
+    sistema ja tem exigindo um clique para aparecer. Quem chega quer ver o que
+    ha; sincronizar e o que se faz DEPOIS de olhar e achar pouco.
+  -->
+  <div class="painel-aba" data-painel="sincronizar" hidden>
     <p class="secao-texto">
       Traz eventos da <span translate="no">EONET v3</span> da NASA para a base local.
       A operação é <strong>segura de repetir</strong>: o mesmo evento não entra duas vezes,
@@ -95,23 +103,24 @@
   </div>
 
   <!-- ====================================================== aba: lista -->
-  <div class="painel-aba" data-painel="lista" hidden>
+  <div class="painel-aba" data-painel="lista">
     <form class="filtros"
           hx-get="/desastres/fragmento/lista"
           hx-target="#lista-eventos"
           hx-trigger="submit, change from:#categoria">
       <div class="filtro">
         <label class="formulario-rotulo dica" for="categoria" data-dica="Filtra a lista por tipo de evento — incêndio, tempestade, vulcão. Em branco, mostra todos.">Categoria</label>
+        <!--
+          AS 13 VEM DO CATALOGO, nao escritas a mao aqui. A lista escrita a mao
+          tinha 8 — faltavam poeira, origem humana, neve, extremos de temperatura
+          e cor da agua. Um filtro incompleto nao erra: ele simplesmente NUNCA
+          mostra o que ficou de fora, e ninguem procura o que nao sabe que existe.
+        -->
         <select class="campo-formulario" id="categoria" name="categoria">
-          <option value="">Todas</option>
-          <option value="wildfires">Incêndios florestais</option>
-          <option value="severeStorms">Tempestades severas</option>
-          <option value="volcanoes">Vulcões</option>
-          <option value="floods">Enchentes</option>
-          <option value="drought">Secas</option>
-          <option value="earthquakes">Terremotos</option>
-          <option value="landslides">Deslizamentos</option>
-          <option value="seaLakeIce">Gelo marinho</option>
+          <option value="">Todas as categorias</option>
+          {#for c in cdi:categorias.todas}
+          <option value="{c.id}">{c.nome}</option>
+          {/for}
         </select>
       </div>
       <div class="filtros-acoes">

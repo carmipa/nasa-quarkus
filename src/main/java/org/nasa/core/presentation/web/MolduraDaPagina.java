@@ -72,11 +72,30 @@ public class MolduraDaPagina {
      * @return o mesmo template, agora com tudo que o {@code layout/base.html} exige
      */
     public TemplateInstance vestir(TemplateInstance pagina, String secaoAtiva) {
+        return vestir(pagina, secaoAtiva, false);
+    }
+
+    /**
+     * Como {@link #vestir(TemplateInstance, String)}, dizendo se a página desenha mapa.
+     *
+     * <p><b>Por que a moldura precisa saber disso.</b> A atribuição do OpenStreetMap é
+     * exigida pela licença ODbL <b>onde o dado aparece</b>. Ela estava no rodapé de TODA
+     * página — inclusive no cadastro de cliente, que não desenha mapa nenhum. Não é apenas
+     * ruído: numa página sem mapa, a linha afirma uma procedência que não existe ali, e
+     * enfraquece a atribuição justamente onde ela é obrigatória.</p>
+     *
+     * <p><b>O padrão é {@code false}</b>, e é o padrão certo: página nova não nasce
+     * atribuindo dado que não usa. Quem tem mapa diz que tem.</p>
+     */
+    public TemplateInstance vestir(TemplateInstance pagina, String secaoAtiva, boolean temMapa) {
         var agora = relogio.agora();
         return pagina
                 .data("horaServidorUtc", FORMATO_UTC.format(agora))
                 .data("instanteIso", agora.toString())
                 .data("versaoAssets", VersaoDosAssets.ATUAL)
-                .data("secaoAtiva", secaoAtiva);
+                .data("secaoAtiva", secaoAtiva)
+                // Fornecida SEMPRE, nos dois caminhos: o Qute e estrito, e chave ausente
+                // e 500 — nao campo vazio. Ja aconteceu tres vezes neste projeto.
+                .data("temMapa", temMapa);
     }
 }

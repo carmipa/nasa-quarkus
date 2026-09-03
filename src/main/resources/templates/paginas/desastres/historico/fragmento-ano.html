@@ -70,9 +70,19 @@
     <dl class="grafico">
       {#for c in barras}
       <div class="barra-linha realce-linha">
-        <dt class="barra-rotulo" translate="no">{c.categoria}</dt>
+        <dt class="barra-rotulo com-icone" style="color: {cdi:categorias.cor(c.categoria)}">
+          {#icone cdi:categorias.icone(c.categoria) /}
+          <span>{cdi:categorias.nome(c.categoria)}</span>
+        </dt>
         <dd class="barra-valor">
-          <span class="barra" style="width: {c.porcentagem}%"></span>
+          <!--
+            A COR VEM DO CATALOGO, e o icone junto. Cor sozinha nao serve: cerca de
+            8% dos homens nao distinguem verde de vermelho, e um grafico que codifica
+            o tipo so na cor nao informa essa parcela. O icone informa todo mundo, e
+            o nome escrito resolve os dois casos em que os outros dois falham.
+          -->
+          <span class="barra" style="width: {c.porcentagem}%;
+                background: {cdi:categorias.cor(c.categoria)}"></span>
           <span class="barra-numero">{c.quantos}</span>
         </dd>
       </div>

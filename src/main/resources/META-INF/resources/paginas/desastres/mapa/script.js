@@ -45,6 +45,27 @@
     return d.innerHTML;
   }
 
+  /*
+   * SO PASSA `#rrggbb`. Qualquer outra coisa vira o cinza padrao.
+   *
+   * A cor vem do catalogo do SERVIDOR e hoje e sempre uma constante — nem
+   * mesmo categoria desconhecida produz cor de fora, porque ela cai no cinza
+   * fixo. Entao por que validar?
+   *
+   * Porque este valor e concatenado dentro de um atributo `style=` num HTML
+   * montado por string, e essa e a construcao em que um valor inesperado sai
+   * do atributo e vira marcacao. A garantia de que ele e constante e uma
+   * garantia de HOJE, que vive em OUTRO arquivo, e some no dia em que alguem
+   * fizer a cor vir da API ou de uma preferencia do usuario.
+   *
+   * Escapar nao bastaria aqui: `escapar` protege TEXTO, e contexto de CSS tem
+   * regras proprias. Lista de permissao por formato e a defesa certa para
+   * este contexto.
+   */
+  function corSegura(valor) {
+    return /^#[0-9a-fA-F]{6}$/.test(valor || '') ? valor : '#8b949e';
+  }
+
   // ---------------------------------------------------------------- camadas
   //
   // DUAS camadas, e o seletor no canto. Satelite vem do Esri World Imagery, que
@@ -84,15 +105,31 @@
     }
     var ativo = item.dataset.ativo === 'true';
 
+    // A COR VEM DO TIPO DE DESASTRE, calculada no SERVIDOR pelo catalogo de
+    // categorias — nao ha mapa de cores duplicado aqui. Duas listas de cores em
+    // dois arquivos divergem no primeiro dia em que alguem muda uma delas.
+    //
+    // ANTES a cor dizia ATIVO ou ENCERRADO, e todos os pinos ativos eram
+    // laranja: um mapa com trezentos pontos identicos nao responde a pergunta
+    // que se faz olhando um mapa, que e "que tipo de coisa esta acontecendo
+    // ali". O estado agora e dito pelo TAMANHO e pela OPACIDADE, que sao
+    // dimensoes livres — e a cor passou a dizer o tipo.
+    var cor = item.dataset.cor || '#8b949e';
+
     L.circleMarker([lat, lon], {
       radius: ativo ? 8 : 5,
-      color: ativo ? '#ff9f43' : '#9198a1',
-      fillColor: ativo ? '#ff9f43' : '#9198a1',
-      fillOpacity: ativo ? 0.65 : 0.35,
+      color: cor,
+      fillColor: cor,
+      fillOpacity: ativo ? 0.7 : 0.25,
+      // Encerrado ganha traco tracejado ALEM da opacidade menor: opacidade
+      // sozinha se confunde com sobreposicao de pinos numa regiao cheia.
+      dashArray: ativo ? null : '3 3',
       weight: 2
     })
       .bindPopup(
         '<strong>' + escapar(item.dataset.titulo) + '</strong><br>' +
+        '<span style="color:' + corSegura(item.dataset.cor) + '">' +
+        escapar(item.dataset.tipo || 'Sem categoria') + '</span> · ' +
         (ativo ? 'Em curso' : 'Encerrado') +
         '<br><a href="/desastres/' + encodeURIComponent(item.dataset.id) + '">ver detalhes</a>'
       )

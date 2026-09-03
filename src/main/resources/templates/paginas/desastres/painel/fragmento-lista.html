@@ -26,7 +26,13 @@
           <span class="evento-situacao" translate="no">
             {#if e.ativo}Em curso{#else}Encerrado{/if}
           </span>
-          {#if e.categoria}<span class="evento-categoria" translate="no">{e.categoria}</span>{/if}
+          {#if e.categoria}<span class="evento-categoria com-icone"
+              style="color: {cdi:categorias.cor(e.categoria)};
+                     border-color: {cdi:categorias.cor(e.categoria)}"
+              data-dica="Tipo do desastre segundo a NASA. A mesma cor identifica este tipo no mapa e nos gráficos.">
+          {#icone cdi:categorias.icone(e.categoria) /}
+          <span>{cdi:categorias.nome(e.categoria)}</span>
+        </span>{/if}
         </div>
         <a class="evento-titulo" href="/desastres/{e.id}">{e.titulo}</a>
         <dl class="evento-campos">

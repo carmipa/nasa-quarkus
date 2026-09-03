@@ -53,6 +53,31 @@
     </div>
 
     <!--
+      LEGENDA — só as categorias que estão no mapa AGORA, não as 13.
+
+      Listar todas obrigaria procurar, numa lista de treze, as quatro cores que
+      de fato aparecem — e afirmaria que há vulcão no mapa quando não há nenhum.
+      Legenda é chave de leitura do que está desenhado, não catálogo do possível.
+
+      Cada item traz COR e ÍCONE. Cor sozinha deixaria de fora quem não
+      distingue verde de vermelho — cerca de 8% dos homens.
+    -->
+    <div class="mapa-legenda">
+      <span class="mapa-legenda-titulo">No mapa:</span>
+      {#for c in legenda}
+      <span class="mapa-legenda-item com-icone" style="color: {c.cor}"
+            data-dica="Os pinos desta cor são {c.nome}. Pino cheio e maior é evento em curso; pino menor e tracejado já foi encerrado pela NASA.">
+        {#icone c.icone /}
+        <span>{c.nome}</span>
+      </span>
+      {/for}
+      <span class="mapa-legenda-estado dica" tabindex="0"
+            data-dica="O TAMANHO e o traço dizem o estado, não a cor: a cor está reservada para o tipo de desastre. Pino cheio e maior está em curso; pino menor e tracejado já foi encerrado.">
+        cheio = em curso · tracejado = encerrado
+      </span>
+    </div>
+
+    <!--
       A LISTA É A FONTE DOS DADOS DO MAPA, e não uma cópia dele. Ter uma só
       origem impede que as duas divirjam — que é o que aconteceria com um JSON
       embutido ao lado de uma lista escrita à mão.
@@ -67,11 +92,16 @@
           {/if}
           data-id="{e.id}"
           data-ativo="{e.ativo}"
+          data-cor="{cdi:categorias.cor(e.categoria)}"
+          data-tipo="{cdi:categorias.nome(e.categoria)}"
           data-titulo="{e.titulo}">
         <a class="mapa-item-titulo" href="/desastres/{e.id}">{e.titulo}</a>
-        <span class="mapa-item-meta" translate="no">
-          {#if e.categoria}{e.categoria} · {/if}{e.ocorridoEm} UTC
+        <span class="mapa-item-meta com-icone"
+              style="color: {cdi:categorias.cor(e.categoria)}">
+          {#icone cdi:categorias.icone(e.categoria) /}
+          <span>{cdi:categorias.nome(e.categoria)}</span>
         </span>
+        <span class="mapa-item-quando" translate="no">{e.ocorridoEm} UTC</span>
         {#if !e.coordenada}
         <span class="mapa-item-aviso">sem coordenada publicada — não aparece no mapa</span>
         {/if}

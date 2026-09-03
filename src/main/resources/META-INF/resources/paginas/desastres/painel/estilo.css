@@ -91,7 +91,26 @@
 }
 .evento-ativo .evento-situacao { color: var(--cor-alerta); }
 .evento-encerrado .evento-situacao { color: var(--cor-texto-fraco); }
-.evento-categoria { color: var(--cor-texto-fraco); font-size: 0.8rem; }
+/*
+ * O SELO DE CATEGORIA carrega COR e ÍCONE, vindos do catálogo do servidor.
+ * A cor entra por `style` inline porque ela é dado — muda por evento —, e o
+ * que fica aqui é a forma, que não muda. Escrever 13 classes de cor no CSS
+ * duplicaria o catálogo, e duas listas de cores divergem no primeiro dia em
+ * que alguém mexe numa delas.
+ *
+ * A borda usa a mesma cor do texto: contorno colorido é reconhecível no canto
+ * do olho, e o ícone dentro resolve para quem não distingue a cor.
+ */
+.evento-categoria {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  padding: 0.15rem 0.55rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
 
 .evento-titulo {
   display: block;

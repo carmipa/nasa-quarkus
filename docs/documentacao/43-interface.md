@@ -73,3 +73,45 @@ que o gráfico existe para mostrar. No histórico por ano, ao contrário, um ano
 significar duas coisas opostas — ano calmo, ou ano nunca sincronizado — e a tela as pinta
 diferente, com legenda dizendo qual é qual. Desenhá-las igual seria mentir com um gráfico,
 que é a pior forma de mentir porque parece medição.
+
+## Cores por tipo de desastre
+
+As 13 categorias da EONET têm **nome em português, cor e ícone** próprios, num catálogo único
+(`CategoriasDeDesastre`) usado pelo filtro, pelos gráficos, pelos selos das listas e pelos
+pinos do mapa. Uma lista só: duas listas de cores em dois arquivos divergem no primeiro dia
+em que alguém mexe numa delas.
+
+**O filtro tinha 8 de 13.** Faltavam poeira, origem humana, neve, extremos de temperatura e
+cor da água. Um filtro incompleto não erra — ele simplesmente **nunca mostra** o que ficou de
+fora, e ninguém procura o que não sabe que existe. Agora ele vem do catálogo, e há teste que
+confere as 13 contra a lista medida na API.
+
+**Cor e ícone, nunca só cor.** Cerca de 8% dos homens não distinguem verde de vermelho. Um
+mapa que codifica o tipo apenas na cor não informa essa parcela — e num sistema de alerta,
+"não informa" é o defeito inteiro. Cada categoria tem cor **e** ícone; a legenda traz os dois.
+
+**No mapa, a cor passou a dizer o TIPO.** Antes ela dizia em curso ou encerrado, e todos os
+pinos ativos eram laranja — um mapa com trezentos pontos idênticos não responde à pergunta
+que se faz olhando um mapa. O estado agora é dito pelo **tamanho** e pelo **traço** (cheio em
+curso, tracejado encerrado), que são dimensões livres.
+
+A legenda do mapa lista **só as categorias presentes**, não as 13: legenda é chave de leitura
+do que está desenhado, não catálogo do possível — e listar vulcão quando não há nenhum é
+afirmar algo falso.
+
+Guardas: nenhuma cor se repete (duas categorias da mesma cor são indistinguíveis no mapa),
+toda cor é `#rrggbb` válido (o mapa valida por lista de permissão e trocaria uma cor torta
+por cinza **sem erro**), e todo ícone declarado existe no catálogo de ícones.
+
+## O que a tela mostrava errado, visto na tela
+
+Estas foram encontradas **abrindo as páginas e olhando**, não lendo código:
+
+| defeito | causa |
+|---|---|
+| tracejado da dica atravessava o campo inteiro, parecendo borda quebrada | `<label>` é bloco; a `border-bottom` esticava pela coluna toda |
+| título e contadores corriam juntos | faltava margem entre o nome da tela e o dado dela |
+| barras do gráfico diário fundidas num bloco | espaço de `0.15rem` entre colunas |
+| botão "Recalcular" flutuando fora de linha | `align-items: center` centralizava na altura total, que cresce quando um campo tem texto de ajuda |
+| atribuição do OpenStreetMap em páginas sem mapa | rodapé fixo no layout, sem condição |
+| painel de desastres abrindo vazio com 21.542 eventos na base | a aba que abria era o formulário de sincronização |

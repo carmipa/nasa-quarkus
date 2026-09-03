@@ -214,12 +214,26 @@ public class DesastrePaginasResource {
                                  boolean apenasAtivos) {
         // 500 eventos e o teto do que um mapa mostra sem virar uma mancha de pinos.
         var eventos = consultar.listar(0, 100);
+
+        // A LEGENDA MOSTRA SO AS CATEGORIAS QUE ESTAO NO MAPA AGORA.
+        //
+        // Listar as 13 sempre seria pior de duas formas: obrigaria procurar, numa
+        // lista de treze, as quatro cores que de fato aparecem; e afirmaria que ha
+        // vulcao no mapa quando nao ha nenhum. Legenda e chave de leitura do que
+        // esta desenhado — nao catalogo do que poderia estar.
+        var naTela = eventos.stream()
+                .map(e -> CategoriasDeDesastre.de(e.categoria()))
+                .distinct()
+                .sorted(java.util.Comparator.comparing(CategoriasDeDesastre.Categoria::nome))
+                .toList();
+
         return moldura.vestir(telaMapa
                 .data("eventos", eventos)
+                .data("legenda", naTela)
                 .data("dias", dias)
                 .data("apenasAtivos", apenasAtivos)
                 .data("total", consultar.contar())
-                .data("ativos", consultar.contarAtivos()), "desastres");
+                .data("ativos", consultar.contarAtivos()), "desastres", true);
     }
 
     // ------------------------------------------------------------ estatisticas
@@ -435,7 +449,9 @@ public class DesastrePaginasResource {
     @GET
     @Path("/{id}")
     public TemplateInstance detalhe(@PathParam("id") long id) {
+        // `true`: a tela de detalhe tambem desenha mapa, e a atribuicao ODbL e
+        // exigida onde o dado aparece.
         return moldura.vestir(telaDetalhe
-                .data("evento", consultar.exigirPorId(id)), "desastres");
+                .data("evento", consultar.exigirPorId(id)), "desastres", true);
     }
 }

@@ -50,7 +50,7 @@
 }
 .mapa .leaflet-popup-content a { color: var(--cor-destaque); }
 
-.mapa-lista-titulo { font-size: 1.1rem; margin-bottom: 0.75rem; }
+.mapa-lista-titulo { margin-top: 1.5rem; font-size: 1.1rem; margin-bottom: 0.75rem; }
 
 .mapa-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.5rem; width: 100%; }
 
@@ -72,3 +72,51 @@
 .mapa-item-titulo:hover { color: var(--cor-destaque); }
 .mapa-item-meta { color: var(--cor-texto-fraco); font-size: 0.8rem; }
 .mapa-item-aviso { color: var(--cor-alerta); font-size: 0.78rem; }
+
+/* ------------------------------------------------------------------ legenda */
+
+/*
+ * A legenda traz COR e ÍCONE, nunca só cor: cerca de 8% dos homens não
+ * distinguem verde de vermelho, e um mapa que codifica o tipo apenas na cor
+ * não informa essa parcela. Num sistema de alerta, "não informa" é o defeito
+ * inteiro.
+ */
+.mapa-legenda {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1.1rem;
+  width: 100%;
+  margin-top: 0.8rem;
+  padding: 0.7rem 1%;
+  border: 1px solid var(--cor-borda);
+  border-radius: 0.5rem;
+  background: var(--cor-superficie);
+  font-size: 0.85rem;
+}
+
+.mapa-legenda-titulo {
+  color: var(--cor-texto-fraco);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.mapa-legenda-item { font-weight: 600; }
+
+/* O estado fica separado à direita: ele fala de outra dimensão (em curso ou
+   encerrado), e misturá-lo com as cores de tipo sugeriria que é mais um tipo. */
+.mapa-legenda-estado {
+  margin-left: auto;
+  color: var(--cor-texto-fraco);
+  font-size: 0.8rem;
+}
+
+/* Tipo e horário em linhas próprias: antes vinham na mesma linha separados por
+   um ponto, e o tipo colorido colado no horário cinza lia-se como uma frase só. */
+.mapa-item-quando {
+  display: block;
+  color: var(--cor-texto-fraco);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}

@@ -66,7 +66,10 @@
     <dl class="grafico">
       {#for c in barras}
       <div class="barra-linha">
-        <dt class="barra-rotulo" translate="no">{c.categoria}</dt>
+        <dt class="barra-rotulo com-icone" style="color: {cdi:categorias.cor(c.categoria)}">
+          {#icone cdi:categorias.icone(c.categoria) /}
+          <span>{cdi:categorias.nome(c.categoria)}</span>
+        </dt>
         <dd class="barra-valor">
           <!--
             A largura vem calculada do SERVIDOR. Duas razões: o Qute não faz
@@ -75,7 +78,13 @@
             testa. Fazê-la no navegador exigiria JavaScript para desenhar um
             retângulo — e sem ele o gráfico viraria uma lista de números.
           -->
-          <span class="barra" style="width: {c.porcentagem}%"></span>
+          <!--
+            A COR VEM DO CATALOGO, e o icone ao lado do nome. Cor sozinha nao serve:
+            cerca de 8% dos homens nao distinguem verde de vermelho, e um grafico que
+            codifica o tipo so na cor nao informa essa parcela.
+          -->
+          <span class="barra" style="width: {c.porcentagem}%;
+                background: {cdi:categorias.cor(c.categoria)}"></span>
           <span class="barra-numero">{c.quantos}</span>
         </dd>
       </div>

@@ -134,9 +134,20 @@
   {#insert corpo}{/}
 </main>
 
+<!--
+  A ATRIBUIÇÃO DO MAPA SÓ APARECE ONDE HÁ MAPA.
+
+  Ela estava em TODA página — inclusive no cadastro de cliente e na tela de
+  documentação, que não desenham mapa nenhum. Não é só ruído: atribuição de
+  licença aponta a origem de um dado que está NAQUELA tela. Numa página sem
+  mapa ela afirma uma procedência que não existe ali, e enfraquece a
+  atribuição justamente onde ela é obrigatória.
+-->
 <footer class="rodape">
   <span>Projeto acadêmico FIAP — reconstrução em Java 25 / Quarkus</span>
+  {#if temMapa}
   <span class="rodape-atribuicao" translate="no">© OpenStreetMap contributors (ODbL)</span>
+  {/if}
 </footer>
 
 <script src="/estatico/js/htmx.min.js?v={versaoAssets}" defer></script>
