@@ -96,7 +96,7 @@ public class AlertaResource {
     }
 
     @GET
-    @Path("/cliente/{inscritoId}")
+    @Path("/inscrito/{inscritoId}")
     public List<AlertaResposta> doInscrito(@PathParam("inscritoId") long inscritoId,
                                           @QueryParam("pagina") @DefaultValue("0") int pagina,
                                           @QueryParam("tamanho") @DefaultValue("20") int tamanho) {

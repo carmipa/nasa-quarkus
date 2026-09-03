@@ -76,3 +76,64 @@ O `robots.txt` diz em voz alta que **é um pedido, não uma tranca**: todo rastr
 obedece, nenhum mal-intencionado obedece. Por isso não há caminho sigiloso listado nele —
 `Disallow` é a forma mais eficiente de anunciar um caminho a quem procura exatamente isso.
 Quem protege rota é a autenticação.
+
+## O que a auditoria de 03/09/2026 encontrou
+
+Feita depois da troca de banco e da remoção de três fatias — o momento em que mais coisa
+quebra em silêncio. Sete achados, cada um medido antes de virar item.
+
+### Um achado refutado, e o motivo importa
+
+A suspeita era que o formulário público chamasse o Nominatim sem limite, e o Nominatim
+**bane IP** que não respeita a política dele. Medido: o adaptador **já tem** limite de 1
+requisição por segundo, com `User-Agent` identificável e relógio injetado para o teste poder
+provar o intervalo. A suspeita estava errada, e fica registrada — senão a próxima auditoria
+a reencontra e ninguém lembra que já foi julgada.
+
+### O defeito silencioso
+
+A telemetria contava linhas de `cliente`, `endereco` e `contato` — tabelas removidas. A
+consulta estourava, um `catch` devolvia lista vazia, e a seção **"Tamanho da base" sumia da
+página**. Sem erro, sem log. Uma página com uma seção a menos é indistinguível de uma
+correta.
+
+A lista foi corrigida, e a tabela ausente passou a ser **nomeada** na exceção: a tela
+continua degradando, mas o log agora diz *qual* tabela sumiu — a única informação capaz de
+levar alguém ao conserto.
+
+### A superfície de abuso
+
+Medido: **dez inscrições criadas em segundos**, sem nada barrando. Cada uma dispara chamadas
+à BrasilAPI e ao ViaCEP. O risco não é a base encher — é o projeto ser bloqueado pelos
+provedores dos quais ele depende.
+
+Entrou um limite por origem, e três decisões dele valem ser ditas:
+
+- **falha aberto**: se o contador quebrar, a inscrição passa. Um limitador com defeito que
+  bloqueia todo mundo transforma proteção contra abuso na negação de serviço que ele existe
+  para impedir;
+- **não usa `X-Forwarded-For`**: aquele cabeçalho é escrito pelo cliente, e confiar nele daria
+  a qualquer um um limite novo por requisição. Usa o endereço da conexão, que o cliente não
+  escolhe. O custo declarado: quem está atrás do mesmo NAT divide o limite;
+- **não é captcha**: captcha exige serviço de terceiro, script externo e cookie — três coisas
+  que este projeto recusou em toda decisão — e resolve o problema errado, incomodando gente
+  para barrar robô.
+
+### O que a API não devolve
+
+`/api/inscritos` existe, e **não devolve e-mail nem telefone**. Uma API pública que lista os
+contatos dos inscritos é uma lista para spam servida de bandeja. O que fica é o que permite
+operar: quem é, se recebe alerta, e o CEP — que identifica região, não pessoa.
+
+### O que continuou de pé
+
+As cinco guardas anteriores sobreviveram à reescrita, e foi conferido uma a uma: SSRF no
+proxy de imagens, XXE na leitura de XML, travessia de caminho na documentação, lista de
+permissão da cor no atributo `style`, e o escape do Markdown. Nenhuma tela vaza rastro de
+pilha.
+
+### Dois defeitos que as próprias guardas do projeto pegaram
+
+Durante a correção: a checagem de saúde importava um caso de uso de **outra fatia** — a
+regra 3 da fronteira reprovaria o build, e reprovou; e ela lançava `IllegalStateException`,
+que a catraca de exceções recusa. As duas foram encontradas por mecanismo, não por revisão.

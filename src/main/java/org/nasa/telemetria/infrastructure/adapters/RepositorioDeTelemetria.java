@@ -241,20 +241,40 @@ public class RepositorioDeTelemetria {
     }
 
     /** Contagem de linhas das tabelas de negócio — o painel mostra o tamanho da base. */
+    /**
+     * O tamanho de cada tabela de negócio.
+     *
+     * <p><b>TABELA AUSENTE É FALHA, NÃO SEÇÃO VAZIA — e isso é uma correção.</b> Em
+     * 03/09/2026 esta lista ainda continha {@code cliente}, {@code endereco} e
+     * {@code contato}, removidas do projeto. A consulta estourava com "no such table", o
+     * {@code catch} da camada de cima devolvia lista vazia, e a seção <b>"Tamanho da base"
+     * sumia da página</b> — sem erro, sem log, sem nada. Uma página com uma seção a menos
+     * é indistinguível de uma correta.</p>
+     *
+     * <p>Agora a tabela ausente é <b>nomeada</b> na exceção. A tela continua inteira (a
+     * camada de cima ainda degrada), mas o log passa a dizer <b>qual</b> tabela sumiu — que
+     * é a única informação capaz de levar alguém ao conserto.</p>
+     */
     public Map<String, Long> tamanhoDasTabelas() {
         // Lista DECLARADA, nao deduzida do catalogo do banco: varredura de catalogo
         // traria tabelas internas do Flyway e do proprio Postgres, e a pagina mostraria
         // ruido de infraestrutura no lugar do tamanho do negocio.
-        List<String> tabelas = List.of("cliente", "endereco", "contato", "evento_natural",
+        List<String> tabelas = List.of("inscrito", "evento_natural",
                 "alerta_enviado", "telemetria_operacao");
         Map<String, Long> contagens = new LinkedHashMap<>();
         try (Connection c = Conexoes.abrir(dataSource, "tabelas")) {
             for (String t : tabelas) {
                 // O nome vem da lista ACIMA, nunca de fora — por isso a concatenacao aqui
                 // e segura. `?` nao vale para nome de tabela em SQL nenhum.
+                // O nome vem da lista ACIMA, nunca de fora — por isso a concatenacao
+                // aqui e segura. `?` nao vale para nome de tabela em SQL nenhum.
                 try (PreparedStatement ps = c.prepareStatement("SELECT count(*) FROM " + t);
                      ResultSet rs = ps.executeQuery()) {
                     contagens.put(t, rs.next() ? rs.getLong(1) : 0L);
+                } catch (SQLException tabelaSumiu) {
+                    // NOMEIA a tabela. Sem isto, a falha subia generica, a camada de cima
+                    // devolvia lista vazia, e a secao sumia da tela sem dizer por que.
+                    throw new FalhaNaTelemetriaException("tamanho-tabelas", t, tabelaSumiu);
                 }
             }
             return contagens;

@@ -58,6 +58,20 @@ public class InscricaoPaginasResource {
     @Inject
     InscreverUseCase inscrever;
 
+    /**
+     * O limite por origem.
+     *
+     * <p>Este formulário é público e escreve no banco. Medido em 03/09/2026: dez inscrições
+     * em segundos, sem nada barrando — e cada uma dispara chamadas à BrasilAPI e ao ViaCEP.
+     * O risco não é a base encher; é o projeto ser bloqueado pelos provedores dos quais ele
+     * depende.</p>
+     */
+    @Inject
+    org.nasa.core.web.LimiteDeTentativas limite;
+
+    @jakarta.inject.Inject
+    io.vertx.core.http.HttpServerRequest requisicao;
+
     @Inject
     ConsultarInscritosUseCase consultar;
 
@@ -84,6 +98,15 @@ public class InscricaoPaginasResource {
                                       @FormParam("telefone") String telefone,
                                       @FormParam("cep") String cep,
                                       @FormParam("raioKm") Double raioKm) {
+        if (!limite.podeSeguir(origem())) {
+            // A MENSAGEM NAO ACUSA quem tentou demais nem diz o numero exato do limite:
+            // acusar treina o abuso a se ajustar, e quem chegou aqui por engano so precisa
+            // saber que deve esperar.
+            return moldura.vestir(comum(0).data("resultado", null)
+                    .data("erro", "muitas tentativas seguidas desta origem — espere alguns "
+                            + "minutos e tente de novo")
+                    .data("jaInscrito", false), "inscricao");
+        }
         try {
             var r = inscrever.executar(nome, email, telefone, cep, raioKm);
             return moldura.vestir(comum(0).data("resultado", r).data("erro", null)
@@ -110,6 +133,24 @@ public class InscricaoPaginasResource {
                 // segunda vez simplesmente nao muda nada.
                 .data("erro", mudou ? null : "esta inscricao ja estava cancelada")
                 .data("jaInscrito", false), "inscricao");
+    }
+
+    /**
+     * O endereço da conexão.
+     *
+     * <p><b>Não usa {@code X-Forwarded-For}</b>, e é deliberado: aquele cabeçalho é escrito
+     * pelo cliente, e confiar nele daria a qualquer um um limite novo por requisição. O
+     * endereço da conexão o cliente não escolhe. O custo declarado é que quem está atrás do
+     * mesmo NAT divide o limite — por isso o limite é generoso.</p>
+     */
+    private String origem() {
+        try {
+            return requisicao == null || requisicao.remoteAddress() == null
+                    ? null : requisicao.remoteAddress().host();
+        } catch (RuntimeException semEndereco) {
+            // Sem endereco, passa. E o caso de chamada interna e de teste.
+            return null;
+        }
     }
 
     /**
