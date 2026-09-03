@@ -1,0 +1,106 @@
+# =============================================================================
+# nasa-quarkus — unidade systemd para a VPS srv1522378
+#
+# ONDE INSTALAR:  /etc/systemd/system/nasa-quarkus.service
+#
+# AS DUAS FLAGS DA JVM NAO SAO OPCIONAIS, e o arranque prova isso:
+#
+#   -Duser.timezone=UTC ............. sem ela a CatracaDeFusoUtc DERRUBA o
+#       arranque, de proposito. O carimbo do log e escrito pelo framework de
+#       logging usando o fuso padrao da JVM, nao pelos `Instant` da aplicacao.
+#       Medido em 02/09/2026 no mesmo commit: a API respondia `...T15:05:51Z`
+#       enquanto a linha de log do MESMO instante dizia `12:05:51-03:00`. Quem
+#       cruza os dois ve tres horas de diferenca e vai cacar um defeito de
+#       gravacao que nao existe. `%d{...}{UTC}` no formato do log foi tentado e
+#       NAO funciona: o JBoss LogManager imprime o literal `{UTC}`.
+#
+#   --enable-native-access=ALL-UNNAMED ... o driver do SQLite carrega a
+#       biblioteca nativa por `System.load`, e o Java 25 avisa que "restricted
+#       methods will be blocked in a future release". Sem a flag o aviso vira
+#       ruido a cada arranque; quando o bloqueio chegar, o banco nao abre.
+#
+# POR QUE NAO HA `Restart=always` COM `RestartSec` CURTO. Se o arranque falhar
+# por configuracao — `NASA_DB_PATH` ausente, esquema nao aplicado, fuso errado —
+# um reinicio a cada segundo enche o journal e esconde a causa entre milhares de
+# linhas iguais. `RestartSec=10` com `StartLimitBurst` faz o systemd DESISTIR e
+# deixar o servico em `failed`, que e um estado visivel em `systemctl status`.
+# Falha de configuracao tem de PARAR, nao girar.
+# =============================================================================
+
+[Unit]
+Description=nasa-quarkus — alerta de desastres naturais (Java 25 / Quarkus)
+Documentation=https://github.com/carmipa/nasa-quarkus
+# `network-online` e nao so `network`: a sincronizacao com a EONET da NASA
+# acontece no arranque, e `network` sobe antes de haver rota para a internet.
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+
+# UM USUARIO PROPRIO, sem shell e sem login. A aplicacao nao precisa de nada
+# fora da pasta dela, e rodar como `root` daria a um defeito de travessia de
+# caminho a chance de ler os outros nove servicos desta maquina.
+#   useradd --system --no-create-home --shell /usr/sbin/nologin nasa
+User=nasa
+Group=nasa
+
+WorkingDirectory=/opt/nasa-quarkus
+
+# O CAMINHO DO BANCO E OBRIGATORIO EM PRODUCAO, sem valor padrao. Faltando, o
+# arranque cai — que e melhor que criar um banco vazio num lugar inesperado e
+# parecer funcionar ate alguem perguntar onde estao os dados.
+Environment=NASA_DB_PATH=/var/lib/nasa-quarkus/nasa.db
+Environment=JAVA_HOME=/usr/lib/jvm/java-25-openjdk-amd64
+
+ExecStart=/usr/lib/jvm/java-25-openjdk-amd64/bin/java \
+    --enable-native-access=ALL-UNNAMED \
+    -Duser.timezone=UTC \
+    -Xmx512m \
+    -jar /opt/nasa-quarkus/quarkus-app/quarkus-run.jar
+
+# ---------------------------------------------------------------- reinicio
+Restart=on-failure
+RestartSec=10
+# Cinco tentativas em cinco minutos e depois DESISTE. Sem o limite, uma falha
+# de configuracao gira para sempre e o journal fica ilegivel.
+StartLimitBurst=5
+StartLimitIntervalSec=300
+
+# ------------------------------------------------------------- confinamento
+# Cada linha abaixo fecha uma porta que esta aplicacao nao usa. Elas importam
+# porque esta maquina tem outros nove servicos: o objetivo e que um defeito
+# aqui nao os alcance.
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+LockPersonality=true
+MemoryDenyWriteExecute=false
+
+# `ProtectSystem=strict` deixa TODO o sistema de arquivos somente-leitura. As
+# duas pastas abaixo sao as unicas excecoes, e o SQLite precisa das duas:
+# alem do `.db`, o modo WAL cria `-wal` e `-shm` NA MESMA PASTA. Sem a
+# permissao de escrita ali, o banco abre e a primeira gravacao falha com
+# `attempt to write a readonly database` — erro que aponta para permissao de
+# arquivo, nao para esta linha.
+ReadWritePaths=/var/lib/nasa-quarkus
+
+# A aplicacao fala com a NASA, o GDACS e os provedores de CEP. Sem esta lista,
+# `ProtectSystem` nao restringe rede — ela e declarada para deixar explicito
+# que saida de rede E necessaria, e que nada mais e.
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+
+# ------------------------------------------------------------------- log
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=nasa-quarkus
+
+[Install]
+WantedBy=multi-user.target
