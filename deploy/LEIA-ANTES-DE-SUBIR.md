@@ -1,210 +1,171 @@
-# Subir na VPS — `desastres.carminati.dev.br`
+# O deploy — como ele realmente é
 
-**Estado em 03/09/2026, medido de fora:**
+**No ar desde 03/09/2026:** <https://desastres.carminati.dev.br>
 
-| endereço | resultado |
+> **Este documento já esteve errado, e vale saber por quê.** A primeira versão
+> descrevia systemd + openresty, porque eu medi o cabeçalho `Server: openresty`
+> de fora e concluí o produto a partir do motor. A imagem
+> `jc21/nginx-proxy-manager` **é construída sobre openresty** — o cabeçalho dizia
+> a verdade sobre o binário e mentia sobre a ferramenta. Cabeçalho de servidor
+> identifica o motor, não o produto; para saber o produto, é preciso olhar de
+> dentro.
+
+## A forma
+
+```
+internet
+   │  80/443
+   ▼
+infra-proxy-app-1  (Nginx Proxy Manager, container)
+   │  rede docker `nginx-proxy-network`
+   ▼
+nasa-desastres:8080  (container, imagem nasa-quarkus:latest)
+   │
+   ▼
+/opt/nasa-quarkus/dados/nasa.db   (volume ./dados:/dados)
+```
+
+A porta é publicada como `127.0.0.1:18083:8080`. **É esse `127.0.0.1` que
+protege a aplicação** — ele é o laço da VPS, e só quem está na máquina ou na
+rede docker alcança. Não é firewall, é topologia: não há regra para alguém
+desfazer sem querer.
+
+> Não ponha `quarkus.http.host=127.0.0.1` na aplicação achando que ajuda. Dentro
+> do container esse é o laço do **próprio container**, e o `docker-proxy` deixa
+> de alcançar a aplicação — o site não sobe. Eu escrevi essa chave e o
+> Dockerfile teve de sobrepô-la; ela foi removida, com o motivo no
+> `application.properties`.
+
+## Publicar uma versão nova
+
+```bash
+ssh vps-paulo
+cd /opt/nasa-quarkus
+git pull --ff-only
+docker compose build
+docker compose up -d
+docker inspect nasa-desastres --format '{{.State.Health.Status}}'   # espere `healthy`
+```
+
+E então provar, de fora — **200 não prova tela certa neste projeto**, o Qute
+imprime expressão inválida como texto sem falhar:
+
+```bash
+B=https://desastres.carminati.dev.br
+curl -s "$B/saude"
+for r in / /desastres /desastres/mapa /alertas /contato /documentacao /sitemap.xml; do
+  printf "%-24s %s\n" "$r" "$(curl -s -o /dev/null -w '%{http_code}' "$B$r")"
+done
+curl -s "$B/" | grep -oE '\{#[a-z]+|\{cdi:|\.raw\}'    # tem de vir VAZIO
+```
+
+**E os vizinhos** — a VPS tem outros nove serviços, e um deploy que derruba
+vizinho é um deploy que falhou:
+
+```bash
+for d in frameworknet challengepride binmapper; do
+  printf "%-16s %s\n" "$d" "$(curl -s -o /dev/null -w '%{http_code}' "https://$d.carminati.dev.br/")"
+done
+ssh vps-paulo 'docker ps --filter health=unhealthy --format "{{.Names}}"'   # tem de vir VAZIO
+```
+
+## O proxy, e por que ele é um arquivo à mão
+
+[`npm-900-desastres.conf`](npm-900-desastres.conf) →
+`/opt/infra-proxy/data/nginx/proxy_host/900.conf`
+
+Publicar pela interface do NPM exige a senha do admin. O banco dele
+(`/opt/infra-proxy/data/database.sqlite`) serve **outros três sites de
+produção**, e escrever nele direto arriscaria os três para ganhar um. Um arquivo
+novo em `proxy_host/` entra pelo mesmo `include` dos gerados, não toca o banco, e
+sai com um `rm`.
+
+O número **900** é folga deliberada: o NPM gera `1.conf`, `2.conf`, `3.conf`,
+`100.conf` a partir dos ids do banco dele, e sobrescreveria um número baixo sem
+avisar.
+
+Depois de qualquer alteração:
+
+```bash
+ssh vps-paulo 'docker exec infra-proxy-app-1 nginx -t'        # o portão
+ssh vps-paulo 'docker exec infra-proxy-app-1 nginx -s reload'
+```
+
+`nginx -t` **antes** do reload, sempre. Recarregar com configuração inválida
+deixa a antiga no ar — o que é sorte, não plano.
+
+## O certificado, e o que ele custa
+
+Emitido por certbot dentro do container do NPM, **fora da interface dele**.
+Consequência que precisa ficar dita: **a renovação automática do NPM não cobre
+este certificado**, porque ele não está no banco. Sem cron, vence em
+**2026-12-02** e o domínio cai com erro de TLS, calado.
+
+Por isso:
+
+| | |
 |---|---|
-| DNS `desastres.carminati.dev.br` | resolve para `187.77.249.75` ✅ |
-| `http://desastres.carminati.dev.br/` | **200**, e é a página `"Default Site"` do openresty |
-| `https://desastres.carminati.dev.br/` | **não responde** (`http=000`) — não há TLS escutando |
-| `/saude` | **404** — a aplicação não está lá |
+| script | `/opt/infra-proxy/scripts/renovar-cert-desastres.sh` |
+| cron | `/etc/cron.d/renovar-cert-desastres` — seg e qui, 4h47 |
+| provado em | 03/09/2026, `certbot renew --dry-run` → *"all simulated renewals succeeded"* |
 
-O DNS está pronto. **A aplicação não está no ar**, e o que atende é um
-*placeholder*.
+O horário é deslocado dos outros dois scripts (`aspm` 4h37, `carminati-fst`
+4h17) para não renovar três certificados no mesmo minuto e bater no limite de
+taxa do Let's Encrypt.
 
-`187.77.249.75` é a VPS `srv1522378`: o `~/.ssh/config` do Paulo declara
-`Host vps-paulo hostinger 187.77.249.75`, usuário `root`. Ela hospeda **outros
-nove serviços**, e é por isso que cada passo abaixo é reversível e nenhum toca
-configuração compartilhada.
+**Um cron que ninguém testou é uma promessa.** O `--dry-run` é o que o torna
+evidência — refaça-o se mexer no caminho do webroot.
 
----
+## O login do GitHub — desligado, e como acender
 
-## Passo 0 — MEDIR, antes de mudar qualquer coisa
+**Nasce desligado** (`%prod.quarkus.oidc.enabled=${OIDC_LIGADO:false}`), porque
+o OAuth App ainda não existe. Sem isso o Quarkus recusaria o arranque por falta
+de `client-id`, e o site inteiro ficaria fora do ar esperando uma credencial que
+protege **uma tela**.
 
-O ponto que decide o resto: **existe um painel gerenciando o openresty?**
-CyberPanel e o stack da Hostinger geram os vhosts, e um arquivo escrito à mão é
-**sobrescrito** na próxima alteração pelo painel — o site cai sem ninguém ter
-mexido nele.
+Para acender, no `/opt/nasa-quarkus/.env` (permissão `600`, fora do git):
 
 ```bash
-ssh vps-paulo 'hostname; whoami'
-ssh vps-paulo 'nginx -V 2>&1 | head -1'
-ssh vps-paulo 'ls -la /usr/local/lsws/conf/vhosts/ 2>/dev/null'     # CyberPanel/OLS
-ssh vps-paulo 'ls -la /usr/local/openresty/nginx/conf/conf.d/ 2>/dev/null'
-ssh vps-paulo 'ls -la /etc/nginx/sites-enabled/ 2>/dev/null'
-ssh vps-paulo 'nginx -T 2>/dev/null | grep server_name'
-ssh vps-paulo 'ss -tlnp | head -30'
-ssh vps-paulo 'systemctl list-units --type=service --state=running | head -30'
-ssh vps-paulo 'df -h /; free -m'
-ssh vps-paulo 'java -version 2>&1; ls /usr/lib/jvm/ 2>/dev/null'
+OIDC_LIGADO=true
+GITHUB_CLIENT_ID=...
+GITHUB_CLIENT_SECRET=...
 ```
 
-**Havendo painel**, o vhost se cria pelo painel e só o bloco `location /` do
-[`desastres.carminati.dev.br.conf`](desastres.carminati.dev.br.conf) é colado no
-campo de configuração personalizada. **Sem painel**, aquele arquivo vale inteiro.
+O callback do OAuth App é `https://desastres.carminati.dev.br/login/github/retorno`.
+Depois, `docker compose up -d` — nada de código muda.
 
-**Java 25 é requisito** e o último comando diz se ele está lá. Se não estiver,
-instalar é um `apt` — que mexe no sistema compartilhado, e portanto é decisão do
-Paulo, não minha.
-
----
-
-## Passo 1 — o usuário e as pastas
+**E aí o `location /telemetria { return 404; }` do `900.conf` sai**, porque a
+tela passa a ter fechadura de verdade. Enquanto ele está lá, a telemetria se vê
+por túnel:
 
 ```bash
-ssh vps-paulo 'useradd --system --no-create-home --shell /usr/sbin/nologin nasa'
-ssh vps-paulo 'mkdir -p /opt/nasa-quarkus /var/lib/nasa-quarkus'
-ssh vps-paulo 'chown -R nasa:nasa /var/lib/nasa-quarkus'
+ssh -L 18083:127.0.0.1:18083 vps-paulo    # e abra http://127.0.0.1:18083/telemetria
 ```
 
-**Por que um usuário próprio.** A aplicação não precisa de nada fora da pasta
-dela. Rodando como `root`, um defeito de travessia de caminho alcançaria os
-outros nove serviços — e este projeto tem, no `DocumentacaoCatalogo`, uma trava
-de travessia justamente porque essa família de defeito é fácil de reintroduzir.
+## O que fica fechado, e o que não
 
-`/var/lib/nasa-quarkus` é separado de `/opt` de propósito: o código é
-substituído a cada versão, o **banco não**. Misturados, um `rm -rf` da pasta de
-código apagaria os dados.
+Só `/telemetria`. Todo o resto é público, de propósito: é uma vitrine.
 
----
+A configuração é **lista de negação** e não de permissão. A primeira versão era
+o contrário e punha `/desastres`, `/alertas`, `/saude` e `/sitemap.xml` atrás de
+login — quebrando o healthcheck do container e escondendo a função principal do
+site. Listar o que é público obriga a lembrar de cada rota nova, e a esquecida
+fica fechada sem ninguém entender por quê.
 
-## Passo 2 — o artefato
+**O risco desta escolha, declarado:** rota sensível nova nasce **pública**. É
+aceitável porque não há dado pessoal no sistema — não há cadastro, e o alerta
+não grava nada. No dia em que houver, esta decisão precisa ser revista.
 
-O `quarkus-run.jar` é *fast-jar*: ele **precisa** da pasta `lib/` ao lado, e
-copiar só o `.jar` produz `ClassNotFoundException` no arranque.
+## Reverter
 
-Duas formas. **Construir aqui e enviar** é a preferível — a VPS não precisa de
-Gradle nem de rede para o Maven Central, e o que sobe é exatamente o que foi
-testado:
+Cada passo é independente e nenhum toca os outros nove serviços:
 
 ```bash
-# na máquina local
-./gradlew clean quarkusBuild
-scp -r build/quarkus-app vps-paulo:/opt/nasa-quarkus/
-ssh vps-paulo 'chown -R nasa:nasa /opt/nasa-quarkus'
+ssh vps-paulo 'cd /opt/nasa-quarkus && git checkout <commit-anterior> && docker compose up -d --build'
+ssh vps-paulo 'rm /opt/infra-proxy/data/nginx/proxy_host/900.conf'   # tira o domínio do ar
+ssh vps-paulo 'docker exec infra-proxy-app-1 nginx -t && docker exec infra-proxy-app-1 nginx -s reload'
 ```
 
-**Ou clonar e construir lá**, que foi a intenção original ("vou clonar lá").
-Custa Gradle, JDK completo e ~1 GB de dependências na VPS:
-
-```bash
-ssh vps-paulo 'cd /opt && git clone https://github.com/carmipa/nasa-quarkus.git'
-ssh vps-paulo 'cd /opt/nasa-quarkus && ./gradlew quarkusBuild'
-```
-
-> O repositório é **público**, então o clone não pede credencial. E `gs/` não
-> está versionado — há duas camadas impedindo isso, e a guarda de caminhos
-> proibidos roda a cada commit.
-
----
-
-## Passo 3 — o serviço
-
-```bash
-scp deploy/nasa-quarkus.service vps-paulo:/etc/systemd/system/
-ssh vps-paulo 'systemctl daemon-reload && systemctl enable --now nasa-quarkus'
-ssh vps-paulo 'systemctl status nasa-quarkus --no-pager'
-ssh vps-paulo 'journalctl -u nasa-quarkus -n 50 --no-pager'
-```
-
-**Conferir ANTES de mexer no proxy** — a aplicação escuta só em `127.0.0.1`,
-então o teste é de dentro:
-
-```bash
-ssh vps-paulo 'curl -s -o /dev/null -w "saude=%{http_code}\n" http://127.0.0.1:8080/saude'
-ssh vps-paulo 'curl -s http://127.0.0.1:8080/saude'
-```
-
-`/saude` conta a tabela `esquema_migracao` — não faz `SELECT 1`. Um banco vazio
-aceita conexão e responde `SELECT 1`; é por isso que a checagem conta a tabela
-de controle, e é o que distingue *"o banco está fora"* de *"a migração não
-rodou"*.
-
-Se o arranque cair, as três causas prováveis, em ordem:
-
-| sintoma no journal | causa |
-|---|---|
-| `FusoHorarioNaoUtcException` | falta `-Duser.timezone=UTC` — a catraca derruba de propósito |
-| `NASA_DB_PATH` não resolvido | a variável não chegou; ela **não tem padrão** em produção |
-| `attempt to write a readonly database` | `ReadWritePaths` não cobre a pasta do banco. O WAL cria `-wal` e `-shm` **na mesma pasta** |
-
----
-
-## Passo 4 — o certificado, e só depois o vhost
-
-**Nesta ordem.** Instalar o vhost antes de o certificado existir impede o nginx
-de recarregar — e um `reload` que falha deixa a configuração **antiga** no ar,
-o que é sorte, não plano.
-
-```bash
-ssh vps-paulo 'certbot certonly --webroot -w /var/www/html -d desastres.carminati.dev.br'
-ssh vps-paulo 'ls -la /etc/letsencrypt/live/desastres.carminati.dev.br/'
-```
-
-O Cloudflare está em **DNS only** — ele só resolve o nome e **não termina TLS**.
-O certificado tem de sair desta máquina; foi isso que a medição da porta 443 sem
-resposta mostrou.
-
-Só então:
-
-```bash
-scp deploy/desastres.carminati.dev.br.conf vps-paulo:/etc/nginx/sites-available/
-ssh vps-paulo 'ln -s /etc/nginx/sites-available/desastres.carminati.dev.br.conf /etc/nginx/sites-enabled/'
-ssh vps-paulo 'nginx -t'        # NUNCA recarregar sem isto passar
-ssh vps-paulo 'systemctl reload nginx'
-```
-
-`nginx -t` é o portão: ele valida a sintaxe **sem** aplicar. Recarregar com
-configuração inválida é o caminho mais curto para derrubar os outros nove
-serviços junto — e eles não têm nada a ver com este deploy.
-
----
-
-## Passo 5 — provar que subiu
-
-```bash
-curl -s -o /dev/null -w "http=%{http_code}\n"  http://desastres.carminati.dev.br/
-curl -s -o /dev/null -w "https=%{http_code}\n" https://desastres.carminati.dev.br/
-curl -s https://desastres.carminati.dev.br/saude
-curl -s https://desastres.carminati.dev.br/sitemap.xml | head -4
-curl -s -o /dev/null -w "telemetria=%{http_code}\n" https://desastres.carminati.dev.br/telemetria
-```
-
-O esperado: `80` redirecionando para `443`, `https=200`, `/saude` respondendo,
-o sitemap com o domínio real (não `localhost`) e `/telemetria` em **404**.
-
-**E a prova que importa, porque um deploy não pode derrubar vizinho** — os
-outros nove serviços continuam de pé:
-
-```bash
-ssh vps-paulo 'systemctl list-units --type=service --state=failed --no-pager'
-```
-
-A saída tem de vir **vazia**. Comparar com o que o Passo 0 registrou.
-
----
-
-## O que reverter, se der errado
-
-Nesta ordem, e cada passo é independente:
-
-```bash
-ssh vps-paulo 'rm /etc/nginx/sites-enabled/desastres.carminati.dev.br.conf'
-ssh vps-paulo 'nginx -t && systemctl reload nginx'
-ssh vps-paulo 'systemctl disable --now nasa-quarkus'
-```
-
-Nada disso toca os outros nove serviços, e o banco em `/var/lib/nasa-quarkus`
-sobrevive — de propósito.
-
----
-
-## O que ainda não existe
-
-- **Login do GitHub.** A telemetria está barrada no proxy com `404`, que é uma
-  tapa-buraco honesta: ela impede o acesso e não pretende ser autorização.
-  A chave OAuth é do Paulo.
-- **Renovação automática do certificado.** O `certbot` instala um *timer*
-  próprio, e o Passo 4 depende dele. Vale conferir com
-  `systemctl list-timers | grep certbot` — noventa dias passam rápido, e a
-  falha aparece com o site inacessível.
+O banco vive em `/opt/nasa-quarkus/dados/` e sobrevive a tudo isso — de
+propósito. Ele guarda 21 mil eventos sincronizados da NASA e **nenhum dado
+pessoal**.
