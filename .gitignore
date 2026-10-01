@@ -529,3 +529,6 @@ NOTAS-LOCAIS.md
 # =============================================================================
 !src/main/java/**/*.java
 !src/test/java/**/*.java
+
+# Anotacoes locais das sessoes de trabalho com IA: ficam so na maquina do autor (repositorio publico).
+.claude/
